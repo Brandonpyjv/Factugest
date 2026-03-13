@@ -1,14 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.discounts import get_all_discount
+from templates_config import templates
 
-discount_bp = Blueprint('discount', __name__)
+router = APIRouter()
 
 
-@discount_bp.route('/discount', endpoint='discount')
-def discount(): 
-    data=get_all_discount()
-    return render_template('discount/index.html',all_discount=data)
+@router.get("/discount", name="discount")
+def discount(request: Request):
+    data = get_all_discount()
+    return templates.TemplateResponse(request, "discount/index.html", {"all_discount": data})
 
-@discount_bp.route('/new_discount', endpoint='new_discount')
-def new_discount():
-    return render_template('discount/form.html')
+
+@router.get("/new_discount", name="new_discount")
+def new_discount(request: Request):
+    return templates.TemplateResponse(request, "discount/form.html")

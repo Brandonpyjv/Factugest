@@ -1,13 +1,11 @@
-
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.logs_service import get_all_logs
+from templates_config import templates
+
+router = APIRouter()
 
 
-logs_bp = Blueprint('logs', __name__)
-
-
-
-@logs_bp.route("/logs", endpoint='logs')
-def logs():
-    data=get_all_logs()
-    return render_template("logs/index.html", logs=data )
+@router.get("/logs", name="logs")
+def logs(request: Request):
+    data = get_all_logs()
+    return templates.TemplateResponse(request, "logs/index.html", {"logs": data})

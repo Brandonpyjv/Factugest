@@ -1,15 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.branches import get_all_branches
+from templates_config import templates
 
-branches_bp = Blueprint('branches', __name__)
+router = APIRouter()
 
 
-@branches_bp.route('/branches', endpoint='branches')
-def branches():
-    data=get_all_branches()
-    return render_template('branches/index.html', branches=data)
+@router.get("/branches", name="branches")
+def branches(request: Request):
+    data = get_all_branches()
+    return templates.TemplateResponse(request, "branches/index.html", {"branches": data})
 
-@branches_bp.route('/new_branch')
-def new_branch():
-    return render_template('branches/form.html')
 
+@router.get("/new_branch", name="new_branch")
+def new_branch(request: Request):
+    return templates.TemplateResponse(request, "branches/form.html")

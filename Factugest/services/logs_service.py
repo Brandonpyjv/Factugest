@@ -19,5 +19,3 @@ def get_all_logs():
     db.close()
     return result
 
-data= get_all_logs()
-print(data)

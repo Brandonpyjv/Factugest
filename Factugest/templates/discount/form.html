@@ -25,8 +25,8 @@
                       action="{% if discount and discount.get('cod_descuento') %}
                                   {{ url_for('edit_discount', id=discount.cod_descuento) }}
                               {% else %}
-                                  {{ url_for('discount.new_discount') }}
-                              {% endif %}" 
+                                  {{ url_for('new_discount') }}
+                              {% endif %}"
                       method="post">
 
                         <div class="mb-3">
@@ -76,7 +76,7 @@
                             <button type="submit" class="btn btn-warning">
                                 <i class="fas fa-save"></i> Save
                             </button>
-                            <a href="{{ url_for('discount.discount') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('discount') }}" class="btn btn-secondary">
                                 Cancel
                             </a>
                         </div>

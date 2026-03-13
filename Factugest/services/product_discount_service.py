@@ -25,6 +25,3 @@ def get_all_product_discounts():
     cursor.close()
     db.close()
     return result
-
-data=get_all_product_discounts()
-print(data)

@@ -37,7 +37,7 @@
                                 <i class="fas fa-save"></i>
                                 <span th:text="${item.codImpuesto != null} ? 'Actualizar' : 'Guardar'">Guardar</span>
                             </button>
-                            <a href="{{ url_for ('taxes.invoice_taxes')}}" class="btn btn-secondary">
+                            <a href="{{ url_for('invoice_taxes') }}" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
                         </div>

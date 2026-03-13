@@ -1,15 +1,16 @@
-from flask import Blueprint, render_template
+from fastapi import APIRouter, Request
 from services.product_discount_service import get_all_product_discounts
+from templates_config import templates
 
-product_discount_bp = Blueprint('product_discount', __name__)
+router = APIRouter()
 
 
-@product_discount_bp.route('/product_discounts', endpoint='product_discounts')
-def product_discounts():
+@router.get("/product_discounts", name="product_discounts")
+def product_discounts(request: Request):
     data = get_all_product_discounts()
-    return render_template('product_discounts/index.html', all_product_discounts=data)
+    return templates.TemplateResponse(request, "product_discounts/index.html", {"all_product_discounts": data})
 
 
-@product_discount_bp.route('/new_product_discounts', endpoint='new_product_discounts')
-def nee_product_discounts():
-    return render_template('product_discounts/form.html')
+@router.get("/new_product_discounts", name="new_product_discounts")
+def new_product_discounts(request: Request):
+    return templates.TemplateResponse(request, "product_discounts/form.html")

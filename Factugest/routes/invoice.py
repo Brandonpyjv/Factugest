@@ -1,13 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.invoice_service import get_all_invoices_detailed
+from templates_config import templates
 
-invoice_bp = Blueprint('invoice', __name__)
+router = APIRouter()
 
-@invoice_bp.route('/invoice', endpoint='invoice')
-def invoice():
-    data=get_all_invoices_detailed()
-    return render_template('invoice/index.html', all_invoices=data)
 
-@invoice_bp.route('/new_invoice', endpoint='new_invoice')
-def new_invoice():
-    return render_template('invoice/form.html')
+@router.get("/invoice", name="invoice")
+def invoice(request: Request):
+    data = get_all_invoices_detailed()
+    return templates.TemplateResponse(request, "invoice/index.html", {"all_invoices": data})
+
+
+@router.get("/new_invoice", name="new_invoice")
+def new_invoice(request: Request):
+    return templates.TemplateResponse(request, "invoice/form.html")

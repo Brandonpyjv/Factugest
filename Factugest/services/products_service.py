@@ -29,7 +29,3 @@ def get_all_products_detailed():
     cursor.close()
     db.close()
     return result
-
-
-data=get_all_products_detailed()
-print(data)
