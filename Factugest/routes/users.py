@@ -1,13 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.user_service import get_all_users
+from templates_config import templates
 
-users_bp= Blueprint('users', __name__)
+router = APIRouter()
 
-@users_bp.route('/users')
-def users():
+
+@router.get("/users", name="users")
+def users(request: Request):
     data = get_all_users()
-    return render_template('users/index.html', usuarios=data)
+    return templates.TemplateResponse(request, "users/index.html", {"usuarios": data})
 
-@users_bp.route('/users/new')
-def new_user():
-    return render_template('users/form.html')
+
+@router.get("/users/new", name="new_user")
+def new_user(request: Request):
+    return templates.TemplateResponse(request, "users/form.html")
