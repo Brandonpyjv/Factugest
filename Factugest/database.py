@@ -4,7 +4,7 @@ def create_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Mrbb9704231210333",
+        passwd="",
         database="factugest")
 
 

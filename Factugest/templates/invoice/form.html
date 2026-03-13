@@ -12,7 +12,7 @@
         <p class="text-muted mb-0 small">Fill in the details below to generate a new invoice.</p>
     </div>
 
-    <form action="{{ url_for('invoice.new_invoice') }}" method="POST" id="invoiceForm">
+    <form action="{{ url_for('new_invoice') }}" method="POST" id="invoiceForm">
         <div class="row">
             <div class="col-xl-9 col-lg-8">
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
@@ -135,7 +135,7 @@
                             <button type="submit" class="btn btn-primary shadow-sm py-2 d-flex justify-content-center align-items-center gap-2" style="border-radius: 8px; font-weight: 600;">
                                 <i class="bi bi-save"></i> Save Invoice
                             </button>
-                            <a href="{{ url_for('invoice.invoice') }}" class="btn btn-light border shadow-sm py-2" style="border-radius: 8px; font-weight: 600;">
+                            <a href="{{ url_for('invoice') }}" class="btn btn-light border shadow-sm py-2" style="border-radius: 8px; font-weight: 600;">
                                 Cancel
                             </a>
                         </div>

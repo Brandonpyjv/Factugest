@@ -1,13 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.customer_service import get_all_customers
+from templates_config import templates
 
-customer_bp = Blueprint('customer', __name__)
+router = APIRouter()
 
-@customer_bp.route('/customer', endpoint='customer')
-def customer():
-    data=get_all_customers()
-    return render_template('customer/index.html', all_customers=data)
 
-@customer_bp.route('/new_customer', endpoint='new_customer')
-def new_customer():
-    return render_template('customer/form.html')
+@router.get("/customer", name="customer")
+def customer(request: Request):
+    data = get_all_customers()
+    return templates.TemplateResponse(request, "customer/index.html", {"all_customers": data})
+
+
+@router.get("/new_customer", name="new_customer")
+def new_customer(request: Request):
+    return templates.TemplateResponse(request, "customer/form.html")

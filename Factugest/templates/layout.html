@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 
 <html lang="es">
-    
+
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}SAAS{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
 
     <style>
         /* Ajuste para que el contenido no quede debajo del navbar */
@@ -22,7 +22,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm" id="miNavbar" style="background: linear-gradient(135deg, #4e73df, #6ea0f5);">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
-            <img src="{{ url_for('static', filename='img/logodark.png') }}" alt="Logo" width="35" height="35">
+            <img src="{{ url_for('static', path='img/logodark.png') }}" alt="Logo" width="35" height="35">
             <span class="fw-bold small tracking-wider">FACTUGEST</span>
         </a>
 
@@ -33,17 +33,17 @@
         <div class="collapse navbar-collapse" id="mainNavbar">
             <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-4">
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('invoice.new_invoice') }}">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('new_invoice') }}">
                         <i class="bi bi-plus-square"></i> New Sale
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('products.product') }}">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('product') }}">
                         <i class="bi bi-box"></i> Stock
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('customer.customer') }}">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('customer') }}">
                         <i class="bi bi-person-plus"></i> Customers
                     </a>
                 </li>
@@ -52,7 +52,7 @@
                         <i class="bi bi-graph-up"></i> Daily Sales
                     </a>
                     <ul class="dropdown-menu shadow">
-                        <li><a class="dropdown-item" href="{{ url_for('logs.logs') }}">Ventas del día</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logs') }}">Ventas del día</a></li>
                         <li><a class="dropdown-item" href="#">Cash Closeout</a></li>
                     </ul>
                 </li>
@@ -84,7 +84,7 @@
                             <div class="text-white small fw-bold" style="line-height: 1;">Brandon</div>
                             <small class="text-white-50" style="font-size: 0.7rem;">Admin</small>
                         </div>
-                        <img src="{{ url_for('static', filename='img/prof_brandon.png') }}" alt="profile" width="35" height="35" class="rounded-circle border border-2 border-white shadow-sm">
+                        <img src="{{ url_for('static', path='img/prof_brandon.png') }}" alt="profile" width="35" height="35" class="rounded-circle border border-2 border-white shadow-sm">
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
                         <li><a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2"></i> My Profile</a></li>
@@ -109,10 +109,10 @@
                 <i class="bi bi-chevron-down small"></i>
             </a>
             <div class="collapse show" id="collapseBilling">
-                <a href="{{ url_for('invoice.invoice') }}" class="ps-4 py-2 small">Invoices</a>
-                <a href="{{ url_for('invoice_payments.invoice_payments') }}" class="ps-4 py-2 small">Payments</a>
-                <a href="{{ url_for('discount.discount') }}" class="ps-4 py-2 small">Discounts</a>
-                <a href="{{ url_for('taxes.invoice_taxes') }}" class="ps-4 py-2 small">Taxes</a>
+                <a href="{{ url_for('invoice') }}" class="ps-4 py-2 small">Invoices</a>
+                <a href="{{ url_for('invoice_payments') }}" class="ps-4 py-2 small">Payments</a>
+                <a href="{{ url_for('discount') }}" class="ps-4 py-2 small">Discounts</a>
+                <a href="{{ url_for('invoice_taxes') }}" class="ps-4 py-2 small">Taxes</a>
             </div>
         </div>
 
@@ -123,9 +123,9 @@
                 <i class="bi bi-chevron-down small"></i>
             </a>
             <div class="collapse" id="collapseCatalog">
-                <a href="{{ url_for('products.product') }}" class="ps-4 py-2 small">Products</a>
-                <a href="{{ url_for('product_discount.product_discounts') }}" class="ps-4 py-2 small">Product Discounts</a>
-                <a href="{{ url_for('payment_methods.payment_methods') }}" class="ps-4 py-2 small">Payment Methods</a>
+                <a href="{{ url_for('product') }}" class="ps-4 py-2 small">Products</a>
+                <a href="{{ url_for('product_discounts') }}" class="ps-4 py-2 small">Product Discounts</a>
+                <a href="{{ url_for('payment_methods') }}" class="ps-4 py-2 small">Payment Methods</a>
             </div>
         </div>
 
@@ -140,10 +140,10 @@
 
 
             <div class="collapse" id="collapseMgmt">
-                <a href="{{ url_for('customer.customer') }}" class="ps-4 py-2 small">Customers</a>
-                <a href="{{ url_for('branches.branches') }}" class="ps-4 py-2 small">Branches</a>
-                <a href="{{ url_for('users.users') }}" class="ps-4 py-2 small">Users</a>
-                <a href="{{ url_for('logs.logs') }}" class="ps-4 py-2 small">Logs</a>
+                <a href="{{ url_for('customer') }}" class="ps-4 py-2 small">Customers</a>
+                <a href="{{ url_for('branches') }}" class="ps-4 py-2 small">Branches</a>
+                <a href="{{ url_for('users') }}" class="ps-4 py-2 small">Users</a>
+                <a href="{{ url_for('logs') }}" class="ps-4 py-2 small">Logs</a>
             </div>
         </div>
 
