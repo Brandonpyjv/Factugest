@@ -14,7 +14,7 @@
             <p class="text-muted mb-0 small">Manage and track your branches.</p>
         </div>
 
-        <a href="{{ url_for('branches.new_branch') }}"
+        <a href="{{ url_for('new_branch') }}"
             class="btn btn-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2"
             style="border-radius: 8px; font-weight: 600;">
             <i class="bi bi-plus-circle-fill"></i> New Branch
@@ -82,7 +82,7 @@
                         <i class="bi bi-info-circle me-1"></i> No branches registered
                     </h5>
                     <p class="mb-3 small text-muted">Create your first branch to start managing locations.</p>
-                    <a href="{{ url_for('branches.new_branch') }}" class="btn btn-primary px-4 py-2 shadow-sm"
+                    <a href="{{ url_for('new_branch') }}" class="btn btn-primary px-4 py-2 shadow-sm"
                         style="border-radius: 8px; font-weight: 600;">
                         <i class="bi bi-plus-circle-fill"></i> Add First Branch
                     </a>

@@ -1,47 +1,54 @@
-from flask import Flask, render_template
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
-from routes.invoice import invoice_bp
-from routes.users import users_bp
-from routes.customer import customer_bp
-from routes.payment_methods import payment_methods_bp
-from routes.discounts import discount_bp
-from routes.taxes import invoice_taxes_bp
-from routes.branches import branches_bp
-from routes.invoice_payments import invoice_payments_bp
-from routes.productos import products_bp
-from routes.logs import logs_bp
-from routes.product_discount import product_discount_bp
+from templates_config import templates
+from routes.invoice import router as invoice_router
+from routes.users import router as users_router
+from routes.customer import router as customer_router
+from routes.payment_methods import router as payment_methods_router
+from routes.discounts import router as discount_router
+from routes.taxes import router as invoice_taxes_router
+from routes.branches import router as branches_router
+from routes.invoice_payments import router as invoice_payments_router
+from routes.productos import router as products_router
+from routes.logs import router as logs_router
+from routes.product_discount import router as product_discount_router
 
-app = Flask(__name__)
+app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
-#Blueprints de todos los endpoints
-app.register_blueprint(users_bp)
-app.register_blueprint(customer_bp)
-app.register_blueprint(invoice_bp)
-app.register_blueprint(payment_methods_bp)
-app.register_blueprint(discount_bp)
-app.register_blueprint(invoice_taxes_bp)
-app.register_blueprint(branches_bp)
-app.register_blueprint(invoice_payments_bp)
-app.register_blueprint(products_bp)
-app.register_blueprint(logs_bp)
-app.register_blueprint(product_discount_bp)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-#----Endpoints----
-@app.route('/')
-def index():
-    return render_template('index.html')
+app.include_router(users_router)
+app.include_router(customer_router)
+app.include_router(invoice_router)
+app.include_router(payment_methods_router)
+app.include_router(discount_router)
+app.include_router(invoice_taxes_router)
+app.include_router(branches_router)
+app.include_router(invoice_payments_router)
+app.include_router(products_router)
+app.include_router(logs_router)
+app.include_router(product_discount_router)
 
-@app.route('/setting', endpoint='setting')
-def setting():
-    return render_template('settings/index.html')
-
-@app.route('/settings/new', endpoint='settings/new')
-def setting_new():
-    return render_template('settings/form.html')
+# Registrar url_for como global en Jinja2 apuntando al router de la app
+templates.env.globals["url_for"] = app.url_path_for
 
 
-#---EEjecución de la app---
+@app.get("/", name="index")
+def index(request: Request):
+    return templates.TemplateResponse(request, "index.html")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+@app.get("/settings", name="setting")
+def setting(request: Request):
+    return templates.TemplateResponse(request, "settings/index.html")
+
+
+@app.get("/settings/new", name="settings_new")
+def setting_new(request: Request):
+    return templates.TemplateResponse(request, "settings/form.html")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

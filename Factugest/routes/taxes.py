@@ -1,16 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.taxes import get_all_invoice_taxes
+from templates_config import templates
+
+router = APIRouter()
 
 
-invoice_taxes_bp = Blueprint('taxes', __name__)
+@router.get("/invoice_taxes", name="invoice_taxes")
+def invoice_taxes(request: Request):
+    data = get_all_invoice_taxes()
+    return templates.TemplateResponse(request, "invoice_taxes/index.html", {"invoice_taxes": data})
 
 
-@invoice_taxes_bp.route('/invoice_taxes', endpoint='invoice_taxes')
-def invoice_taxes():
-    data=get_all_invoice_taxes()
-    return render_template('invoice_taxes/index.html', invoice_taxes=data)
-
-
-@invoice_taxes_bp.route("/taxes/new", endpoint="taxes/new")
-def logs():
-    return render_template("invoice_taxes/form.html")
+@router.get("/taxes/new", name="taxes_new")
+def taxes_new(request: Request):
+    return templates.TemplateResponse(request, "invoice_taxes/form.html")

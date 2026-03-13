@@ -1,14 +1,16 @@
-from flask import render_template, Blueprint
+from fastapi import APIRouter, Request
 from services.products_service import get_all_products_detailed
+from templates_config import templates
 
-products_bp = Blueprint('products', __name__, url_prefix='/products')
+router = APIRouter(prefix="/products")
 
-@products_bp.route("/product", endpoint='product')
-def products():
-    data=get_all_products_detailed()
-    return render_template("product/index.html", products=data)
 
-@products_bp.route('/product/new', endpoint='product/new')
-def product_new():
-    return render_template('product/form.html')
+@router.get("/product", name="product")
+def products(request: Request):
+    data = get_all_products_detailed()
+    return templates.TemplateResponse(request, "product/index.html", {"products": data})
 
+
+@router.get("/product/new", name="product_new")
+def product_new(request: Request):
+    return templates.TemplateResponse(request, "product/form.html")
