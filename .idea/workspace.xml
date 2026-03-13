@@ -75,7 +75,7 @@
       <workItem from="1773416472685" duration="2888000" />
       <workItem from="1773424381059" duration="1155000" />
       <workItem from="1773427242475" duration="24000" />
-      <workItem from="1773427821949" duration="2162000" />
+      <workItem from="1773427821949" duration="6130000" />
     </task>
     <servers />
   </component>
@@ -84,6 +84,6 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Factugest$prueba.coverage" NAME="prueba Coverage Results" MODIFIED="1773426738295" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Factugest" />
-    <SUITE FILE_PATH="coverage/Factugest$main.coverage" NAME="main Coverage Results" MODIFIED="1773425099080" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Factugest" />
+    <SUITE FILE_PATH="coverage/Factugest$main.coverage" NAME="main Coverage Results" MODIFIED="1773433216237" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Factugest" />
   </component>
 </project>
