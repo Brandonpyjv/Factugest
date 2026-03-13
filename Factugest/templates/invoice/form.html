@@ -1,208 +1,322 @@
 {% extends "layout.html" %}
 
-{% block title %}New Invoice | Factugest{% endblock %}
+{% block title %}Nueva Factura | Factugest{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
 
     <div class="mb-4">
-        <h1 class="h3 mb-1 text-gray-800 fw-bold">
-            <i class="bi bi-receipt text-primary me-2"></i>Create New Invoice
+        <h1 class="h3 mb-1 fw-bold">
+            <i class="bi bi-receipt text-primary me-2"></i>Crear Nueva Factura
         </h1>
-        <p class="text-muted mb-0 small">Fill in the details below to generate a new invoice.</p>
+        <p class="text-muted small mb-0">Completa los datos para generar una factura electrónica.</p>
     </div>
 
-    <form action="{{ url_for('new_invoice') }}" method="POST" id="invoiceForm">
-        <div class="row">
+    <form action="{{ url_for('create_invoice') }}" method="POST" id="invoiceForm">
+        <div class="row g-3">
+
+            <!-- Columna izquierda -->
             <div class="col-xl-9 col-lg-8">
-                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-header bg-white py-3 border-bottom border-light">
-                        <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
+
+                <!-- Cabecera factura -->
+                <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
+                    <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-primary">Datos Generales</h6>
+                        <div>
+                            <select name="tipo_factura" class="form-select form-select-sm bg-light border-0" style="width:auto;display:inline-block;">
+                                <option value="FV">FV — Factura de Venta</option>
+                                <option value="ND">ND — Nota Débito</option>
+                                <option value="NC">NC — Nota Crédito</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary">Customer *</label>
+                                <label class="form-label small fw-bold text-secondary">Cliente *</label>
                                 <select name="cod_cliente" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select a customer...</option>
+                                    <option value="" disabled selected>Seleccionar cliente...</option>
                                     {% for c in customers %}
-                                    <option value="{{ c.customer_id }}">{{ c.full_name }} - {{ c.document_number }}</option>
+                                    <option value="{{ c.customer_id }}">
+                                        {{ c.full_name }} — {{ c.document_type }}{{ c.document_number }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
-
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary">Issuing Company *</label>
+                                <label class="form-label small fw-bold text-secondary">Empresa Emisora *</label>
                                 <select name="cod_empresa" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select company...</option>
+                                    <option value="" disabled selected>Seleccionar empresa...</option>
                                     {% for e in empresas %}
-                                    <option value="{{ e.cod_empresa }}">{{ e.nombre }} (NIT: {{ e.nit }})</option>
+                                    <option value="{{ e.cod_empresa }}">
+                                        {{ e.nombre }} — NIT {{ e.nit }}{% if e.dv %}-{{ e.dv }}{% endif %}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Issue Date *</label>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Fecha Emisión *</label>
                                 <input type="datetime-local" name="fecha" class="form-control bg-light border-0" required>
                             </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Payment Method *</label>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Fecha Vencimiento</label>
+                                <input type="date" name="fecha_vencimiento" class="form-control bg-light border-0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Método de Pago *</label>
                                 <select name="cod_metodo_pago" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select method...</option>
+                                    <option value="" disabled selected>Seleccionar...</option>
                                     {% for pm in metodos_pago %}
                                     <option value="{{ pm.cod_pago }}">{{ pm.descripcion }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Payment Status *</label>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Estado Pago *</label>
                                 <select name="cod_pago" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select status...</option>
-                                    {% for status in pagos_factura %}
-                                    <option value="{{ status.cod_pago_factura }}">{{ status.status | capitalize }}</option>
+                                    <option value="" disabled selected>Seleccionar...</option>
+                                    {% for s in pagos_factura %}
+                                    <option value="{{ s.cod_pago_factura }}">{{ s.status | capitalize }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-secondary">Observaciones</label>
+                                <input type="text" name="observaciones" class="form-control bg-light border-0"
+                                       placeholder="Notas adicionales para la factura...">
+                            </div>
                         </div>
+                    </div>
+                </div>
 
-                        <hr class="my-4 border-light">
-
-                        <h6 class="mb-3 font-weight-bold text-primary">Products / Services</h6>
+                <!-- Tabla de productos -->
+                <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
+                    <div class="card-header bg-white py-3 border-bottom border-light">
+                        <h6 class="m-0 fw-bold text-primary">Productos / Servicios</h6>
+                    </div>
+                    <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-3" id="productosTable">
+                            <table class="table align-middle mb-0" id="productosTable">
                                 <thead class="bg-light">
-                                    <tr class="text-uppercase small fw-bold" style="letter-spacing: 0.5px;">
-                                        <th width="40%" class="ps-3">Product</th>
-                                        <th width="15%">Unit Price</th>
-                                        <th width="15%">Quantity</th>
-                                        <th width="20%">Subtotal</th>
-                                        <th width="10%" class="text-center pe-3">Action</th>
+                                    <tr class="text-uppercase small fw-bold" style="letter-spacing:0.4px; font-size:0.7rem;">
+                                        <th class="ps-3" style="width:32%">Producto</th>
+                                        <th style="width:13%">P. Unitario</th>
+                                        <th style="width:9%">Cant.</th>
+                                        <th style="width:10%">Desc %</th>
+                                        <th style="width:12%">Base Grav.</th>
+                                        <th style="width:12%">IVA</th>
+                                        <th style="width:8%" class="text-center pe-3">Acc.</th>
                                     </tr>
                                 </thead>
-                                <tbody class="border-top-0">
-                                    <tr class="product-row">
+                                <tbody id="tbodyProductos">
+                                    <tr class="product-row border-bottom">
                                         <td class="ps-3">
-                                            <select name="cod_producto[]" class="form-select form-select-sm border-0 bg-light product-select" required onchange="updatePrice(this)">
-                                                <option value="" data-price="0" disabled selected>Select product...</option>
+                                            <select name="cod_producto" class="form-select form-select-sm border-0 bg-light product-select"
+                                                    required onchange="updatePrice(this)">
+                                                <option value="" data-price="0" data-tax="0" disabled selected>Seleccionar...</option>
                                                 {% for p in productos %}
-                                                <option value="{{ p.cod_producto }}" data-price="{{ p.precio_unitario }}">
-                                                    {{ p.sku }} - {{ p.nombre }}
+                                                <option value="{{ p.cod_producto }}"
+                                                        data-price="{{ p.precio_unitario }}"
+                                                        data-tax="{{ p.tax_porcentaje or 0 }}">
+                                                    [{{ p.sku }}] {{ p.nombre }}
                                                 </option>
                                                 {% endfor %}
                                             </select>
                                         </td>
                                         <td>
-                                            <input type="number" name="precio_unitario[]" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01">
+                                            <input type="number" name="precio_unitario" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01" min="0">
                                         </td>
                                         <td>
-                                            <input type="number" name="cantidad[]" class="form-control form-control-sm border-0 bg-light qty-input" value="1" min="1" required onchange="calculateRow(this)">
+                                            <input type="number" name="cantidad" class="form-control form-control-sm border-0 bg-light qty-input"
+                                                   value="1" min="1" required onchange="calcRow(this)">
                                         </td>
                                         <td>
-                                            <input type="number" name="subtotal[]" class="form-control form-control-sm border-0 bg-light subtotal-input" readonly step="0.01">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="descuento_porcentaje" class="form-control border-0 bg-light desc-input"
+                                                       value="0" min="0" max="100" step="0.01" onchange="calcRow(this)">
+                                                <span class="input-group-text bg-light border-0" style="font-size:0.7rem;">%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm border-0 bg-light base-display" readonly
+                                                   style="font-size:0.8rem; font-weight:600;">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success" readonly
+                                                   style="font-size:0.8rem;">
                                         </td>
                                         <td class="text-center pe-3">
                                             <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)">
-                                               <i class="bi bi-trash"></i>
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <button type="button" class="btn btn-sm btn-light border text-primary" onclick="addRow()">
-                            <i class="bi bi-plus-circle me-1"></i> Add Row
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-lg-4">
-                <div class="card border-0 shadow-sm position-sticky bg-white" style="top: 85px; border-radius: 12px; overflow: hidden;">
-                    <div class="card-header bg-white py-3 border-bottom border-light">
-                        <h6 class="m-0 font-weight-bold text-primary">Summary</h6>
-                    </div>
-                    <div class="card-body p-4 bg-white">
-
-                        <div class="bg-light rounded text-center p-4 mb-4 border border-light">
-                            <p class="text-muted mb-1 small text-uppercase fw-bold">Total Amount</p>
-                            <input type="hidden" name="total" id="grandTotalInput" value="0">
-                            <h3 class="mb-0 text-success fw-bold" id="grandTotalDisplay">$ 0.00</h3>
-                        </div>
-
-                        <div class="d-grid gap-3">
-                            <button type="submit" class="btn btn-primary shadow-sm py-2 d-flex justify-content-center align-items-center gap-2" style="border-radius: 8px; font-weight: 600;">
-                                <i class="bi bi-save"></i> Save Invoice
+                        <div class="p-3 border-top border-light">
+                            <button type="button" class="btn btn-sm btn-light border text-primary" onclick="addRow()">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar Producto
                             </button>
-                            <a href="{{ url_for('invoice') }}" class="btn btn-light border shadow-sm py-2" style="border-radius: 8px; font-weight: 600;">
-                                Cancel
-                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Panel resumen -->
+            <div class="col-xl-3 col-lg-4">
+                <div class="card border-0 shadow-sm position-sticky bg-white" style="top:80px;border-radius:12px;overflow:hidden;">
+                    <div class="card-header bg-white py-3 border-bottom border-light">
+                        <h6 class="m-0 fw-bold text-primary">Resumen DIAN</h6>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Subtotal bruto:</span>
+                            <span class="fw-bold" id="dispSubtotal">$ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">(-) Descuentos:</span>
+                            <span class="fw-bold text-danger" id="dispDescuentos">$ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Base gravable:</span>
+                            <span class="fw-bold" id="dispBase">$ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">(+) Impuestos:</span>
+                            <span class="fw-bold text-success" id="dispImpuestos">$ 0.00</span>
+                        </div>
+                        <hr class="my-2">
+
+                        <input type="hidden" name="total" id="hidTotal">
+
+                        <div class="bg-light rounded text-center p-3 mb-4 border">
+                            <p class="text-muted mb-1 small text-uppercase fw-bold">TOTAL A PAGAR</p>
+                            <h3 class="mb-0 text-primary fw-bold" id="dispTotal">$ 0.00</h3>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2 d-flex justify-content-center align-items-center gap-2"
+                                    style="border-radius:8px;font-weight:600;">
+                                <i class="bi bi-save"></i> Guardar Factura
+                            </button>
+                            <a href="{{ url_for('invoice') }}" class="btn btn-light border py-2"
+                               style="border-radius:8px;font-weight:600;">Cancelar</a>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.querySelector('input[name="fecha"]').value = now.toISOString().slice(0,16);
+const productosData = {
+    {% for p in productos %}
+    {{ p.cod_producto }}: { sku: "{{ p.sku }}", nombre: "{{ p.nombre }}", precio: {{ p.precio_unitario }}, tax: {{ p.tax_porcentaje or 0 }} },
+    {% endfor %}
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.querySelector('input[name="fecha"]').value = now.toISOString().slice(0, 16);
+    calcTotales();
+});
+
+function updatePrice(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    const row = sel.closest('tr');
+    row.querySelector('.price-input').value = opt.dataset.price || 0;
+    row.querySelector('.desc-input').value = 0;
+    row.dataset.tax = opt.dataset.tax || 0;
+    calcRow(sel);
+}
+
+function calcRow(el) {
+    const row = el.closest('tr');
+    const precio = parseFloat(row.querySelector('.price-input').value) || 0;
+    const cant   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+    const desc   = parseFloat(row.querySelector('.desc-input').value)  || 0;
+    const tax    = parseFloat(row.dataset.tax || row.querySelector('.product-select').options[row.querySelector('.product-select').selectedIndex]?.dataset?.tax || 0);
+
+    const bruto = precio * cant;
+    const descVal = bruto * desc / 100;
+    const base = bruto - descVal;
+    const iva = base * tax / 100;
+
+    row.querySelector('.base-display').value = '$ ' + base.toLocaleString('es-CO', {minimumFractionDigits: 2});
+    row.querySelector('.tax-display').value  = tax > 0 ? '$ ' + iva.toLocaleString('es-CO', {minimumFractionDigits: 2}) + ' (' + tax + '%)' : 'EXENTO';
+    row.dataset.bruto = bruto;
+    row.dataset.descval = descVal;
+    row.dataset.base = base;
+    row.dataset.iva = iva;
+    calcTotales();
+}
+
+function calcTotales() {
+    let subtotal = 0, descTot = 0, ivaTot = 0;
+    document.querySelectorAll('.product-row').forEach(r => {
+        subtotal += parseFloat(r.dataset.bruto || 0);
+        descTot  += parseFloat(r.dataset.descval || 0);
+        ivaTot   += parseFloat(r.dataset.iva || 0);
     });
+    const base  = subtotal - descTot;
+    const total = base + ivaTot;
 
-    function updatePrice(selectElement) {
-        const row = selectElement.closest('tr');
-        const priceInput = row.querySelector('.price-input');
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const fmt = v => '$ ' + v.toLocaleString('es-CO', {minimumFractionDigits: 2});
+    document.getElementById('dispSubtotal').textContent  = fmt(subtotal);
+    document.getElementById('dispDescuentos').textContent = fmt(descTot);
+    document.getElementById('dispBase').textContent       = fmt(base);
+    document.getElementById('dispImpuestos').textContent  = fmt(ivaTot);
+    document.getElementById('dispTotal').textContent      = fmt(total);
+    document.getElementById('hidTotal').value             = total.toFixed(2);
+}
 
-        priceInput.value = selectedOption.getAttribute('data-price');
-        calculateRow(selectElement);
+function buildSelect(selectedId) {
+    let html = '<option value="" data-price="0" data-tax="0" disabled>Seleccionar...</option>';
+    for (const [id, p] of Object.entries(productosData)) {
+        const sel = id == selectedId ? 'selected' : '';
+        html += `<option value="${id}" data-price="${p.precio}" data-tax="${p.tax}" ${sel}>[${p.sku}] ${p.nombre}</option>`;
     }
+    return html;
+}
 
-    function calculateRow(element) {
-        const row = element.closest('tr');
-        const price = parseFloat(row.querySelector('.price-input').value) || 0;
-        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-        const subtotalInput = row.querySelector('.subtotal-input');
+function addRow() {
+    const tbody = document.getElementById('tbodyProductos');
+    const tr = document.createElement('tr');
+    tr.className = 'product-row border-bottom';
+    tr.dataset.bruto = 0; tr.dataset.descval = 0; tr.dataset.base = 0; tr.dataset.iva = 0; tr.dataset.tax = 0;
+    tr.innerHTML = `
+        <td class="ps-3">
+            <select name="cod_producto" class="form-select form-select-sm border-0 bg-light product-select"
+                    required onchange="updatePrice(this)">${buildSelect(null)}</select>
+        </td>
+        <td><input type="number" name="precio_unitario" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01" min="0"></td>
+        <td><input type="number" name="cantidad" class="form-control form-control-sm border-0 bg-light qty-input" value="1" min="1" required onchange="calcRow(this)"></td>
+        <td>
+            <div class="input-group input-group-sm">
+                <input type="number" name="descuento_porcentaje" class="form-control border-0 bg-light desc-input" value="0" min="0" max="100" step="0.01" onchange="calcRow(this)">
+                <span class="input-group-text bg-light border-0" style="font-size:0.7rem;">%</span>
+            </div>
+        </td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light base-display" readonly style="font-size:0.8rem;font-weight:600;"></td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success" readonly style="font-size:0.8rem;"></td>
+        <td class="text-center pe-3">
+            <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
+        </td>`;
+    tbody.appendChild(tr);
+}
 
-        subtotalInput.value = (price * qty).toFixed(2);
-        calculateGrandTotal();
-    }
-
-    function calculateGrandTotal() {
-        let total = 0;
-        document.querySelectorAll('.subtotal-input').forEach(function(input) {
-            total += parseFloat(input.value) || 0;
-        });
-
-        document.getElementById('grandTotalDisplay').innerText = '$ ' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
-        document.getElementById('grandTotalInput').value = total.toFixed(2);
-    }
-
-    function addRow() {
-        const tbody = document.querySelector('#productosTable tbody');
-        const firstRow = tbody.querySelector('.product-row');
-        const newRow = firstRow.cloneNode(true);
-
-        newRow.querySelector('.product-select').selectedIndex = 0;
-        newRow.querySelector('.price-input').value = '';
-        newRow.querySelector('.qty-input').value = '1';
-        newRow.querySelector('.subtotal-input').value = '';
-
-        tbody.appendChild(newRow);
-    }
-
-    function removeRow(button) {
-        const tbody = document.querySelector('#productosTable tbody');
-        if (tbody.querySelectorAll('.product-row').length > 1) {
-            button.closest('tr').remove();
-            calculateGrandTotal();
-        } else {
-            alert("The invoice must have at least one product.");
-        }
-    }
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.product-row');
+    if (rows.length > 1) { btn.closest('tr').remove(); calcTotales(); }
+    else alert('La factura debe tener al menos un producto.');
+}
 </script>
 {% endblock %}

@@ -4,7 +4,50 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="" />
+    <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/branches.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/branches.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/customer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/customer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/discounts.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/discounts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/invoice.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/invoice.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/invoice_payments.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/invoice_payments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/payment_methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/payment_methods.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/productos.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/productos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/taxes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/taxes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/branches.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/branches.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/customer_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/customer_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/discounts.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/discounts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/invoice_payments_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/invoice_payments_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/invoice_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/invoice_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/payment_methods_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/payment_methods_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/products_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/products_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/taxes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/taxes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/user_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/user_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/branches/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/branches/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/branches/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/branches/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/customer/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/customer/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/customer/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/customer/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/discount/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/discount/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/discount/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/discount/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice_payments/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice_payments/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice_payments/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice_payments/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice_taxes/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice_taxes/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice_taxes/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice_taxes/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/layout.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/layout.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/payment_methods/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/payment_methods/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/payment_methods/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/payment_methods/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/product/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/product/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/product/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/product/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/users/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/users/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/users/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/users/index.html" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -73,7 +116,7 @@
       <workItem from="1773416472685" duration="2888000" />
       <workItem from="1773424381059" duration="1155000" />
       <workItem from="1773427242475" duration="24000" />
-      <workItem from="1773427821949" duration="302000" />
+      <workItem from="1773427821949" duration="1257000" />
     </task>
     <servers />
   </component>
