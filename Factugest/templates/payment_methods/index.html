@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+
+{% block title %}Payment Methods{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 fw-bold">
+                <i class="bi bi-credit-card text-primary me-2"></i>Payment Methods
+            </h1>
+            <p class="text-muted mb-0 small">Manage and maintain your available payment methods.</p>
+        </div>
+
+        <a href="{{url_for('payment_methods./payment_methods/new')}}"
+            class="btn btn-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2"
+            style="border-radius: 8px; font-weight: 600;">
+            <i class="bi bi-plus-circle-fill"></i> New Payment Method
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+
+        <div class="card-header bg-white py-3 border-bottom border-light">
+            <h6 class="m-0 font-weight-bold text-primary">All Payment Methods</h6>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr class="text-uppercase small fw-bold" style="letter-spacing: 0.5px;">
+                            <th scope="col" class="ps-4">Code</th>
+                            <th scope="col">Name</th>
+                            <th scope="col" class="pe-4 text-center">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="border-top-0">
+                        {% for method in all_payment_methods %}
+                        <tr style="transition: all 0.2s;">
+                            <td class="ps-4 text-dark fw-bold">{{ method.cod_pago }}</td>
+
+                            <td class="text-muted">{{ method.descripcion }}</td>
+
+                            <td class="pe-4 text-center">
+                                <a href="#"
+                                    class="btn btn-sm btn-light border text-primary me-1" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <a href="#"
+                                    class="btn btn-sm btn-light border text-danger" title="Delete"
+                                    onclick="return confirm('Are you sure you want to delete this payment method?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if not all_payment_methods %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                No payment methods registered.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="mt-3 text-end">
+        <p class="text-muted small">Showing {{ all_payment_methods|length }} records found in database.</p>
+    </div>
+
+    <div class="mt-3 d-flex justify-content-center align-items-center">
+        <a href="{{ url_for('index') }}" class="btn btn-light border px-4 py-2" style="border-radius: 8px;">
+            <i class="bi bi-arrow-left"></i> Back to Home
+        </a>
+
+    </div>
+</div>
+{% endblock %}

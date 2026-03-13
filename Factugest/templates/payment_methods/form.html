@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${metodoPago.codPago != null ? 'Editar Método de Pago' : 'Nuevo Método de Pago'}">Formulario Método de Pago</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a2d04a4f8b.js" crossorigin="anonymous"></script>
+</head>
+<body>
+	
+<div class="container mt-5">
+    <h2 class="mb-4 text-center" th:text="${metodoPago.codPago != null ? 'Editar Método de Pago' : 'Nuevo Método de Pago'}">Formulario</h2>
+
+    <form th:action="@{/metodos_pago/guardar}" th:object="${metodoPago}" method="post" class="border p-4 rounded bg-light shadow-sm">
+        <input type="hidden" th:field="*{codPago}">
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <input type="text" th:field="*{descripcion}" class="form-control" placeholder="Ej: Tarjeta de crédito" required>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+            <a href="{{ url_for('payment_methods.payment_methods') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+
+{% block title %}Invoice Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 fw-bold">
+                <i class="bi bi-file-earmark-text text-primary me-2"></i>Invoice Management
+            </h1>
+            <p class="text-muted mb-0 small">Manage and track your invoices.</p>
+        </div>
+
+        <a href="{{ url_for('invoice.new_invoice') }}"
+           class="btn btn-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2"
+           style="border-radius: 8px; font-weight: 600;">
+            <i class="bi bi-plus-circle-fill"></i> New Invoice
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+
+        <div class="card-header bg-white py-3 border-bottom border-light">
+            <h6 class="m-0 font-weight-bold text-primary">All Invoices</h6>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                    <tr class="text-uppercase small fw-bold" style="letter-spacing: 0.5px;">
+                        <th scope="col" class="ps-4">Invoice</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Customer</th>
+                        <th scope="col">User</th>
+                        <th scope="col">Method</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Branch</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="pe-4 text-center">Action</th>
+                    </tr>
+                    </thead>
+
+                    <tbody class="border-top-0">
+                    {% for invoice in all_invoices %}
+                    <tr style="transition: all 0.2s;">
+                        <td class="ps-4 text-dark fw-bold">{{ invoice.cod_factura }}</td>
+
+                        <td>{{ invoice.fecha.strftime('%d/%m/%Y') if invoice.fecha else 'N/A' }}</td>
+
+                        <td>{{ invoice.cliente }}</td>
+
+                        <td class="text-muted">{{ invoice.usuario }}</td>
+
+                        <td>
+                            <span class="small text-uppercase text-secondary">{{ invoice.metodo_pago }}</span>
+                        </td>
+
+                        <td class="fw-bold text-dark text-end">
+                            ${{ "{:,.2f}".format(invoice.total) }}
+                        </td>
+
+                        <td>
+                        <span class="badge border text-secondary fw-normal">
+                            {{ invoice.empresa if invoice.empresa else 'Sin Empresa' }}
+                        </span>
+                        </td>
+
+                        <td>
+                            {% if invoice.cod_pago == 1 %}
+                                <span class="badge rounded-pill bg-success-subtle text-success px-3 border border-success-subtle">Paid</span>
+                            {% elif invoice.cod_pago == 2 %}
+                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis px-3 border border-warning-subtle">Pending</span>
+                            {% elif invoice.cod_pago == 3 %}
+                                <span class="badge rounded-pill bg-info-subtle text-info-emphasis px-3 border border-info-subtle">Partially Paid</span>
+                            {% elif invoice.cod_pago == 4 %}
+                                <span class="badge rounded-pill bg-danger-subtle text-danger px-3 border border-danger-subtle">Overdue</span>
+                            {% elif invoice.cod_pago == 5 %}
+                                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis px-3 border border-secondary-subtle">Cancelled</span>
+                            {% elif invoice.cod_pago == 6 %}
+                                <span class="badge rounded-pill bg-dark-subtle text-dark-emphasis px-3 border border-dark-subtle">Disputed</span>
+                            {% elif invoice.cod_pago == 7 %}
+                                <span class="badge rounded-pill bg-primary-subtle text-primary px-3 border border-primary-subtle">Refunded</span>
+                            {% else %}
+                                <span class="badge rounded-pill bg-light text-dark px-3">{{ invoice.estado }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="pe-4 text-center">
+                            <button class="btn btn-sm btn-light border text-primary"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 text-end">
+        <p class="text-muted small">Showing {{ all_invoices|length }} records found in database.</p>
+    </div>
+
+    <div class="mt-3 d-flex justify-content-center align-items-center">
+        <a href="{{ url_for('index') }}" class="btn btn-light border px-4 py-2" style="border-radius: 8px;">
+            <i class="bi bi-arrow-left"></i> Back to Home
+        </a>
+
+    </div>
+
+
+    {% endblock %}

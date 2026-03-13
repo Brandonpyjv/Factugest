@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+
+{% block title %}New Invoice | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-1 text-gray-800 fw-bold">
+            <i class="bi bi-receipt text-primary me-2"></i>Create New Invoice
+        </h1>
+        <p class="text-muted mb-0 small">Fill in the details below to generate a new invoice.</p>
+    </div>
+
+    <form action="{{ url_for('invoice.new_invoice') }}" method="POST" id="invoiceForm">
+        <div class="row">
+            <div class="col-xl-9 col-lg-8">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-white py-3 border-bottom border-light">
+                        <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Customer *</label>
+                                <select name="cod_cliente" class="form-select bg-light border-0" required>
+                                    <option value="" disabled selected>Select a customer...</option>
+                                    {% for c in customers %}
+                                    <option value="{{ c.customer_id }}">{{ c.full_name }} - {{ c.document_number }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Issuing Company *</label>
+                                <select name="cod_empresa" class="form-select bg-light border-0" required>
+                                    <option value="" disabled selected>Select company...</option>
+                                    {% for e in empresas %}
+                                    <option value="{{ e.cod_empresa }}">{{ e.nombre }} (NIT: {{ e.nit }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Issue Date *</label>
+                                <input type="datetime-local" name="fecha" class="form-control bg-light border-0" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Payment Method *</label>
+                                <select name="cod_metodo_pago" class="form-select bg-light border-0" required>
+                                    <option value="" disabled selected>Select method...</option>
+                                    {% for pm in metodos_pago %}
+                                    <option value="{{ pm.cod_pago }}">{{ pm.descripcion }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Payment Status *</label>
+                                <select name="cod_pago" class="form-select bg-light border-0" required>
+                                    <option value="" disabled selected>Select status...</option>
+                                    {% for status in pagos_factura %}
+                                    <option value="{{ status.cod_pago_factura }}">{{ status.status | capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 border-light">
+
+                        <h6 class="mb-3 font-weight-bold text-primary">Products / Services</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-3" id="productosTable">
+                                <thead class="bg-light">
+                                    <tr class="text-uppercase small fw-bold" style="letter-spacing: 0.5px;">
+                                        <th width="40%" class="ps-3">Product</th>
+                                        <th width="15%">Unit Price</th>
+                                        <th width="15%">Quantity</th>
+                                        <th width="20%">Subtotal</th>
+                                        <th width="10%" class="text-center pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="border-top-0">
+                                    <tr class="product-row">
+                                        <td class="ps-3">
+                                            <select name="cod_producto[]" class="form-select form-select-sm border-0 bg-light product-select" required onchange="updatePrice(this)">
+                                                <option value="" data-price="0" disabled selected>Select product...</option>
+                                                {% for p in productos %}
+                                                <option value="{{ p.cod_producto }}" data-price="{{ p.precio_unitario }}">
+                                                    {{ p.sku }} - {{ p.nombre }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="precio_unitario[]" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="cantidad[]" class="form-control form-control-sm border-0 bg-light qty-input" value="1" min="1" required onchange="calculateRow(this)">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="subtotal[]" class="form-control form-control-sm border-0 bg-light subtotal-input" readonly step="0.01">
+                                        </td>
+                                        <td class="text-center pe-3">
+                                            <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)">
+                                               <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-light border text-primary" onclick="addRow()">
+                            <i class="bi bi-plus-circle me-1"></i> Add Row
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-lg-4">
+                <div class="card border-0 shadow-sm position-sticky bg-white" style="top: 85px; border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-white py-3 border-bottom border-light">
+                        <h6 class="m-0 font-weight-bold text-primary">Summary</h6>
+                    </div>
+                    <div class="card-body p-4 bg-white">
+
+                        <div class="bg-light rounded text-center p-4 mb-4 border border-light">
+                            <p class="text-muted mb-1 small text-uppercase fw-bold">Total Amount</p>
+                            <input type="hidden" name="total" id="grandTotalInput" value="0">
+                            <h3 class="mb-0 text-success fw-bold" id="grandTotalDisplay">$ 0.00</h3>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-primary shadow-sm py-2 d-flex justify-content-center align-items-center gap-2" style="border-radius: 8px; font-weight: 600;">
+                                <i class="bi bi-save"></i> Save Invoice
+                            </button>
+                            <a href="{{ url_for('invoice.invoice') }}" class="btn btn-light border shadow-sm py-2" style="border-radius: 8px; font-weight: 600;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.querySelector('input[name="fecha"]').value = now.toISOString().slice(0,16);
+    });
+
+    function updatePrice(selectElement) {
+        const row = selectElement.closest('tr');
+        const priceInput = row.querySelector('.price-input');
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+
+        priceInput.value = selectedOption.getAttribute('data-price');
+        calculateRow(selectElement);
+    }
+
+    function calculateRow(element) {
+        const row = element.closest('tr');
+        const price = parseFloat(row.querySelector('.price-input').value) || 0;
+        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+        const subtotalInput = row.querySelector('.subtotal-input');
+
+        subtotalInput.value = (price * qty).toFixed(2);
+        calculateGrandTotal();
+    }
+
+    function calculateGrandTotal() {
+        let total = 0;
+        document.querySelectorAll('.subtotal-input').forEach(function(input) {
+            total += parseFloat(input.value) || 0;
+        });
+
+        document.getElementById('grandTotalDisplay').innerText = '$ ' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('grandTotalInput').value = total.toFixed(2);
+    }
+
+    function addRow() {
+        const tbody = document.querySelector('#productosTable tbody');
+        const firstRow = tbody.querySelector('.product-row');
+        const newRow = firstRow.cloneNode(true);
+
+        newRow.querySelector('.product-select').selectedIndex = 0;
+        newRow.querySelector('.price-input').value = '';
+        newRow.querySelector('.qty-input').value = '1';
+        newRow.querySelector('.subtotal-input').value = '';
+
+        tbody.appendChild(newRow);
+    }
+
+    function removeRow(button) {
+        const tbody = document.querySelector('#productosTable tbody');
+        if (tbody.querySelectorAll('.product-row').length > 1) {
+            button.closest('tr').remove();
+            calculateGrandTotal();
+        } else {
+            alert("The invoice must have at least one product.");
+        }
+    }
+</script>
+{% endblock %}

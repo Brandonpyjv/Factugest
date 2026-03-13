@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Edit Customer' if customer and customer.codCliente else 'New Customer' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">{{ 'Edit Customer' if customer and customer.codCliente else 'New Customer' }}</h4>
+                    </div>
+
+                    <div class="card-body">
+                        <form>
+
+                            {% if customer %}
+                                <input type="hidden" name="codCliente_hidden" value="{{ customer.codCliente }}">
+                            {% endif %}
+
+                            <div class="row">
+                                <div class="col-md-6">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Customer Code *</label>
+                                        <input type="number" name="codCliente" class="form-control" required
+                                               value="{{ customer.codCliente if customer else '' }}"
+                                               {{ 'readonly' if customer else '' }}>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Full Name *</label>
+                                        <input type="text" name="nombre" class="form-control" required
+                                               value="{{ customer.nombre if customer else '' }}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Document Type *</label>
+                                        <select name="tipo_documento" class="form-select" required>
+                                            <option value="">Select...</option>
+                                            <option value="C" {{ 'selected' if customer and customer.tipo_documento == 'C' }}>C - Local Citizen</option>
+                                            <option value="E" {{ 'selected' if customer and customer.tipo_documento == 'E' }}>E - Foreigner</option>
+                                            <option value="J" {{ 'selected' if customer and customer.tipo_documento == 'J' }}>J - Legal Entity</option>
+                                            <option value="G" {{ 'selected' if customer and customer.tipo_documento == 'G' }}>G - Government</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Document Number *</label>
+                                        <input type="text" name="numero_documento" class="form-control" required
+                                               value="{{ customer.numero_documento if customer else '' }}">
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="text" name="telefono" class="form-control"
+                                               value="{{ customer.telefono if customer else '' }}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Address</label>
+                                        <input type="email" name="correo" class="form-control"
+                                               value="{{ customer.correo if customer else '' }}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Address</label>
+                                        <input type="text" name="direccion" class="form-control"
+                                               value="{{ customer.direccion if customer else '' }}">
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4 gap-2">
+                                <button type="reset" class="btn btn-warning">
+                                    <i class="fas fa-eraser"></i> Clear
+                                </button>
+
+                                <a href="{{url_for('customer.customer')}}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
