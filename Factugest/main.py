@@ -24,10 +24,10 @@ from services.invoice_service import get_dashboard_stats
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
-# Sesiones — la clave secreta viene del .env
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "factugest-dev-secret"))
-# Autenticación: redirige a /login si no hay sesión
+# Los middlewares se ejecutan en orden inverso al registro:
+# AuthMiddleware corre primero, luego SessionMiddleware lo prepara.
 app.add_middleware(AuthMiddleware)
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "factugest-dev-secret"))
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
