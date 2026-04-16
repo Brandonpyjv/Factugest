@@ -16,6 +16,7 @@ def get_all_products_detailed():
                    p.unidad_medida,
                    p.codigo_barras,
                    p.activo,
+                   p.tipo_item,
                    i.descripcion AS tax_name,
                    i.porcentaje  AS tax_porcentaje
             FROM productos p

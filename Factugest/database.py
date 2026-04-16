@@ -1,27 +1,38 @@
+import os
 import mysql.connector
+from dotenv import load_dotenv
+
+load_dotenv()
+
+_DB_CONFIG = {
+    "host":     os.getenv("DB_HOST", "localhost"),
+    "user":     os.getenv("DB_USER", "root"),
+    "passwd":   os.getenv("DB_PASSWORD", ""),
+    "database": os.getenv("DB_NAME", "factugest"),
+}
+
 
 def create_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="",
-        database="factugest")
+    return mysql.connector.connect(**_DB_CONFIG)
 
 
 def get_all_from_table(table_name):
-    allowed_tables = ["customers","usuarios", "facturas","metodos_pago","descuentos", "impuestos", "empresas", "pagos_factura", "productos", "logs"]
+    allowed_tables = [
+        "customers", "usuarios", "facturas", "metodos_pago",
+        "descuentos", "impuestos", "empresas", "pagos_factura",
+        "productos", "logs",
+    ]
     if table_name not in allowed_tables:
         raise ValueError("Nombre de tabla no permitido")
     db = create_connection()
     cursor = db.cursor()
-    query = f"SELECT * FROM {table_name}"
-    cursor.execute(query)
+    cursor.execute(f"SELECT * FROM {table_name}")
     myresult = cursor.fetchall()
-    column_names = [column[0] for column in cursor.description]
-    insert_object = [dict(zip(column_names, record)) for record in myresult]
+    column_names = [col[0] for col in cursor.description]
+    result = [dict(zip(column_names, record)) for record in myresult]
     cursor.close()
     db.close()
-    return insert_object
+    return result
 
 
 def execute_query(query, params=None):

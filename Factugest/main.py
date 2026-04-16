@@ -1,7 +1,14 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
 
+load_dotenv()
+
+from auth import AuthMiddleware, hash_password
 from templates_config import templates
+from routes.login import router as login_router
 from routes.invoice import router as invoice_router
 from routes.users import router as users_router
 from routes.customer import router as customer_router
@@ -17,8 +24,14 @@ from services.invoice_service import get_dashboard_stats
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
+# Sesiones — la clave secreta viene del .env
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "factugest-dev-secret"))
+# Autenticación: redirige a /login si no hay sesión
+app.add_middleware(AuthMiddleware)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.include_router(login_router)
 app.include_router(users_router)
 app.include_router(customer_router)
 app.include_router(invoice_router)
@@ -33,6 +46,21 @@ app.include_router(product_discount_router)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for
+
+
+@app.on_event("startup")
+def migrate_passwords():
+    """Hashea contraseñas en texto plano al arrancar (idempotente)."""
+    from database import get_many, execute_update
+    users = get_many("SELECT cod_usuario, contrasena FROM usuarios")
+    for u in users:
+        pwd = u.get("contrasena") or ""
+        if pwd and not pwd.startswith("$2"):
+            hashed = hash_password(pwd)
+            execute_update(
+                "UPDATE usuarios SET contrasena=%s WHERE cod_usuario=%s",
+                (hashed, u["cod_usuario"]),
+            )
 
 
 @app.get("/", name="index")
