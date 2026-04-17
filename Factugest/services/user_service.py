@@ -7,6 +7,7 @@ def get_all_users():
     return get_many(
         "SELECT u.*, e.nombre AS empresa_nombre "
         "FROM usuarios u LEFT JOIN empresas e ON u.cod_empresa = e.cod_empresa "
+        "WHERE u.activo = 1 "
         "ORDER BY u.nombre"
     )
 
@@ -46,4 +47,4 @@ def update_user(user_id: int, nombre: str, correo: str, rol: str, contrasena: st
 
 
 def delete_user(user_id: int):
-    return execute_update("DELETE FROM usuarios WHERE cod_usuario = %s", (user_id,))
+    return execute_update("UPDATE usuarios SET activo = 0 WHERE cod_usuario = %s", (user_id,))

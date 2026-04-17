@@ -46,9 +46,11 @@
                             <label class="form-label small fw-bold text-secondary">Rol *</label>
                             <select name="rol" class="form-select bg-light border-0" required>
                                 <option value="">Seleccionar rol...</option>
-                                <option value="ADMIN" {{ 'selected' if user and user.rol == 'ADMIN' }}>Administrador</option>
-                                <option value="CAJERO" {{ 'selected' if user and user.rol == 'CAJERO' }}>Cajero</option>
-                                <option value="VENDEDOR" {{ 'selected' if user and user.rol == 'VENDEDOR' }}>Vendedor</option>
+                                {% for r in roles_disponibles %}
+                                <option value="{{ r.value }}" {{ 'selected' if user and user.rol == r.value }}>
+                                    {{ r.label }}
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
 

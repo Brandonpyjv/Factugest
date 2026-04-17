@@ -7,6 +7,7 @@ def get_all_customers():
         FROM customers c
         LEFT JOIN municipios m ON c.cod_municipio = m.cod_municipio
         LEFT JOIN departamentos d ON m.cod_departamento = d.cod_departamento
+        WHERE c.activo = 1
         ORDER BY c.full_name
     """)
 
@@ -84,4 +85,4 @@ def update_customer(customer_id: int, full_name: str, document_type: str,
 
 
 def delete_customer(customer_id: int):
-    return execute_update("DELETE FROM customers WHERE customer_id = %s", (customer_id,))
+    return execute_update("UPDATE customers SET activo = 0 WHERE customer_id = %s", (customer_id,))

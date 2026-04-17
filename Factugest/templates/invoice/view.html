@@ -97,16 +97,16 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr class="text-uppercase small fw-bold" style="letter-spacing: 0.4px; font-size: 0.7rem;">
-                                    <th class="ps-4">Producto</th>
-                                    <th>SKU</th>
-                                    <th class="text-end">P. Unit.</th>
-                                    <th class="text-center">Cant.</th>
-                                    <th class="text-end">Desc %</th>
-                                    <th class="text-end">Base Grav.</th>
-                                    <th class="text-end">IVA</th>
-                                    <th class="text-end pe-4">Total Línea</th>
+                            <thead>
+                                <tr class="text-uppercase small fw-bold text-white" style="letter-spacing:0.4px;font-size:0.7rem;background:linear-gradient(135deg,#4e73df,#6ea0f5);">
+                                    <th class="ps-4" style="background:transparent;color:#fff;">Producto</th>
+                                    <th style="background:transparent;color:#fff;">SKU</th>
+                                    <th class="text-end" style="background:transparent;color:#fff;">P. Unit.</th>
+                                    <th class="text-center" style="background:transparent;color:#fff;">Cant.</th>
+                                    <th class="text-end" style="background:transparent;color:#fff;">Desc %</th>
+                                    <th class="text-end" style="background:transparent;color:#fff;">Base Grav.</th>
+                                    <th class="text-end" style="background:transparent;color:#fff;">IVA</th>
+                                    <th class="text-end pe-4" style="background:transparent;color:#fff;">Total Línea</th>
                                 </tr>
                             </thead>
                             <tbody class="border-top-0">
@@ -231,11 +231,13 @@
                        class="btn btn-danger d-flex align-items-center gap-2 justify-content-center" target="_blank">
                         <i class="bi bi-file-pdf"></i> Descargar PDF
                     </a>
+                    {% if request.session.get('user', {}).get('rol') != 'CAJERO' %}
                     <a href="{{ url_for('delete_invoice', invoice_id=invoice.cod_factura) }}"
                        class="btn btn-outline-danger d-flex align-items-center gap-2 justify-content-center"
                        onclick="return confirm('¿Eliminar esta factura permanentemente?')">
                         <i class="bi bi-trash"></i> Eliminar Factura
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
