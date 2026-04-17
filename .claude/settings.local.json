@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:\\\\01. Proyectos\\\\Factugest Python\\\\Factugest\\\\Factugest\" && python -c \"\nfrom services.invoice_service import get_invoice_by_id, get_invoice_details\nfrom services.pdf_service import generate_invoice_pdf\ninv = get_invoice_by_id\\(2\\)\ndetails = get_invoice_details\\(2\\)\nprint\\('Factura:', inv['cod_factura'], inv['empresa_nombre']\\)\npdf = generate_invoice_pdf\\(inv, details\\)\nprint\\('PDF generado:', len\\(pdf\\), 'bytes'\\)\n\" 2>&1)",
+      "Bash(pip3 show *)",
+      "Bash(python3 -c \"import fastapi\")",
+      "Bash(python3 -m pip --version)",
+      "Bash(python3 -m pip show fastapi)",
+      "Read(//home/brandon/.local/bin/**)",
+      "Read(//usr/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(sudo apt-get *)",
+      "Bash(python3 -m venv .venv)",
+      "Bash(mysql *)",
+      "Bash(/opt/lampp/bin/mysql *)",
+      "Bash(grep *)",
+      "Bash(python3 *)",
+      "Bash(.venv/bin/pip list *)",
+      "Bash(.venv/bin/pip install *)"
+    ]
+  }
+}

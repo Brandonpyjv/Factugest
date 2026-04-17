@@ -1,75 +1,245 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Branch Form | Factugest</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
+{% extends "layout.html" %}
 
-    <div class="container mt-4">
-        <h1>
-            <i class="fas fa-map-marker-alt"></i>
-            {{ 'Edit Branch' if branch and branch.cod_sucursal else 'New Branch' }}
+{% block title %}{{ 'Editar Empresa' if branch else 'Nueva Empresa' }} | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-1 fw-bold">
+            <i class="bi bi-building text-primary me-2"></i>
+            {{ 'Editar Empresa' if branch else 'Nueva Empresa' }}
         </h1>
-
-        <hr>
-
-        <form action="#" method="POST">
-
-            {% if branch %}
-                <input type="hidden" name="cod_sucursal" value="{{ branch.cod_sucursal }}">
-            {% endif %}
-
-            <div class="mb-3">
-                <label class="form-label">Branch Code *</label>
-                <input type="number" name="cod_sucursal" class="form-control" required
-                       value="{{ branch.cod_sucursal if branch else '' }}"
-                       {{ 'readonly' if branch else '' }}>
-                <small class="text-muted">Unique identifier for the branch.</small>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Branch Name *</label>
-                <input type="text" name="nombre" class="form-control" required
-                       value="{{ branch.nombre if branch else '' }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Company Tax ID (NIT) / Code *</label>
-                <input type="text" name="cod_empresa" class="form-control" required
-                       value="{{ branch.cod_empresa if branch else '' }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Address</label>
-                <input type="text" name="direccion" class="form-control"
-                       value="{{ branch.direccion if branch else '' }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Phone Number</label>
-                <input type="text" name="telefono" class="form-control"
-                       value="{{ branch.telefono if branch else '' }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Email Address</label>
-                <input type="email" name="correo" class="form-control"
-                       value="{{ branch.correo if branch else '' }}">
-            </div>
-
-            <div class="mt-4">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> Save
-                </button>
-                <a href="/branches" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancel
-                </a>
-            </div>
-        </form>
+        <p class="text-muted small mb-0">{{ 'Modifica los datos de la empresa.' if branch else 'Registra una nueva empresa o sucursal.' }}</p>
     </div>
 
-</body>
-</html>
+    <div class="row justify-content-center">
+        <div class="col-xl-7">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h6 class="m-0 fw-bold text-primary">Datos de la Empresa</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('update_branch', branch_id=branch.cod_empresa) if branch else url_for('create_branch') }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-secondary">Nombre de la Empresa *</label>
+                                <input type="text" name="nombre" class="form-control bg-light border-0" required
+                                       value="{{ branch.nombre if branch else '' }}"
+                                       placeholder="Ej: Mi Empresa S.A.S.">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">NIT *</label>
+                                <input type="text" name="nit" class="form-control bg-light border-0 font-monospace" required
+                                       value="{{ branch.nit if branch else '' }}"
+                                       placeholder="900123456">
+                            </div>
+
+                            <div class="col-md-1">
+                                <label class="form-label small fw-bold text-secondary">DV</label>
+                                <input type="text" name="dv" class="form-control bg-light border-0 font-monospace text-center"
+                                       maxlength="1"
+                                       value="{{ branch.dv if branch and branch.dv else '' }}"
+                                       placeholder="0">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Tipo Documento</label>
+                                <select name="tipo_documento" class="form-select bg-light border-0">
+                                    <option value="NIT" {{ 'selected' if not branch or branch.tipo_documento == 'NIT' }}>NIT</option>
+                                    <option value="CC" {{ 'selected' if branch and branch.tipo_documento == 'CC' }}>Cédula de Ciudadanía</option>
+                                    <option value="CE" {{ 'selected' if branch and branch.tipo_documento == 'CE' }}>Cédula de Extranjería</option>
+                                    <option value="PASAPORTE" {{ 'selected' if branch and branch.tipo_documento == 'PASAPORTE' }}>Pasaporte</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-secondary">Dirección</label>
+                                <input type="text" name="direccion" class="form-control bg-light border-0"
+                                       value="{{ branch.direccion if branch else '' }}"
+                                       placeholder="Cll 28 # 9-47">
+                            </div>
+
+                            <!-- Departamento + Municipio Colombia -->
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-secondary">Departamento *</label>
+                                <select id="selectDepartamento" class="form-select bg-light border-0" required>
+                                    <option value="">Seleccionar departamento...</option>
+                                    {% for d in departamentos %}
+                                    <option value="{{ d.cod_departamento }}"
+                                        {{ 'selected' if branch and branch.cod_departamento == d.cod_departamento }}>
+                                        {{ d.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold text-secondary">Ciudad / Municipio *</label>
+                                <select id="selectMunicipio" name="cod_municipio" class="form-select bg-light border-0" required>
+                                    <option value="">— Seleccione departamento primero —</option>
+                                    {% for m in municipios %}
+                                    <option value="{{ m.cod_municipio }}"
+                                        {{ 'selected' if branch and branch.cod_municipio == m.cod_municipio }}>
+                                        {{ m.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Teléfono</label>
+                                <input type="text" name="telefono" class="form-control bg-light border-0"
+                                       value="{{ branch.telefono if branch else '' }}"
+                                       placeholder="3001234567">
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-secondary">Correo Electrónico</label>
+                                <input type="email" name="correo" class="form-control bg-light border-0"
+                                       value="{{ branch.correo if branch else '' }}"
+                                       placeholder="empresa@dominio.com">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Régimen Tributario *</label>
+                                <select name="regimen_tributario" class="form-select bg-light border-0" required>
+                                    <option value="RESPONSABLE_IVA" {{ 'selected' if not branch or branch.regimen_tributario == 'RESPONSABLE_IVA' }}>Responsable de IVA</option>
+                                    <option value="NO_RESPONSABLE_IVA" {{ 'selected' if branch and branch.regimen_tributario == 'NO_RESPONSABLE_IVA' }}>No Responsable de IVA</option>
+                                    <option value="GRAN_CONTRIBUYENTE" {{ 'selected' if branch and branch.regimen_tributario == 'GRAN_CONTRIBUYENTE' }}>Gran Contribuyente</option>
+                                    <option value="AUTORETENEDOR" {{ 'selected' if branch and branch.regimen_tributario == 'AUTORETENEDOR' }}>Autoretenedor</option>
+                                    <option value="REGIMEN_SIMPLE" {{ 'selected' if branch and branch.regimen_tributario == 'REGIMEN_SIMPLE' }}>Régimen Simple de Tributación</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Actividad Económica (CIIU)</label>
+                                <input type="text" name="actividad_economica" class="form-control bg-light border-0 font-monospace"
+                                       value="{{ branch.actividad_economica if branch and branch.actividad_economica else '' }}"
+                                       placeholder="Ej: 4711" maxlength="10">
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-secondary">Sitio Web</label>
+                                <input type="text" name="website" class="form-control bg-light border-0"
+                                       value="{{ branch.website if branch and branch.website else '' }}"
+                                       placeholder="www.miempresa.com">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Tarifa ICA (%)</label>
+                                <input type="text" name="tarifa_ica" class="form-control bg-light border-0 font-monospace"
+                                       value="{{ branch.tarifa_ica if branch and branch.tarifa_ica else '' }}"
+                                       placeholder="Ej: 0.414">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Autoretenedor</label>
+                                <select name="autoretenedor" class="form-select bg-light border-0">
+                                    <option value="0" {{ 'selected' if not branch or not branch.autoretenedor }}>No</option>
+                                    <option value="1" {{ 'selected' if branch and branch.autoretenedor }}>Sí</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Gran Contribuyente</label>
+                                <select name="gran_contribuyente" class="form-select bg-light border-0">
+                                    <option value="0" {{ 'selected' if not branch or not branch.gran_contribuyente }}>No</option>
+                                    <option value="1" {{ 'selected' if branch and branch.gran_contribuyente }}>Sí</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Sección Resolución DIAN -->
+                        <div class="mt-4 p-3 border rounded" style="background:#f8f9fa;">
+                            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-shield-check me-1"></i>Resolución DIAN - Facturación Electrónica</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-secondary">Prefijo Factura</label>
+                                    <input type="text" name="prefijo_factura" class="form-control bg-white border font-monospace"
+                                           value="{{ branch.prefijo_factura if branch and branch.prefijo_factura else 'FV' }}"
+                                           placeholder="FV" maxlength="10">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-secondary">Consecutivo Actual</label>
+                                    <input type="number" name="consecutivo_actual" class="form-control bg-white border font-monospace"
+                                           value="{{ branch.consecutivo_actual if branch and branch.consecutivo_actual else 1 }}"
+                                           min="1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-secondary">N° Resolución DIAN</label>
+                                    <input type="text" name="resolucion_dian" class="form-control bg-white border font-monospace"
+                                           value="{{ branch.resolucion_dian if branch and branch.resolucion_dian else '' }}"
+                                           placeholder="18760000001">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-secondary">Desde (rango #)</label>
+                                    <input type="number" name="resolucion_desde" class="form-control bg-white border font-monospace"
+                                           value="{{ branch.resolucion_desde if branch and branch.resolucion_desde else '' }}"
+                                           placeholder="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-secondary">Hasta (rango #)</label>
+                                    <input type="number" name="resolucion_hasta" class="form-control bg-white border font-monospace"
+                                           value="{{ branch.resolucion_hasta if branch and branch.resolucion_hasta else '' }}"
+                                           placeholder="5000">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-secondary">Fecha Desde</label>
+                                    <input type="date" name="resolucion_fecha_desde" class="form-control bg-white border"
+                                           value="{{ branch.resolucion_fecha_desde.strftime('%Y-%m-%d') if branch and branch.resolucion_fecha_desde else '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-secondary">Fecha Hasta</label>
+                                    <input type="date" name="resolucion_fecha_hasta" class="form-control bg-white border"
+                                           value="{{ branch.resolucion_fecha_hasta.strftime('%Y-%m-%d') if branch and branch.resolucion_fecha_hasta else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{{ url_for('branches') }}" class="btn btn-light border px-4">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> {{ 'Actualizar' if branch else 'Guardar' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const selectDpto  = document.getElementById('selectDepartamento');
+const selectMpio  = document.getElementById('selectMunicipio');
+const savedMpio   = "{{ branch.cod_municipio if branch and branch.cod_municipio else '' }}";
+
+selectDpto.addEventListener('change', async function () {
+    const cod = this.value;
+    selectMpio.innerHTML = '<option value="">Cargando...</option>';
+    if (!cod) {
+        selectMpio.innerHTML = '<option value="">— Seleccione departamento primero —</option>';
+        return;
+    }
+    const data = await fetch(`/api/ubicacion/municipios/${cod}`).then(r => r.json());
+    selectMpio.innerHTML = '<option value="">Seleccionar ciudad...</option>';
+    data.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.cod_municipio;
+        opt.textContent = m.nombre;
+        if (m.cod_municipio === savedMpio) opt.selected = true;
+        selectMpio.appendChild(opt);
+    });
+});
+
+// Al cargar la página, si ya hay departamento seleccionado disparar evento para cargar municipios
+if (selectDpto.value) {
+    selectDpto.dispatchEvent(new Event('change'));
+}
+</script>
+{% endblock %}

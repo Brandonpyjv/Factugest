@@ -1,208 +1,573 @@
 {% extends "layout.html" %}
 
-{% block title %}New Invoice | Factugest{% endblock %}
+{% block title %}Nueva Factura | Factugest{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
 
     <div class="mb-4">
-        <h1 class="h3 mb-1 text-gray-800 fw-bold">
-            <i class="bi bi-receipt text-primary me-2"></i>Create New Invoice
+        <h1 class="h3 mb-1 fw-bold">
+            <i class="bi bi-receipt text-primary me-2"></i>Crear Nueva Factura
         </h1>
-        <p class="text-muted mb-0 small">Fill in the details below to generate a new invoice.</p>
+        <p class="text-muted small mb-0">Completa los datos para generar una factura electrónica.</p>
     </div>
 
-    <form action="{{ url_for('new_invoice') }}" method="POST" id="invoiceForm">
-        <div class="row">
+    <form action="{{ url_for('create_invoice') }}" method="POST" id="invoiceForm" novalidate>
+        <div class="row g-3">
+
+            <!-- Columna izquierda -->
             <div class="col-xl-9 col-lg-8">
-                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-header bg-white py-3 border-bottom border-light">
-                        <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
+
+                <!-- Cabecera factura -->
+                <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
+                    <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-primary">Datos Generales</h6>
+                        <div>
+                            <select name="tipo_factura" class="form-select form-select-sm bg-light border-0" style="width:auto;display:inline-block;">
+                                <option value="FV">FV — Factura de Venta</option>
+                                <option value="ND">ND — Nota Débito</option>
+                                <option value="NC">NC — Nota Crédito</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-3">
+
+                            <!-- Cliente con búsqueda -->
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary">Customer *</label>
-                                <select name="cod_cliente" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select a customer...</option>
-                                    {% for c in customers %}
-                                    <option value="{{ c.customer_id }}">{{ c.full_name }} - {{ c.document_number }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label class="form-label small fw-bold text-secondary">Cliente *</label>
+                                <div class="position-relative" id="clienteContainer">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted" style="font-size:0.8rem;"></i></span>
+                                        <input type="text" id="clienteSearch"
+                                               class="form-control bg-light border-0"
+                                               placeholder="Nombre o número de identificación..."
+                                               autocomplete="off">
+                                    </div>
+                                    <div id="clienteDropdown"
+                                         class="list-group position-absolute w-100 shadow"
+                                         style="z-index:1050;display:none;max-height:250px;overflow-y:auto;top:100%;left:0;"></div>
+                                    <input type="hidden" name="cod_cliente" id="codCliente">
+                                    <div id="clienteSeleccionado" class="d-none mt-1">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            <span id="clienteNombreDisplay"></span>
+                                            <button type="button" class="btn-close ms-1" style="font-size:0.55rem;" onclick="clearCliente()"></button>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
+                            <!-- Empresa (asignada al usuario, solo lectura) -->
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary">Issuing Company *</label>
-                                <select name="cod_empresa" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select company...</option>
-                                    {% for e in empresas %}
-                                    <option value="{{ e.cod_empresa }}">{{ e.nombre }} (NIT: {{ e.nit }})</option>
-                                    {% endfor %}
-                                </select>
+                                <label class="form-label small fw-bold text-secondary">Empresa Emisora</label>
+                                {% if empresa %}
+                                <div class="form-control bg-light border-0 d-flex align-items-center gap-2" style="min-height:38px;">
+                                    <i class="bi bi-building text-primary" style="font-size:0.9rem;"></i>
+                                    <span class="fw-bold text-dark">{{ empresa.nombre }}</span>
+                                    <span class="text-muted small ms-1">— NIT {{ empresa.nit }}{% if empresa.dv %}-{{ empresa.dv }}{% endif %}</span>
+                                </div>
+                                <input type="hidden" name="cod_empresa" value="{{ empresa.cod_empresa }}">
+                                {% else %}
+                                <div class="form-control bg-danger-subtle border-0 d-flex align-items-center gap-2 text-danger" style="min-height:38px;">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <span class="small">Usuario sin sucursal asignada. Contacta al administrador.</span>
+                                </div>
+                                {% endif %}
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Issue Date *</label>
-                                <input type="datetime-local" name="fecha" class="form-control bg-light border-0" required>
+                            <!-- Fechas: automáticas -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Fecha Emisión</label>
+                                <div class="form-control bg-light border-0 text-muted small d-flex align-items-center gap-1"
+                                     style="font-size:0.82rem;">
+                                    <i class="bi bi-clock-history"></i>
+                                    Automática al guardar
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Fecha Vencimiento</label>
+                                <div class="form-control bg-light border-0 text-muted small d-flex align-items-center gap-1"
+                                     style="font-size:0.82rem;">
+                                    <i class="bi bi-calendar-check"></i>
+                                    Automática al guardar
+                                </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Payment Method *</label>
+                            <!-- Método de Pago -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Método de Pago *</label>
                                 <select name="cod_metodo_pago" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select method...</option>
                                     {% for pm in metodos_pago %}
-                                    <option value="{{ pm.cod_pago }}">{{ pm.descripcion }}</option>
+                                    <option value="{{ pm.cod_pago }}" {{ 'selected' if pm.cod_pago == 1 }}>{{ pm.descripcion }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Payment Status *</label>
+                            <!-- Estado Pago -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Estado Pago *</label>
                                 <select name="cod_pago" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Select status...</option>
-                                    {% for status in pagos_factura %}
-                                    <option value="{{ status.cod_pago_factura }}">{{ status.status | capitalize }}</option>
+                                    {% for s in pagos_factura %}
+                                    <option value="{{ s.cod_pago_factura }}" {{ 'selected' if s.cod_pago_factura == 1 }}>{{ s.status | capitalize }}</option>
                                     {% endfor %}
                                 </select>
+                            </div>
+
+                            <!-- Observaciones -->
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-secondary">Observaciones</label>
+                                <input type="text" name="observaciones" class="form-control bg-light border-0"
+                                       placeholder="Notas adicionales para la factura...">
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <hr class="my-4 border-light">
-
-                        <h6 class="mb-3 font-weight-bold text-primary">Products / Services</h6>
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-3" id="productosTable">
-                                <thead class="bg-light">
-                                    <tr class="text-uppercase small fw-bold" style="letter-spacing: 0.5px;">
-                                        <th width="40%" class="ps-3">Product</th>
-                                        <th width="15%">Unit Price</th>
-                                        <th width="15%">Quantity</th>
-                                        <th width="20%">Subtotal</th>
-                                        <th width="10%" class="text-center pe-3">Action</th>
+                <!-- Tabla de productos -->
+                <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                    <div class="card-header bg-white py-3 border-bottom border-light" style="border-radius:12px 12px 0 0;">
+                        <h6 class="m-0 fw-bold text-primary">Productos / Servicios</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="overflow:visible;">
+                            <table class="table align-middle mb-0" id="productosTable">
+                                <thead>
+                                    <tr class="text-uppercase small fw-bold text-white" style="letter-spacing:0.4px; font-size:0.7rem; background:linear-gradient(135deg,#4e73df,#6ea0f5);">
+                                        <th class="ps-3" style="width:32%;background:transparent;">Producto</th>
+                                        <th style="width:13%;background:transparent;">P. Unitario</th>
+                                        <th style="width:9%;background:transparent;">Cant.</th>
+                                        <th style="width:14%;background:transparent;">Descuento</th>
+                                        <th style="width:11%;background:transparent;">Base Grav.</th>
+                                        <th style="width:12%;background:transparent;">IVA</th>
+                                        <th style="width:9%;background:transparent;" class="text-center pe-3">Acc.</th>
                                     </tr>
                                 </thead>
-                                <tbody class="border-top-0">
-                                    <tr class="product-row">
+                                <tbody id="tbodyProductos">
+                                    <tr class="product-row border-bottom" data-bruto="0" data-descval="0" data-base="0" data-iva="0" data-tax="0">
                                         <td class="ps-3">
-                                            <select name="cod_producto[]" class="form-select form-select-sm border-0 bg-light product-select" required onchange="updatePrice(this)">
-                                                <option value="" data-price="0" disabled selected>Select product...</option>
-                                                {% for p in productos %}
-                                                <option value="{{ p.cod_producto }}" data-price="{{ p.precio_unitario }}">
-                                                    {{ p.sku }} - {{ p.nombre }}
-                                                </option>
-                                                {% endfor %}
+                                            <div class="position-relative producto-container">
+                                                <input type="text" class="form-control form-control-sm border-0 bg-light producto-search"
+                                                       placeholder="Código o nombre del producto..." autocomplete="off">
+                                                <div class="producto-dropdown list-group position-absolute w-100 shadow-sm"
+                                                     style="z-index:2000;display:none;max-height:220px;overflow-y:auto;top:100%;left:0;min-width:300px;"></div>
+                                                <input type="hidden" name="cod_producto" class="cod-producto">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="precio_unitario"
+                                                   class="form-control form-control-sm border-0 bg-light price-input"
+                                                   readonly step="0.01" min="0" value="0">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="cantidad"
+                                                   class="form-control form-control-sm border-0 bg-light qty-input"
+                                                   value="1" min="1" required onchange="calcRow(this)">
+                                        </td>
+                                        <td>
+                                            <select name="descuento_porcentaje"
+                                                    class="form-select form-select-sm border-0 bg-light desc-select"
+                                                    onchange="calcRow(this)">
+                                                <option value="0" data-desc="">Sin descuento</option>
                                             </select>
+                                            <input type="hidden" name="descuento_descripcion" class="desc-desc" value="">
                                         </td>
                                         <td>
-                                            <input type="number" name="precio_unitario[]" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01">
+                                            <input type="text" class="form-control form-control-sm border-0 bg-light base-display"
+                                                   readonly style="font-size:0.8rem;font-weight:600;">
                                         </td>
                                         <td>
-                                            <input type="number" name="cantidad[]" class="form-control form-control-sm border-0 bg-light qty-input" value="1" min="1" required onchange="calculateRow(this)">
-                                        </td>
-                                        <td>
-                                            <input type="number" name="subtotal[]" class="form-control form-control-sm border-0 bg-light subtotal-input" readonly step="0.01">
+                                            <input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success"
+                                                   readonly style="font-size:0.8rem;">
                                         </td>
                                         <td class="text-center pe-3">
                                             <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)">
-                                               <i class="bi bi-trash"></i>
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <button type="button" class="btn btn-sm btn-light border text-primary" onclick="addRow()">
-                            <i class="bi bi-plus-circle me-1"></i> Add Row
-                        </button>
+                        <div class="p-3 border-top border-light">
+                            <button type="button" class="btn btn-sm btn-light border text-primary" onclick="addRow()">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar Producto
+                            </button>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
+            <!-- Panel resumen -->
             <div class="col-xl-3 col-lg-4">
-                <div class="card border-0 shadow-sm position-sticky bg-white" style="top: 85px; border-radius: 12px; overflow: hidden;">
-                    <div class="card-header bg-white py-3 border-bottom border-light">
-                        <h6 class="m-0 font-weight-bold text-primary">Summary</h6>
+                <div class="card border-0 shadow-sm position-sticky bg-white" style="top:80px;border-radius:12px;overflow:hidden;">
+                    <div class="card-header py-3 border-bottom border-0 text-center" style="background:linear-gradient(135deg,#4e73df,#6ea0f5);">
+                        <h6 class="m-0 fw-bold text-white">Resumen Factura</h6>
                     </div>
                     <div class="card-body p-4 bg-white">
 
-                        <div class="bg-light rounded text-center p-4 mb-4 border border-light">
-                            <p class="text-muted mb-1 small text-uppercase fw-bold">Total Amount</p>
-                            <input type="hidden" name="total" id="grandTotalInput" value="0">
-                            <h3 class="mb-0 text-success fw-bold" id="grandTotalDisplay">$ 0.00</h3>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Subtotal bruto:</span>
+                            <span class="fw-bold" id="dispSubtotal">$ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">(-) Desc. productos:</span>
+                            <span class="fw-bold text-danger" id="dispDescProductos">$ 0.00</span>
                         </div>
 
-                        <div class="d-grid gap-3">
-                            <button type="submit" class="btn btn-primary shadow-sm py-2 d-flex justify-content-center align-items-center gap-2" style="border-radius: 8px; font-weight: 600;">
-                                <i class="bi bi-save"></i> Save Invoice
+                        <!-- Descuento a factura -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Descuento en Factura</label>
+                            <select id="selectDescuentoFactura" class="form-select form-select-sm bg-light border-0"
+                                    onchange="applyInvoiceDiscount(this)">
+                                <option value="">Sin descuento en factura</option>
+                                {% for d in invoice_discounts %}
+                                <option value="{{ d.cod_descuento }}" data-pct="{{ d.porcentaje }}">
+                                    {{ d.descripcion }} ({{ d.porcentaje }}%)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" name="cod_descuento_factura" id="codDescuentoFactura">
+                            <input type="hidden" name="valor_descuento_factura" id="valorDescuentoFactura" value="0">
+                            <input type="hidden" id="pctDescuentoFactura" value="0">
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2 small" id="rowDescFactura" style="display:none!important;">
+                            <span class="text-muted">(-) Desc. factura:</span>
+                            <span class="fw-bold text-danger" id="dispDescFactura">$ 0.00</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Base gravable:</span>
+                            <span class="fw-bold" id="dispBase">$ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">(+) Impuestos:</span>
+                            <span class="fw-bold text-success" id="dispImpuestos">$ 0.00</span>
+                        </div>
+                        <hr class="my-2">
+
+                        <input type="hidden" name="total" id="hidTotal">
+
+                        <div class="rounded text-center p-3 mb-4 bg-light border">
+                            <p class="mb-1 small text-uppercase fw-bold text-muted">TOTAL A PAGAR</p>
+                            <h3 class="mb-0 fw-bold text-dark" id="dispTotal">$ 0.00</h3>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn py-2 d-flex justify-content-center align-items-center gap-2 fw-bold text-white"
+                                    style="border-radius:8px;background:linear-gradient(135deg,#4e73df,#6ea0f5);border:none;">
+                                <i class="bi bi-save"></i> Guardar Factura
                             </button>
-                            <a href="{{ url_for('invoice') }}" class="btn btn-light border shadow-sm py-2" style="border-radius: 8px; font-weight: 600;">
-                                Cancel
-                            </a>
+                            <a href="{{ url_for('invoice') }}" class="btn btn-light border py-2 fw-bold"
+                               style="border-radius:8px;">Cancelar</a>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.querySelector('input[name="fecha"]').value = now.toISOString().slice(0,16);
+const fmt = v => '$ ' + parseFloat(v || 0).toLocaleString('es-CO', {minimumFractionDigits: 2});
+
+// ── Búsqueda de Cliente ───────────────────────────────────────────────────────
+const clienteSearch   = document.getElementById('clienteSearch');
+const clienteDropdown = document.getElementById('clienteDropdown');
+let clienteTimer;
+
+clienteSearch.addEventListener('input', function() {
+    clearTimeout(clienteTimer);
+    document.getElementById('codCliente').value = '';
+    document.getElementById('clienteSeleccionado').classList.add('d-none');
+    const q = this.value.trim();
+    if (q.length < 2) { clienteDropdown.style.display = 'none'; return; }
+    clienteTimer = setTimeout(() => fetchClientes(q), 300);
+});
+
+clienteSearch.addEventListener('blur', () =>
+    setTimeout(() => { clienteDropdown.style.display = 'none'; }, 200));
+
+async function fetchClientes(q) {
+    try {
+        const res  = await fetch('/invoice/api/customers/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        clienteDropdown.innerHTML = '';
+        if (data.length === 0) {
+            clienteDropdown.innerHTML = '<div class="list-group-item text-muted small py-2">No se encontraron clientes</div>';
+        } else {
+            data.forEach(c => {
+                const btn = document.createElement('button');
+                btn.type      = 'button';
+                btn.className = 'list-group-item list-group-item-action py-2 small';
+                btn.innerHTML = `<strong>${c.full_name}</strong>
+                    <span class="text-muted ms-2 small">${c.document_type || ''}${c.document_number || ''}</span>`;
+                btn.addEventListener('mousedown', e => { e.preventDefault(); selectCliente(c); });
+                clienteDropdown.appendChild(btn);
+            });
+        }
+        clienteDropdown.style.display = 'block';
+    } catch (err) { console.error('Error buscando clientes:', err); }
+}
+
+function selectCliente(c) {
+    document.getElementById('codCliente').value = c.customer_id;
+    clienteSearch.value = c.full_name + ' — ' + (c.document_type || '') + (c.document_number || '');
+    clienteDropdown.style.display = 'none';
+    document.getElementById('clienteNombreDisplay').textContent = c.full_name;
+    document.getElementById('clienteSeleccionado').classList.remove('d-none');
+}
+
+function clearCliente() {
+    document.getElementById('codCliente').value = '';
+    clienteSearch.value = '';
+    document.getElementById('clienteSeleccionado').classList.add('d-none');
+    clienteSearch.focus();
+}
+
+// ── Búsqueda de Producto por fila ─────────────────────────────────────────────
+function initProductSearch(row) {
+    const searchInput = row.querySelector('.producto-search');
+    const dropdown    = row.querySelector('.producto-dropdown');
+    let timer;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        row.querySelector('.cod-producto').value = '';
+        const q = this.value.trim();
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        timer = setTimeout(() => fetchProductos(q, row, dropdown), 300);
     });
 
-    function updatePrice(selectElement) {
-        const row = selectElement.closest('tr');
-        const priceInput = row.querySelector('.price-input');
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
+    searchInput.addEventListener('blur', () =>
+        setTimeout(() => { dropdown.style.display = 'none'; }, 200));
+}
 
-        priceInput.value = selectedOption.getAttribute('data-price');
-        calculateRow(selectElement);
-    }
-
-    function calculateRow(element) {
-        const row = element.closest('tr');
-        const price = parseFloat(row.querySelector('.price-input').value) || 0;
-        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-        const subtotalInput = row.querySelector('.subtotal-input');
-
-        subtotalInput.value = (price * qty).toFixed(2);
-        calculateGrandTotal();
-    }
-
-    function calculateGrandTotal() {
-        let total = 0;
-        document.querySelectorAll('.subtotal-input').forEach(function(input) {
-            total += parseFloat(input.value) || 0;
-        });
-
-        document.getElementById('grandTotalDisplay').innerText = '$ ' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
-        document.getElementById('grandTotalInput').value = total.toFixed(2);
-    }
-
-    function addRow() {
-        const tbody = document.querySelector('#productosTable tbody');
-        const firstRow = tbody.querySelector('.product-row');
-        const newRow = firstRow.cloneNode(true);
-
-        newRow.querySelector('.product-select').selectedIndex = 0;
-        newRow.querySelector('.price-input').value = '';
-        newRow.querySelector('.qty-input').value = '1';
-        newRow.querySelector('.subtotal-input').value = '';
-
-        tbody.appendChild(newRow);
-    }
-
-    function removeRow(button) {
-        const tbody = document.querySelector('#productosTable tbody');
-        if (tbody.querySelectorAll('.product-row').length > 1) {
-            button.closest('tr').remove();
-            calculateGrandTotal();
+async function fetchProductos(q, row, dropdown) {
+    try {
+        const res  = await fetch('/invoice/api/products/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        dropdown.innerHTML = '';
+        if (data.length === 0) {
+            dropdown.innerHTML = '<div class="list-group-item text-muted small py-2">No se encontraron productos</div>';
         } else {
-            alert("The invoice must have at least one product.");
+            data.forEach(p => {
+                const btn = document.createElement('button');
+                btn.type      = 'button';
+                btn.className = 'list-group-item list-group-item-action py-2 small';
+                btn.innerHTML = `<strong>[${p.sku}]</strong> ${p.nombre}
+                    <span class="text-muted ms-2">${fmt(p.precio_unitario)}</span>`;
+                btn.addEventListener('mousedown', e => { e.preventDefault(); selectProducto(p, row, dropdown); });
+                dropdown.appendChild(btn);
+            });
         }
+        dropdown.style.display = 'block';
+    } catch (err) { console.error('Error buscando productos:', err); }
+}
+
+async function selectProducto(p, row, dropdown) {
+    row.querySelector('.cod-producto').value     = p.cod_producto;
+    row.querySelector('.producto-search').value  = '[' + p.sku + '] ' + p.nombre;
+    row.querySelector('.price-input').value      = p.precio_unitario;
+    row.dataset.tax = p.tax_porcentaje;
+    dropdown.style.display = 'none';
+    await loadProductDiscounts(row, p.cod_producto);
+    calcRow(row.querySelector('.desc-select'));
+    // Si esta es la última fila, agregar automáticamente una nueva
+    const rows = document.querySelectorAll('.product-row');
+    if (rows[rows.length - 1] === row) {
+        addRow();
     }
+}
+
+async function loadProductDiscounts(row, codProducto) {
+    const select = row.querySelector('.desc-select');
+    select.innerHTML = '<option value="0" data-desc="">Sin descuento</option>';
+    try {
+        const res       = await fetch('/invoice/api/products/' + codProducto + '/discounts');
+        const discounts = await res.json();
+        discounts.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value          = d.porcentaje;
+            opt.dataset.desc   = d.descripcion;
+            opt.textContent    = d.descripcion + ' (' + d.porcentaje + '%)';
+            select.appendChild(opt);
+        });
+    } catch (err) { console.error('Error cargando descuentos:', err); }
+}
+
+// ── Descuento a factura ───────────────────────────────────────────────────────
+function applyInvoiceDiscount(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    const cod = opt.value || '';
+    const pct = cod ? parseFloat(opt.dataset.pct || 0) : 0;
+    document.getElementById('codDescuentoFactura').value = cod;
+    document.getElementById('pctDescuentoFactura').value = pct;
+    calcTotales();
+}
+
+// ── Cálculos ──────────────────────────────────────────────────────────────────
+function calcRow(el) {
+    const row    = el.closest('tr');
+    const precio = parseFloat(row.querySelector('.price-input').value) || 0;
+    const cant   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+    const sel    = row.querySelector('.desc-select');
+    const desc   = parseFloat(sel.value) || 0;
+    const tax    = parseFloat(row.dataset.tax || 0);
+
+    const bruto   = precio * cant;
+    const descVal = bruto * desc / 100;
+    const base    = bruto - descVal;
+    const iva     = base * tax / 100;
+
+    row.querySelector('.base-display').value = fmt(base);
+    row.querySelector('.tax-display').value  = tax > 0
+        ? fmt(iva) + ' (' + tax + '%)'
+        : 'EXENTO';
+
+    row.dataset.bruto   = bruto;
+    row.dataset.descval = descVal;
+    row.dataset.base    = base;
+    row.dataset.iva     = iva;
+
+    // capturar descripción del descuento seleccionado
+    const descDescInput = row.querySelector('.desc-desc');
+    if (descDescInput) {
+        descDescInput.value = sel.options[sel.selectedIndex]?.dataset?.desc || '';
+    }
+    calcTotales();
+}
+
+function calcTotales() {
+    let subtotal = 0, descProd = 0, ivaTot = 0;
+    document.querySelectorAll('.product-row').forEach(r => {
+        subtotal += parseFloat(r.dataset.bruto   || 0);
+        descProd += parseFloat(r.dataset.descval || 0);
+        ivaTot   += parseFloat(r.dataset.iva     || 0);
+    });
+
+    const baseProds  = subtotal - descProd;
+    const invPct     = parseFloat(document.getElementById('pctDescuentoFactura').value || 0);
+    const invDiscVal = baseProds * invPct / 100;
+    const baseAfterAll = baseProds - invDiscVal;
+
+    // Prorratear IVA: el descuento de factura reduce la base imponible
+    const ratio      = baseProds > 0 ? invDiscVal / baseProds : 0;
+    const ivaAjustado = ivaTot * (1 - ratio);
+    const total      = baseAfterAll + ivaAjustado;
+
+    document.getElementById('valorDescuentoFactura').value = invDiscVal.toFixed(2);
+
+    document.getElementById('dispSubtotal').textContent      = fmt(subtotal);
+    document.getElementById('dispDescProductos').textContent  = fmt(descProd);
+    document.getElementById('dispBase').textContent           = fmt(baseAfterAll);
+    document.getElementById('dispImpuestos').textContent      = fmt(ivaAjustado);
+    document.getElementById('dispTotal').textContent          = fmt(total);
+    document.getElementById('hidTotal').value                 = total.toFixed(2);
+
+    const rowDescFactura = document.getElementById('rowDescFactura');
+    if (invDiscVal > 0) {
+        document.getElementById('dispDescFactura').textContent = fmt(invDiscVal);
+        rowDescFactura.style.removeProperty('display');
+    } else {
+        rowDescFactura.style.setProperty('display', 'none', 'important');
+    }
+}
+
+// ── Filas de producto ─────────────────────────────────────────────────────────
+function buildRowHTML() {
+    return `
+        <td class="ps-3">
+            <div class="position-relative producto-container">
+                <input type="text" class="form-control form-control-sm border-0 bg-light producto-search"
+                       placeholder="Código o nombre del producto..." autocomplete="off">
+                <div class="producto-dropdown list-group position-absolute w-100 shadow-sm"
+                     style="z-index:2000;display:none;max-height:220px;overflow-y:auto;top:100%;left:0;min-width:300px;"></div>
+                <input type="hidden" name="cod_producto" class="cod-producto">
+            </div>
+        </td>
+        <td><input type="number" name="precio_unitario"
+                   class="form-control form-control-sm border-0 bg-light price-input"
+                   readonly step="0.01" min="0" value="0"></td>
+        <td><input type="number" name="cantidad"
+                   class="form-control form-control-sm border-0 bg-light qty-input"
+                   value="1" min="1" required onchange="calcRow(this)"></td>
+        <td>
+            <select name="descuento_porcentaje"
+                    class="form-select form-select-sm border-0 bg-light desc-select"
+                    onchange="calcRow(this)">
+                <option value="0" data-desc="">Sin descuento</option>
+            </select>
+            <input type="hidden" name="descuento_descripcion" class="desc-desc" value="">
+        </td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light base-display"
+                   readonly style="font-size:0.8rem;font-weight:600;"></td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success"
+                   readonly style="font-size:0.8rem;"></td>
+        <td class="text-center pe-3">
+            <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>`;
+}
+
+function addRow() {
+    const tbody = document.getElementById('tbodyProductos');
+    const tr    = document.createElement('tr');
+    tr.className    = 'product-row border-bottom';
+    tr.dataset.bruto   = 0;
+    tr.dataset.descval = 0;
+    tr.dataset.base    = 0;
+    tr.dataset.iva     = 0;
+    tr.dataset.tax     = 0;
+    tr.innerHTML = buildRowHTML();
+    tbody.appendChild(tr);
+    initProductSearch(tr);
+    tr.querySelector('.producto-search').focus();
+}
+
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.product-row');
+    if (rows.length > 1) {
+        btn.closest('tr').remove();
+        calcTotales();
+    } else {
+        alert('La factura debe tener al menos un producto.');
+    }
+}
+
+// ── Validación y arranque ─────────────────────────────────────────────────────
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('codCliente').value) {
+        e.preventDefault();
+        alert('Debe seleccionar un cliente de la lista de resultados.');
+        document.getElementById('clienteSearch').focus();
+        return;
+    }
+
+    // Eliminar filas vacías (la que se agrega automáticamente al seleccionar producto)
+    document.querySelectorAll('.product-row').forEach(row => {
+        if (!row.querySelector('.cod-producto').value) {
+            row.remove();
+        }
+    });
+
+    if (document.querySelectorAll('.product-row').length === 0) {
+        e.preventDefault();
+        alert('Debe agregar al menos un producto a la factura.');
+        addRow();
+        return;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.product-row').forEach(row => initProductSearch(row));
+    calcTotales();
+});
 </script>
 {% endblock %}

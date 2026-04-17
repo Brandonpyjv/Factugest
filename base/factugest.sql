@@ -127,12 +127,16 @@ INSERT INTO `descuentos` (`cod_descuento`, `descripcion`, `porcentaje`, `aplica_
 --
 
 CREATE TABLE `detalle_factura` (
-  `cantidad` int(11) NOT NULL,
-  `cod_destalle` int(11) NOT NULL,
+  `cod_destalle` int(11) NOT NULL AUTO_INCREMENT,
   `cod_factura` int(11) NOT NULL,
   `cod_producto` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
   `precio_unitario` double NOT NULL,
-  `subtotal` double NOT NULL
+  `subtotal` double NOT NULL,
+  `descuento_porcentaje` double NOT NULL DEFAULT 0,
+  `descuento_valor` double NOT NULL DEFAULT 0,
+  `impuesto_porcentaje` double NOT NULL DEFAULT 0,
+  `impuesto_valor` double NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -454,7 +458,8 @@ ALTER TABLE `descuentos`
 -- Indices de la tabla `detalle_factura`
 --
 ALTER TABLE `detalle_factura`
-  ADD PRIMARY KEY (`cod_destalle`);
+  ADD PRIMARY KEY (`cod_destalle`),
+  MODIFY `cod_destalle` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Indices de la tabla `empresas`

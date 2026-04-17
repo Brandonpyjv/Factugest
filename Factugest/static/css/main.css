@@ -126,8 +126,12 @@ body {
     vertical-align: middle;
 }
 
+.table thead tr {
+    background: linear-gradient(135deg, #4e73df, #6ea0f5);
+}
+
 .table th {
-    background: #4e73df;
+    background: transparent !important;
     color: #fff;
     text-align: center;
     font-weight: 600;
@@ -146,14 +150,14 @@ body {
 }
 
 .btn-primary {
-    background: #4e73df;
-    border-color: #4e73df;
+    background: linear-gradient(135deg, #4e73df, #6ea0f5);
+    border-color: transparent;
     color: #fff;
     transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #4e73df, #6ea0f5);
+    background: linear-gradient(135deg, #3a5ec0, #4e73df);
     border-color: transparent;
     color: #fff;
 }

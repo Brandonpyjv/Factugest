@@ -1,107 +1,161 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ 'Edit Customer' if customer and customer.codCliente else 'New Customer' }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+{% extends "layout.html" %}
 
-    <div class="container mt-4">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h4 class="mb-0">{{ 'Edit Customer' if customer and customer.codCliente else 'New Customer' }}</h4>
-                    </div>
+{% block title %}{{ 'Editar Cliente' if customer else 'Nuevo Cliente' }} | Factugest{% endblock %}
 
-                    <div class="card-body">
-                        <form>
+{% block content %}
+<div class="container-fluid py-4">
 
-                            {% if customer %}
-                                <input type="hidden" name="codCliente_hidden" value="{{ customer.codCliente }}">
-                            {% endif %}
+    <div class="mb-4">
+        <h1 class="h3 mb-1 fw-bold">
+            <i class="bi bi-person-{{ 'pencil' if customer else 'plus' }} text-primary me-2"></i>
+            {{ 'Editar Cliente' if customer else 'Nuevo Cliente' }}
+        </h1>
+        <p class="text-muted small mb-0">{{ 'Modifica los datos del cliente.' if customer else 'Ingresa los datos del nuevo cliente.' }}</p>
+    </div>
 
-                            <div class="row">
-                                <div class="col-md-6">
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Customer Code *</label>
-                                        <input type="number" name="codCliente" class="form-control" required
-                                               value="{{ customer.codCliente if customer else '' }}"
-                                               {{ 'readonly' if customer else '' }}>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Full Name *</label>
-                                        <input type="text" name="nombre" class="form-control" required
-                                               value="{{ customer.nombre if customer else '' }}">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Document Type *</label>
-                                        <select name="tipo_documento" class="form-select" required>
-                                            <option value="">Select...</option>
-                                            <option value="C" {{ 'selected' if customer and customer.tipo_documento == 'C' }}>C - Local Citizen</option>
-                                            <option value="E" {{ 'selected' if customer and customer.tipo_documento == 'E' }}>E - Foreigner</option>
-                                            <option value="J" {{ 'selected' if customer and customer.tipo_documento == 'J' }}>J - Legal Entity</option>
-                                            <option value="G" {{ 'selected' if customer and customer.tipo_documento == 'G' }}>G - Government</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Document Number *</label>
-                                        <input type="text" name="numero_documento" class="form-control" required
-                                               value="{{ customer.numero_documento if customer else '' }}">
-                                    </div>
-
-                                </div>
-
-                                <div class="col-md-6">
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Phone</label>
-                                        <input type="text" name="telefono" class="form-control"
-                                               value="{{ customer.telefono if customer else '' }}">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Email Address</label>
-                                        <input type="email" name="correo" class="form-control"
-                                               value="{{ customer.correo if customer else '' }}">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Address</label>
-                                        <input type="text" name="direccion" class="form-control"
-                                               value="{{ customer.direccion if customer else '' }}">
-                                    </div>
-
-                                </div>
+    <div class="row justify-content-center">
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h6 class="m-0 fw-bold text-primary">Información del Cliente</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('update_customer', customer_id=customer.customer_id) if customer else url_for('create_customer') }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary">Nombre Completo *</label>
+                                <input type="text" name="full_name" class="form-control bg-light border-0" required
+                                       value="{{ customer.full_name if customer else '' }}"
+                                       placeholder="Ej: Juan Carlos Pérez">
                             </div>
 
-                            <div class="d-flex justify-content-end mt-4 gap-2">
-                                <button type="reset" class="btn btn-warning">
-                                    <i class="fas fa-eraser"></i> Clear
-                                </button>
-
-                                <a href="{{url_for('customer')}}" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Cancel
-                                </a>
-
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save"></i> Save
-                                </button>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Tipo Documento *</label>
+                                <select name="document_type" class="form-select bg-light border-0" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="C" {{ 'selected' if customer and customer.document_type == 'C' }}>C - Cédula</option>
+                                    <option value="E" {{ 'selected' if customer and customer.document_type == 'E' }}>E - Extranjero</option>
+                                    <option value="J" {{ 'selected' if customer and customer.document_type == 'J' }}>J - Jurídico</option>
+                                    <option value="G" {{ 'selected' if customer and customer.document_type == 'G' }}>G - Gobierno</option>
+                                </select>
                             </div>
 
-                        </form>
-                    </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">N° Documento *</label>
+                                <input type="text" name="document_number" class="form-control bg-light border-0" required
+                                       value="{{ customer.document_number if customer else '' }}"
+                                       placeholder="1234567890">
+                            </div>
 
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Teléfono</label>
+                                <input type="text" name="phone" class="form-control bg-light border-0"
+                                       value="{{ customer.phone if customer else '' }}"
+                                       placeholder="3001234567">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Correo Electrónico</label>
+                                <input type="email" name="email" class="form-control bg-light border-0"
+                                       value="{{ customer.email if customer else '' }}"
+                                       placeholder="cliente@email.com">
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-secondary">Dirección</label>
+                                <input type="text" name="address" class="form-control bg-light border-0"
+                                       value="{{ customer.address if customer else '' }}"
+                                       placeholder="Cll 10 # 2-34">
+                            </div>
+
+                            <!-- Departamento + Municipio Colombia -->
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-secondary">Departamento</label>
+                                <select id="selectDepartamento" class="form-select bg-light border-0">
+                                    <option value="">Seleccionar departamento...</option>
+                                    {% for d in departamentos %}
+                                    <option value="{{ d.cod_departamento }}"
+                                        {{ 'selected' if (customer and customer.cod_departamento == d.cod_departamento) or (not customer and default_cod_dpto == d.cod_departamento) }}>
+                                        {{ d.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold text-secondary">Ciudad / Municipio</label>
+                                <select id="selectMunicipio" name="cod_municipio" class="form-select bg-light border-0">
+                                    <option value="">— Seleccione departamento primero —</option>
+                                    {% for m in municipios %}
+                                    <option value="{{ m.cod_municipio }}"
+                                        {{ 'selected' if (customer and customer.cod_municipio == m.cod_municipio) or (not customer and default_municipio == m.cod_municipio) }}>
+                                        {{ m.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Tipo Persona *</label>
+                                <select name="tipo_persona" class="form-select bg-light border-0" required>
+                                    <option value="NATURAL" {{ 'selected' if not customer or customer.tipo_persona == 'NATURAL' }}>Natural</option>
+                                    <option value="JURIDICA" {{ 'selected' if customer and customer.tipo_persona == 'JURIDICA' }}>Jurídica</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-secondary">Régimen Tributario *</label>
+                                <select name="regimen_tributario" class="form-select bg-light border-0" required>
+                                    <option value="NO_RESPONSABLE_IVA" {{ 'selected' if not customer or customer.regimen_tributario == 'NO_RESPONSABLE_IVA' }}>No Responsable de IVA</option>
+                                    <option value="RESPONSABLE_IVA" {{ 'selected' if customer and customer.regimen_tributario == 'RESPONSABLE_IVA' }}>Responsable de IVA</option>
+                                    <option value="GRAN_CONTRIBUYENTE" {{ 'selected' if customer and customer.regimen_tributario == 'GRAN_CONTRIBUYENTE' }}>Gran Contribuyente</option>
+                                    <option value="AUTORETENEDOR" {{ 'selected' if customer and customer.regimen_tributario == 'AUTORETENEDOR' }}>Autoretenedor</option>
+                                    <option value="REGIMEN_SIMPLE" {{ 'selected' if customer and customer.regimen_tributario == 'REGIMEN_SIMPLE' }}>Régimen Simple de Tributación</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{{ url_for('customer') }}" class="btn btn-light border px-4">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> {{ 'Actualizar' if customer else 'Guardar' }}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const selectDpto = document.getElementById('selectDepartamento');
+const selectMpio = document.getElementById('selectMunicipio');
+const savedMpio  = "{{ (customer.cod_municipio if customer and customer.cod_municipio else default_municipio) or '' }}";
+
+selectDpto.addEventListener('change', async function () {
+    const cod = this.value;
+    selectMpio.innerHTML = '<option value="">Cargando...</option>';
+    if (!cod) {
+        selectMpio.innerHTML = '<option value="">— Seleccione departamento primero —</option>';
+        return;
+    }
+    const data = await fetch(`/api/ubicacion/municipios/${cod}`).then(r => r.json());
+    selectMpio.innerHTML = '<option value="">Seleccionar ciudad...</option>';
+    data.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.cod_municipio;
+        opt.textContent = m.nombre;
+        if (m.cod_municipio === savedMpio) opt.selected = true;
+        selectMpio.appendChild(opt);
+    });
+});
+
+if (selectDpto.value) {
+    selectDpto.dispatchEvent(new Event('change'));
+}
+</script>
+{% endblock %}
