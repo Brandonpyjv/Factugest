@@ -9,6 +9,7 @@ from services.branches import get_all_branches
 from services.payment_methods_service import get_all_payment_methods
 from services.invoice_payments_service import get_all_invoice_payments
 from services.pdf_service import generate_invoice_pdf
+from services.user_service import get_user_by_id
 from templates_config import templates
 from database import get_one, get_many
 
@@ -25,6 +26,17 @@ def invoice(request: Request):
 def new_invoice(request: Request):
     session_user = request.session.get("user", {})
     cod_empresa = session_user.get("cod_empresa")
+
+    # Si la sesión es antigua y no trae cod_empresa, consultarlo de la BD
+    if not cod_empresa:
+        cod_usuario = session_user.get("cod_usuario")
+        if cod_usuario:
+            db_user = get_user_by_id(cod_usuario)
+            if db_user:
+                cod_empresa = db_user.get("cod_empresa")
+                request.session["user"]["cod_empresa"] = cod_empresa
+                request.session["user"]["empresa_nombre"] = db_user.get("empresa_nombre")
+
     empresa = get_one(
         "SELECT cod_empresa, nombre, nit, dv FROM empresas WHERE cod_empresa = %s",
         (cod_empresa,)
