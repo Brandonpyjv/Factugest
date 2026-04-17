@@ -61,32 +61,38 @@
                                        placeholder="cliente@email.com">
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Ciudad</label>
-                                <input type="text" name="ciudad" class="form-control bg-light border-0"
-                                       value="{{ customer.ciudad if customer else '' }}"
-                                       placeholder="Bogotá">
-                            </div>
-
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label small fw-bold text-secondary">Dirección</label>
                                 <input type="text" name="address" class="form-control bg-light border-0"
                                        value="{{ customer.address if customer else '' }}"
                                        placeholder="Cll 10 # 2-34">
                             </div>
 
-                            <div class="col-md-3">
+                            <!-- Departamento + Municipio Colombia -->
+                            <div class="col-md-5">
                                 <label class="form-label small fw-bold text-secondary">Departamento</label>
-                                <input type="text" name="departamento" class="form-control bg-light border-0"
-                                       value="{{ customer.departamento if customer else '' }}"
-                                       placeholder="Valle del Cauca">
+                                <select id="selectDepartamento" class="form-select bg-light border-0">
+                                    <option value="">Seleccionar departamento...</option>
+                                    {% for d in departamentos %}
+                                    <option value="{{ d.cod_departamento }}"
+                                        {{ 'selected' if (customer and customer.cod_departamento == d.cod_departamento) or (not customer and default_cod_dpto == d.cod_departamento) }}>
+                                        {{ d.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
 
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-secondary">País</label>
-                                <input type="text" name="pais" class="form-control bg-light border-0"
-                                       value="{{ customer.pais if customer else 'Colombia' }}"
-                                       placeholder="Colombia">
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold text-secondary">Ciudad / Municipio</label>
+                                <select id="selectMunicipio" name="cod_municipio" class="form-select bg-light border-0">
+                                    <option value="">— Seleccione departamento primero —</option>
+                                    {% for m in municipios %}
+                                    <option value="{{ m.cod_municipio }}"
+                                        {{ 'selected' if (customer and customer.cod_municipio == m.cod_municipio) or (not customer and default_municipio == m.cod_municipio) }}>
+                                        {{ m.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
 
                             <div class="col-md-4">
@@ -122,4 +128,34 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const selectDpto = document.getElementById('selectDepartamento');
+const selectMpio = document.getElementById('selectMunicipio');
+const savedMpio  = "{{ (customer.cod_municipio if customer and customer.cod_municipio else default_municipio) or '' }}";
+
+selectDpto.addEventListener('change', async function () {
+    const cod = this.value;
+    selectMpio.innerHTML = '<option value="">Cargando...</option>';
+    if (!cod) {
+        selectMpio.innerHTML = '<option value="">— Seleccione departamento primero —</option>';
+        return;
+    }
+    const data = await fetch(`/api/ubicacion/municipios/${cod}`).then(r => r.json());
+    selectMpio.innerHTML = '<option value="">Seleccionar ciudad...</option>';
+    data.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.cod_municipio;
+        opt.textContent = m.nombre;
+        if (m.cod_municipio === savedMpio) opt.selected = true;
+        selectMpio.appendChild(opt);
+    });
+});
+
+if (selectDpto.value) {
+    selectDpto.dispatchEvent(new Event('change'));
+}
+</script>
 {% endblock %}

@@ -61,11 +61,31 @@
                                        placeholder="Cll 28 # 9-47">
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">Ciudad</label>
-                                <input type="text" name="ciudad" class="form-control bg-light border-0"
-                                       value="{{ branch.ciudad if branch else '' }}"
-                                       placeholder="Bogotá">
+                            <!-- Departamento + Municipio Colombia -->
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-secondary">Departamento *</label>
+                                <select id="selectDepartamento" class="form-select bg-light border-0" required>
+                                    <option value="">Seleccionar departamento...</option>
+                                    {% for d in departamentos %}
+                                    <option value="{{ d.cod_departamento }}"
+                                        {{ 'selected' if branch and branch.cod_departamento == d.cod_departamento }}>
+                                        {{ d.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold text-secondary">Ciudad / Municipio *</label>
+                                <select id="selectMunicipio" name="cod_municipio" class="form-select bg-light border-0" required>
+                                    <option value="">— Seleccione departamento primero —</option>
+                                    {% for m in municipios %}
+                                    <option value="{{ m.cod_municipio }}"
+                                        {{ 'selected' if branch and branch.cod_municipio == m.cod_municipio }}>
+                                        {{ m.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
 
                             <div class="col-md-4">
@@ -114,4 +134,35 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const selectDpto  = document.getElementById('selectDepartamento');
+const selectMpio  = document.getElementById('selectMunicipio');
+const savedMpio   = "{{ branch.cod_municipio if branch and branch.cod_municipio else '' }}";
+
+selectDpto.addEventListener('change', async function () {
+    const cod = this.value;
+    selectMpio.innerHTML = '<option value="">Cargando...</option>';
+    if (!cod) {
+        selectMpio.innerHTML = '<option value="">— Seleccione departamento primero —</option>';
+        return;
+    }
+    const data = await fetch(`/api/ubicacion/municipios/${cod}`).then(r => r.json());
+    selectMpio.innerHTML = '<option value="">Seleccionar ciudad...</option>';
+    data.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.cod_municipio;
+        opt.textContent = m.nombre;
+        if (m.cod_municipio === savedMpio) opt.selected = true;
+        selectMpio.appendChild(opt);
+    });
+});
+
+// Al cargar la página, si ya hay departamento seleccionado disparar evento para cargar municipios
+if (selectDpto.value) {
+    selectDpto.dispatchEvent(new Event('change'));
+}
+</script>
 {% endblock %}
