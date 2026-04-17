@@ -6,6 +6,7 @@ def get_all_invoices_detailed():
     cursor = db.cursor(dictionary=True)
     query = """
         SELECT f.cod_factura,
+               f.numero_factura,
                f.fecha,
                f.fecha_vencimiento,
                f.total,
@@ -37,34 +38,94 @@ def get_all_invoices_detailed():
     return result
 
 
+def get_invoice_by_numero_factura(numero_factura: str):
+    return get_one("""
+        SELECT f.*,
+               c.full_name          AS cliente_nombre,
+               c.document_type,
+               c.document_number,
+               c.phone              AS cliente_phone,
+               c.email              AS cliente_email,
+               c.address            AS cliente_address,
+               c.ciudad             AS cliente_ciudad,
+               c.departamento       AS cliente_departamento,
+               c.cod_municipio      AS cliente_cod_municipio,
+               c.tipo_persona,
+               c.regimen_tributario AS cliente_regimen,
+               u.nombre             AS usuario_nombre,
+               e.nombre             AS empresa_nombre,
+               e.nit                AS empresa_nit,
+               e.dv                 AS empresa_dv,
+               e.direccion          AS empresa_direccion,
+               e.ciudad             AS empresa_ciudad,
+               e.telefono           AS empresa_telefono,
+               e.correo             AS empresa_correo,
+               e.website            AS empresa_website,
+               e.regimen_tributario AS empresa_regimen,
+               e.actividad_economica,
+               e.tarifa_ica         AS empresa_tarifa_ica,
+               e.autoretenedor      AS empresa_autoretenedor,
+               e.gran_contribuyente AS empresa_gran_contribuyente,
+               e.prefijo_factura    AS empresa_prefijo,
+               e.resolucion_dian    AS empresa_resolucion_dian,
+               e.resolucion_fecha_desde AS empresa_resolucion_fecha_desde,
+               e.resolucion_fecha_hasta AS empresa_resolucion_fecha_hasta,
+               e.resolucion_desde   AS empresa_resolucion_desde,
+               e.resolucion_hasta   AS empresa_resolucion_hasta,
+               e.cod_municipio      AS empresa_cod_municipio,
+               mp.descripcion       AS metodo_pago_nombre,
+               pf.status            AS estado_pago
+        FROM facturas f
+            LEFT JOIN customers c     ON f.cod_cliente     = c.customer_id
+            LEFT JOIN usuarios u      ON f.cod_usuario     = u.cod_usuario
+            LEFT JOIN empresas e      ON f.cod_empresa     = e.cod_empresa
+            LEFT JOIN metodos_pago mp ON f.cod_metodo_pago = mp.cod_pago
+            LEFT JOIN pagos_factura pf ON f.cod_pago       = pf.cod_pago_factura
+        WHERE f.numero_factura = %s
+    """, (numero_factura,))
+
+
 def get_invoice_by_id(invoice_id: int):
     return get_one("""
         SELECT f.*,
-               c.full_name        AS cliente_nombre,
+               c.full_name          AS cliente_nombre,
                c.document_type,
                c.document_number,
-               c.phone            AS cliente_phone,
-               c.email            AS cliente_email,
-               c.address          AS cliente_address,
-               c.ciudad           AS cliente_ciudad,
+               c.phone              AS cliente_phone,
+               c.email              AS cliente_email,
+               c.address            AS cliente_address,
+               c.ciudad             AS cliente_ciudad,
+               c.departamento       AS cliente_departamento,
+               c.cod_municipio      AS cliente_cod_municipio,
                c.tipo_persona,
                c.regimen_tributario AS cliente_regimen,
-               u.nombre           AS usuario_nombre,
-               e.nombre           AS empresa_nombre,
-               e.nit              AS empresa_nit,
-               e.dv               AS empresa_dv,
-               e.direccion        AS empresa_direccion,
-               e.ciudad           AS empresa_ciudad,
-               e.telefono         AS empresa_telefono,
-               e.correo           AS empresa_correo,
+               u.nombre             AS usuario_nombre,
+               e.nombre             AS empresa_nombre,
+               e.nit                AS empresa_nit,
+               e.dv                 AS empresa_dv,
+               e.direccion          AS empresa_direccion,
+               e.ciudad             AS empresa_ciudad,
+               e.telefono           AS empresa_telefono,
+               e.correo             AS empresa_correo,
+               e.website            AS empresa_website,
                e.regimen_tributario AS empresa_regimen,
                e.actividad_economica,
-               mp.descripcion     AS metodo_pago_nombre,
-               pf.status          AS estado_pago
+               e.tarifa_ica         AS empresa_tarifa_ica,
+               e.autoretenedor      AS empresa_autoretenedor,
+               e.gran_contribuyente AS empresa_gran_contribuyente,
+               e.prefijo_factura    AS empresa_prefijo,
+               e.resolucion_dian    AS empresa_resolucion_dian,
+               e.resolucion_fecha_desde AS empresa_resolucion_fecha_desde,
+               e.resolucion_fecha_hasta AS empresa_resolucion_fecha_hasta,
+               e.resolucion_desde   AS empresa_resolucion_desde,
+               e.resolucion_hasta   AS empresa_resolucion_hasta,
+               e.cod_municipio      AS empresa_cod_municipio,
+               mp.descripcion       AS metodo_pago_nombre,
+               pf.status            AS estado_pago
         FROM facturas f
-            LEFT JOIN customers c     ON f.cod_cliente    = c.customer_id
-            LEFT JOIN usuarios u      ON f.cod_usuario    = u.cod_usuario
-            LEFT JOIN empresas e      ON f.cod_empresa    = e.cod_empresa
+            LEFT JOIN customers c     ON f.cod_cliente     = c.customer_id
+            LEFT JOIN usuarios u      ON f.cod_usuario     = u.cod_usuario
+            LEFT JOIN empresas e      ON f.cod_empresa     = e.cod_empresa
             LEFT JOIN metodos_pago mp ON f.cod_metodo_pago = mp.cod_pago
             LEFT JOIN pagos_factura pf ON f.cod_pago       = pf.cod_pago_factura
         WHERE f.cod_factura = %s
@@ -92,35 +153,57 @@ def create_invoice(cod_cliente: int, cod_usuario: int, cod_empresa: int,
                    cod_metodo_pago: int, cod_pago: int, fecha: str,
                    total: float, subtotal: float, total_descuentos: float,
                    total_impuestos: float, tipo_factura: str = 'FV',
-                   observaciones: str = '', fecha_vencimiento: str = None):
+                   observaciones: str = '', fecha_vencimiento: str = None,
+                   cufe: str = None, numero_factura: str = None,
+                   forma_pago: str = 'CONTADO', orden_compra: str = None,
+                   nombre_vendedor: str = None, cod_descuento_factura: int = None,
+                   descripcion_descuento_factura: str = None):
     query = """
         INSERT INTO facturas
             (fecha, fecha_vencimiento, cod_cliente, cod_usuario, cod_empresa,
              cod_metodo_pago, cod_pago, total, subtotal, total_descuentos,
-             total_impuestos, tipo_factura, observaciones)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             total_impuestos, tipo_factura, observaciones,
+             cufe, numero_factura, forma_pago, orden_compra, nombre_vendedor,
+             cod_descuento_factura, descripcion_descuento_factura)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     return execute_query(query, (
         fecha, fecha_vencimiento or None, cod_cliente, cod_usuario, cod_empresa,
         cod_metodo_pago, cod_pago, total, subtotal, total_descuentos,
-        total_impuestos, tipo_factura, observaciones or None
+        total_impuestos, tipo_factura, observaciones or None,
+        cufe, numero_factura, forma_pago, orden_compra or None, nombre_vendedor or None,
+        cod_descuento_factura or None, descripcion_descuento_factura or None
     ))
 
 
 def create_invoice_detail(cod_factura: int, cod_producto: int, cantidad: int,
                            precio_unitario: float, subtotal: float,
                            descuento_porcentaje: float = 0, descuento_valor: float = 0,
+                           descuento_descripcion: str = None,
                            impuesto_porcentaje: float = 0, impuesto_valor: float = 0):
     query = """
         INSERT INTO detalle_factura
             (cod_factura, cod_producto, cantidad, precio_unitario, subtotal,
-             descuento_porcentaje, descuento_valor, impuesto_porcentaje, impuesto_valor)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+             descuento_porcentaje, descuento_valor, descripcion_descuento,
+             impuesto_porcentaje, impuesto_valor)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     return execute_query(query, (
         cod_factura, cod_producto, cantidad, precio_unitario, subtotal,
-        descuento_porcentaje, descuento_valor, impuesto_porcentaje, impuesto_valor
+        descuento_porcentaje, descuento_valor, descuento_descripcion or None,
+        impuesto_porcentaje, impuesto_valor
     ))
+
+
+def get_notas_by_referencia(cod_factura_referencia: int):
+    return get_many("""
+        SELECT f.cod_factura, f.numero_factura, f.tipo_factura, f.fecha,
+               f.total, f.motivo_nota, pf.status AS estado_pago
+        FROM facturas f
+            LEFT JOIN pagos_factura pf ON f.cod_pago = pf.cod_pago_factura
+        WHERE f.cod_factura_referencia = %s
+        ORDER BY f.fecha DESC
+    """, (cod_factura_referencia,))
 
 
 def update_invoice_status(invoice_id: int, cod_pago: int):

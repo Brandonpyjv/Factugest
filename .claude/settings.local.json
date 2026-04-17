@@ -14,7 +14,9 @@
       "Bash(mysql *)",
       "Bash(/opt/lampp/bin/mysql *)",
       "Bash(grep *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(.venv/bin/pip list *)",
+      "Bash(.venv/bin/pip install *)"
     ]
   }
 }

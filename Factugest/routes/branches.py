@@ -36,9 +36,26 @@ def create_branch_post(
     regimen_tributario: str = Form("RESPONSABLE_IVA"),
     actividad_economica: str = Form(""),
     tipo_documento: str = Form("NIT"),
+    website: str = Form(""),
+    tarifa_ica: str = Form(""),
+    autoretenedor: int = Form(0),
+    gran_contribuyente: int = Form(0),
+    prefijo_factura: str = Form("FV"),
+    resolucion_dian: str = Form(""),
+    resolucion_fecha_desde: Optional[str] = Form(None),
+    resolucion_fecha_hasta: Optional[str] = Form(None),
+    resolucion_desde: Optional[str] = Form(None),
+    resolucion_hasta: Optional[str] = Form(None),
+    consecutivo_actual: Optional[str] = Form("1"),
 ):
     create_branch(nombre, nit, dv, direccion, cod_municipio, telefono, correo,
-                  regimen_tributario, actividad_economica, tipo_documento)
+                  regimen_tributario, actividad_economica, tipo_documento,
+                  website, tarifa_ica, autoretenedor, gran_contribuyente,
+                  prefijo_factura, resolucion_dian, resolucion_fecha_desde,
+                  resolucion_fecha_hasta,
+                  int(resolucion_desde) if resolucion_desde else None,
+                  int(resolucion_hasta) if resolucion_hasta else None,
+                  int(consecutivo_actual) if consecutivo_actual else 1)
     return RedirectResponse(url="/branches", status_code=303)
 
 
@@ -70,9 +87,26 @@ def update_branch_post(
     regimen_tributario: str = Form("RESPONSABLE_IVA"),
     actividad_economica: str = Form(""),
     tipo_documento: str = Form("NIT"),
+    website: str = Form(""),
+    tarifa_ica: str = Form(""),
+    autoretenedor: int = Form(0),
+    gran_contribuyente: int = Form(0),
+    prefijo_factura: str = Form("FV"),
+    resolucion_dian: str = Form(""),
+    resolucion_fecha_desde: Optional[str] = Form(None),
+    resolucion_fecha_hasta: Optional[str] = Form(None),
+    resolucion_desde: Optional[str] = Form(None),
+    resolucion_hasta: Optional[str] = Form(None),
+    consecutivo_actual: Optional[str] = Form("1"),
 ):
     update_branch(branch_id, nombre, nit, dv, direccion, cod_municipio, telefono, correo,
-                  regimen_tributario, actividad_economica, tipo_documento)
+                  regimen_tributario, actividad_economica, tipo_documento,
+                  website, tarifa_ica, autoretenedor, gran_contribuyente,
+                  prefijo_factura, resolucion_dian, resolucion_fecha_desde,
+                  resolucion_fecha_hasta,
+                  int(resolucion_desde) if resolucion_desde else None,
+                  int(resolucion_hasta) if resolucion_hasta else None,
+                  int(consecutivo_actual) if consecutivo_actual else 1)
     return RedirectResponse(url="/branches", status_code=303)
 
 

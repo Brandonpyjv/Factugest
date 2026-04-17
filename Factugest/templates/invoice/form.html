@@ -168,8 +168,9 @@
                                             <select name="descuento_porcentaje"
                                                     class="form-select form-select-sm border-0 bg-light desc-select"
                                                     onchange="calcRow(this)">
-                                                <option value="0">Sin descuento</option>
+                                                <option value="0" data-desc="">Sin descuento</option>
                                             </select>
+                                            <input type="hidden" name="descuento_descripcion" class="desc-desc" value="">
                                         </td>
                                         <td>
                                             <input type="text" class="form-control form-control-sm border-0 bg-light base-display"
@@ -386,14 +387,15 @@ async function selectProducto(p, row, dropdown) {
 
 async function loadProductDiscounts(row, codProducto) {
     const select = row.querySelector('.desc-select');
-    select.innerHTML = '<option value="0">Sin descuento</option>';
+    select.innerHTML = '<option value="0" data-desc="">Sin descuento</option>';
     try {
         const res       = await fetch('/invoice/api/products/' + codProducto + '/discounts');
         const discounts = await res.json();
         discounts.forEach(d => {
             const opt = document.createElement('option');
-            opt.value       = d.porcentaje;
-            opt.textContent = d.descripcion + ' (' + d.porcentaje + '%)';
+            opt.value          = d.porcentaje;
+            opt.dataset.desc   = d.descripcion;
+            opt.textContent    = d.descripcion + ' (' + d.porcentaje + '%)';
             select.appendChild(opt);
         });
     } catch (err) { console.error('Error cargando descuentos:', err); }
@@ -411,10 +413,11 @@ function applyInvoiceDiscount(sel) {
 
 // ── Cálculos ──────────────────────────────────────────────────────────────────
 function calcRow(el) {
-    const row   = el.closest('tr');
+    const row    = el.closest('tr');
     const precio = parseFloat(row.querySelector('.price-input').value) || 0;
     const cant   = parseFloat(row.querySelector('.qty-input').value)   || 0;
-    const desc   = parseFloat(row.querySelector('.desc-select').value) || 0;
+    const sel    = row.querySelector('.desc-select');
+    const desc   = parseFloat(sel.value) || 0;
     const tax    = parseFloat(row.dataset.tax || 0);
 
     const bruto   = precio * cant;
@@ -431,6 +434,12 @@ function calcRow(el) {
     row.dataset.descval = descVal;
     row.dataset.base    = base;
     row.dataset.iva     = iva;
+
+    // capturar descripción del descuento seleccionado
+    const descDescInput = row.querySelector('.desc-desc');
+    if (descDescInput) {
+        descDescInput.value = sel.options[sel.selectedIndex]?.dataset?.desc || '';
+    }
     calcTotales();
 }
 
@@ -442,20 +451,24 @@ function calcTotales() {
         ivaTot   += parseFloat(r.dataset.iva     || 0);
     });
 
-    const baseProds    = subtotal - descProd;
-    const invPct       = parseFloat(document.getElementById('pctDescuentoFactura').value || 0);
-    const invDiscVal   = baseProds * invPct / 100;
+    const baseProds  = subtotal - descProd;
+    const invPct     = parseFloat(document.getElementById('pctDescuentoFactura').value || 0);
+    const invDiscVal = baseProds * invPct / 100;
     const baseAfterAll = baseProds - invDiscVal;
-    const total        = baseAfterAll + ivaTot;
+
+    // Prorratear IVA: el descuento de factura reduce la base imponible
+    const ratio      = baseProds > 0 ? invDiscVal / baseProds : 0;
+    const ivaAjustado = ivaTot * (1 - ratio);
+    const total      = baseAfterAll + ivaAjustado;
 
     document.getElementById('valorDescuentoFactura').value = invDiscVal.toFixed(2);
 
-    document.getElementById('dispSubtotal').textContent     = fmt(subtotal);
-    document.getElementById('dispDescProductos').textContent = fmt(descProd);
-    document.getElementById('dispBase').textContent          = fmt(baseAfterAll);
-    document.getElementById('dispImpuestos').textContent     = fmt(ivaTot);
-    document.getElementById('dispTotal').textContent         = fmt(total);
-    document.getElementById('hidTotal').value                = total.toFixed(2);
+    document.getElementById('dispSubtotal').textContent      = fmt(subtotal);
+    document.getElementById('dispDescProductos').textContent  = fmt(descProd);
+    document.getElementById('dispBase').textContent           = fmt(baseAfterAll);
+    document.getElementById('dispImpuestos').textContent      = fmt(ivaAjustado);
+    document.getElementById('dispTotal').textContent          = fmt(total);
+    document.getElementById('hidTotal').value                 = total.toFixed(2);
 
     const rowDescFactura = document.getElementById('rowDescFactura');
     if (invDiscVal > 0) {
@@ -488,8 +501,9 @@ function buildRowHTML() {
             <select name="descuento_porcentaje"
                     class="form-select form-select-sm border-0 bg-light desc-select"
                     onchange="calcRow(this)">
-                <option value="0">Sin descuento</option>
+                <option value="0" data-desc="">Sin descuento</option>
             </select>
+            <input type="hidden" name="descuento_descripcion" class="desc-desc" value="">
         </td>
         <td><input type="text" class="form-control form-control-sm border-0 bg-light base-display"
                    readonly style="font-size:0.8rem;font-weight:600;"></td>

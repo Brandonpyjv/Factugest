@@ -42,7 +42,14 @@
                     <tbody class="border-top-0">
                         {% for invoice in all_invoices %}
                         <tr style="transition: all 0.2s;">
-                            <td class="ps-4 text-dark fw-bold">{{ invoice.cod_factura }}</td>
+                            <td class="ps-4">
+                                <span class="fw-bold">{{ invoice.numero_factura or invoice.cod_factura }}</span>
+                                {% if invoice.tipo_factura == 'NC' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1" style="font-size:0.6rem;">NC</span>
+                                {% elif invoice.tipo_factura == 'ND' %}
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle ms-1" style="font-size:0.6rem;">ND</span>
+                                {% endif %}
+                            </td>
                             <td>{{ invoice.fecha.strftime('%d/%m/%Y') if invoice.fecha else 'N/A' }}</td>
                             <td>{{ invoice.cliente }}</td>
                             <td class="text-muted">{{ invoice.usuario }}</td>
@@ -63,6 +70,10 @@
                                     <span class="badge rounded-pill bg-info-subtle text-info-emphasis px-3 border border-info-subtle">Pago Parcial</span>
                                 {% elif ep == 'overdue' %}
                                     <span class="badge rounded-pill bg-danger-subtle text-danger px-3 border border-danger-subtle">Vencido</span>
+                                {% elif ep == 'anulada' %}
+                                    <span class="badge rounded-pill bg-dark-subtle text-dark-emphasis px-3 border border-dark-subtle">Anulada</span>
+                                {% elif ep == 'parcialmente anulada' %}
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis px-3 border border-warning-subtle">Parc. Anulada</span>
                                 {% elif ep == 'cancelled' %}
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis px-3 border border-secondary-subtle">Cancelado</span>
                                 {% elif ep == 'disputed' %}
@@ -75,7 +86,7 @@
                             </td>
                             <td class="pe-4 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ url_for('view_invoice', invoice_id=invoice.cod_factura) }}"
+                                    <a href="{{ url_for('view_invoice', numero_factura=invoice.numero_factura or invoice.cod_factura) }}"
                                        class="btn btn-sm btn-light border text-primary" title="Ver detalle">
                                         <i class="bi bi-eye"></i>
                                     </a>
@@ -85,7 +96,7 @@
                                     </a>
                                     <a href="{{ url_for('delete_invoice', invoice_id=invoice.cod_factura) }}"
                                        class="btn btn-sm btn-light border text-danger" title="Eliminar"
-                                       onclick="return confirm('¿Eliminar factura #{{ invoice.cod_factura }}?')">
+                                       onclick="return confirm('¿Eliminar factura {{ invoice.numero_factura or invoice.cod_factura }}?')">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>

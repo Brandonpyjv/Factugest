@@ -25,8 +25,12 @@ def get_branch_by_id(branch_id: int):
 
 def create_branch(nombre: str, nit: str, dv: str, direccion: str, cod_municipio: str,
                   telefono: str, correo: str, regimen_tributario: str = "RESPONSABLE_IVA",
-                  actividad_economica: str = "", tipo_documento: str = "NIT"):
-    # Obtener nombre de ciudad para campo legacy ciudad
+                  actividad_economica: str = "", tipo_documento: str = "NIT",
+                  website: str = "", tarifa_ica: str = "", autoretenedor: int = 0,
+                  gran_contribuyente: int = 0, prefijo_factura: str = "FV",
+                  resolucion_dian: str = "", resolucion_fecha_desde: str = None,
+                  resolucion_fecha_hasta: str = None, resolucion_desde: int = None,
+                  resolucion_hasta: int = None, consecutivo_actual: int = 1):
     ciudad = ""
     if cod_municipio:
         row = get_one("SELECT nombre FROM municipios WHERE cod_municipio = %s", (cod_municipio,))
@@ -35,20 +39,32 @@ def create_branch(nombre: str, nit: str, dv: str, direccion: str, cod_municipio:
     query = """
         INSERT INTO empresas
             (nombre, nit, dv, direccion, ciudad, telefono, correo,
-             regimen_tributario, actividad_economica, tipo_documento, cod_municipio)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             regimen_tributario, actividad_economica, tipo_documento, cod_municipio,
+             website, tarifa_ica, autoretenedor, gran_contribuyente,
+             prefijo_factura, resolucion_dian, resolucion_fecha_desde,
+             resolucion_fecha_hasta, resolucion_desde, resolucion_hasta, consecutivo_actual)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     return execute_query(query, (
         nombre, nit, dv or None, direccion, ciudad, telefono, correo,
         regimen_tributario, actividad_economica or None, tipo_documento,
-        cod_municipio or None
+        cod_municipio or None, website or None, tarifa_ica or None,
+        autoretenedor, gran_contribuyente, prefijo_factura or 'FV',
+        resolucion_dian or None, resolucion_fecha_desde or None,
+        resolucion_fecha_hasta or None, resolucion_desde or None,
+        resolucion_hasta or None, consecutivo_actual or 1
     ))
 
 
 def update_branch(branch_id: int, nombre: str, nit: str, dv: str, direccion: str,
                   cod_municipio: str, telefono: str, correo: str,
                   regimen_tributario: str = "RESPONSABLE_IVA",
-                  actividad_economica: str = "", tipo_documento: str = "NIT"):
+                  actividad_economica: str = "", tipo_documento: str = "NIT",
+                  website: str = "", tarifa_ica: str = "", autoretenedor: int = 0,
+                  gran_contribuyente: int = 0, prefijo_factura: str = "FV",
+                  resolucion_dian: str = "", resolucion_fecha_desde: str = None,
+                  resolucion_fecha_hasta: str = None, resolucion_desde: int = None,
+                  resolucion_hasta: int = None, consecutivo_actual: int = 1):
     ciudad = ""
     if cod_municipio:
         row = get_one("SELECT nombre FROM municipios WHERE cod_municipio = %s", (cod_municipio,))
@@ -58,13 +74,21 @@ def update_branch(branch_id: int, nombre: str, nit: str, dv: str, direccion: str
         UPDATE empresas
         SET nombre=%s, nit=%s, dv=%s, direccion=%s, ciudad=%s,
             telefono=%s, correo=%s, regimen_tributario=%s,
-            actividad_economica=%s, tipo_documento=%s, cod_municipio=%s
+            actividad_economica=%s, tipo_documento=%s, cod_municipio=%s,
+            website=%s, tarifa_ica=%s, autoretenedor=%s, gran_contribuyente=%s,
+            prefijo_factura=%s, resolucion_dian=%s, resolucion_fecha_desde=%s,
+            resolucion_fecha_hasta=%s, resolucion_desde=%s, resolucion_hasta=%s,
+            consecutivo_actual=%s
         WHERE cod_empresa=%s
     """
     return execute_update(query, (
         nombre, nit, dv or None, direccion, ciudad, telefono, correo,
         regimen_tributario, actividad_economica or None, tipo_documento,
-        cod_municipio or None, branch_id
+        cod_municipio or None, website or None, tarifa_ica or None,
+        autoretenedor, gran_contribuyente, prefijo_factura or 'FV',
+        resolucion_dian or None, resolucion_fecha_desde or None,
+        resolucion_fecha_hasta or None, resolucion_desde or None,
+        resolucion_hasta or None, consecutivo_actual or 1, branch_id
     ))
 
 
