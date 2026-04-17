@@ -12,7 +12,7 @@
         <p class="text-muted small mb-0">Completa los datos para generar una factura electrónica.</p>
     </div>
 
-    <form action="{{ url_for('create_invoice') }}" method="POST" id="invoiceForm">
+    <form action="{{ url_for('create_invoice') }}" method="POST" id="invoiceForm" novalidate>
         <div class="row g-3">
 
             <!-- Columna izquierda -->
@@ -32,17 +32,33 @@
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-3">
+
+                            <!-- Cliente con búsqueda -->
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary">Cliente *</label>
-                                <select name="cod_cliente" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Seleccionar cliente...</option>
-                                    {% for c in customers %}
-                                    <option value="{{ c.customer_id }}">
-                                        {{ c.full_name }} — {{ c.document_type }}{{ c.document_number }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
+                                <div class="position-relative" id="clienteContainer">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted" style="font-size:0.8rem;"></i></span>
+                                        <input type="text" id="clienteSearch"
+                                               class="form-control bg-light border-0"
+                                               placeholder="Nombre o número de identificación..."
+                                               autocomplete="off">
+                                    </div>
+                                    <div id="clienteDropdown"
+                                         class="list-group position-absolute w-100 shadow"
+                                         style="z-index:1050;display:none;max-height:250px;overflow-y:auto;top:100%;left:0;"></div>
+                                    <input type="hidden" name="cod_cliente" id="codCliente">
+                                    <div id="clienteSeleccionado" class="d-none mt-1">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            <span id="clienteNombreDisplay"></span>
+                                            <button type="button" class="btn-close ms-1" style="font-size:0.55rem;" onclick="clearCliente()"></button>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- Empresa -->
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary">Empresa Emisora *</label>
                                 <select name="cod_empresa" class="form-select bg-light border-0" required>
@@ -54,14 +70,26 @@
                                     {% endfor %}
                                 </select>
                             </div>
+
+                            <!-- Fechas: automáticas -->
                             <div class="col-md-3">
-                                <label class="form-label small fw-bold text-secondary">Fecha Emisión *</label>
-                                <input type="datetime-local" name="fecha" class="form-control bg-light border-0" required>
+                                <label class="form-label small fw-bold text-secondary">Fecha Emisión</label>
+                                <div class="form-control bg-light border-0 text-muted small d-flex align-items-center gap-1"
+                                     style="font-size:0.82rem;">
+                                    <i class="bi bi-clock-history"></i>
+                                    Automática al guardar
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">Fecha Vencimiento</label>
-                                <input type="date" name="fecha_vencimiento" class="form-control bg-light border-0">
+                                <div class="form-control bg-light border-0 text-muted small d-flex align-items-center gap-1"
+                                     style="font-size:0.82rem;">
+                                    <i class="bi bi-calendar-check"></i>
+                                    Automática al guardar
+                                </div>
                             </div>
+
+                            <!-- Método de Pago -->
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">Método de Pago *</label>
                                 <select name="cod_metodo_pago" class="form-select bg-light border-0" required>
@@ -71,6 +99,8 @@
                                     {% endfor %}
                                 </select>
                             </div>
+
+                            <!-- Estado Pago -->
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">Estado Pago *</label>
                                 <select name="cod_pago" class="form-select bg-light border-0" required>
@@ -80,6 +110,8 @@
                                     {% endfor %}
                                 </select>
                             </div>
+
+                            <!-- Observaciones -->
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-secondary">Observaciones</label>
                                 <input type="text" name="observaciones" class="form-control bg-light border-0"
@@ -90,60 +122,59 @@
                 </div>
 
                 <!-- Tabla de productos -->
-                <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
-                    <div class="card-header bg-white py-3 border-bottom border-light">
+                <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                    <div class="card-header bg-white py-3 border-bottom border-light" style="border-radius:12px 12px 0 0;">
                         <h6 class="m-0 fw-bold text-primary">Productos / Servicios</h6>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="overflow:visible;">
                             <table class="table align-middle mb-0" id="productosTable">
                                 <thead class="bg-light">
                                     <tr class="text-uppercase small fw-bold" style="letter-spacing:0.4px; font-size:0.7rem;">
                                         <th class="ps-3" style="width:32%">Producto</th>
                                         <th style="width:13%">P. Unitario</th>
                                         <th style="width:9%">Cant.</th>
-                                        <th style="width:10%">Desc %</th>
-                                        <th style="width:12%">Base Grav.</th>
+                                        <th style="width:14%">Descuento</th>
+                                        <th style="width:11%">Base Grav.</th>
                                         <th style="width:12%">IVA</th>
-                                        <th style="width:8%" class="text-center pe-3">Acc.</th>
+                                        <th style="width:9%" class="text-center pe-3">Acc.</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyProductos">
-                                    <tr class="product-row border-bottom">
+                                    <tr class="product-row border-bottom" data-bruto="0" data-descval="0" data-base="0" data-iva="0" data-tax="0">
                                         <td class="ps-3">
-                                            <select name="cod_producto" class="form-select form-select-sm border-0 bg-light product-select"
-                                                    required onchange="updatePrice(this)">
-                                                <option value="" data-price="0" data-tax="0" disabled selected>Seleccionar...</option>
-                                                {% for p in productos %}
-                                                <option value="{{ p.cod_producto }}"
-                                                        data-price="{{ p.precio_unitario }}"
-                                                        data-tax="{{ p.tax_porcentaje or 0 }}">
-                                                    [{{ p.sku }}] {{ p.nombre }}
-                                                </option>
-                                                {% endfor %}
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="number" name="precio_unitario" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01" min="0">
-                                        </td>
-                                        <td>
-                                            <input type="number" name="cantidad" class="form-control form-control-sm border-0 bg-light qty-input"
-                                                   value="1" min="1" required onchange="calcRow(this)">
-                                        </td>
-                                        <td>
-                                            <div class="input-group input-group-sm">
-                                                <input type="number" name="descuento_porcentaje" class="form-control border-0 bg-light desc-input"
-                                                       value="0" min="0" max="100" step="0.01" onchange="calcRow(this)">
-                                                <span class="input-group-text bg-light border-0" style="font-size:0.7rem;">%</span>
+                                            <div class="position-relative producto-container">
+                                                <input type="text" class="form-control form-control-sm border-0 bg-light producto-search"
+                                                       placeholder="Código o nombre del producto..." autocomplete="off">
+                                                <div class="producto-dropdown list-group position-absolute w-100 shadow-sm"
+                                                     style="z-index:2000;display:none;max-height:220px;overflow-y:auto;top:100%;left:0;min-width:300px;"></div>
+                                                <input type="hidden" name="cod_producto" class="cod-producto">
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm border-0 bg-light base-display" readonly
-                                                   style="font-size:0.8rem; font-weight:600;">
+                                            <input type="number" name="precio_unitario"
+                                                   class="form-control form-control-sm border-0 bg-light price-input"
+                                                   readonly step="0.01" min="0" value="0">
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success" readonly
-                                                   style="font-size:0.8rem;">
+                                            <input type="number" name="cantidad"
+                                                   class="form-control form-control-sm border-0 bg-light qty-input"
+                                                   value="1" min="1" required onchange="calcRow(this)">
+                                        </td>
+                                        <td>
+                                            <select name="descuento_porcentaje"
+                                                    class="form-select form-select-sm border-0 bg-light desc-select"
+                                                    onchange="calcRow(this)">
+                                                <option value="0">Sin descuento</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm border-0 bg-light base-display"
+                                                   readonly style="font-size:0.8rem;font-weight:600;">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success"
+                                                   readonly style="font-size:0.8rem;">
                                         </td>
                                         <td class="text-center pe-3">
                                             <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)">
@@ -177,9 +208,32 @@
                             <span class="fw-bold" id="dispSubtotal">$ 0.00</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">(-) Descuentos:</span>
-                            <span class="fw-bold text-danger" id="dispDescuentos">$ 0.00</span>
+                            <span class="text-muted">(-) Desc. productos:</span>
+                            <span class="fw-bold text-danger" id="dispDescProductos">$ 0.00</span>
                         </div>
+
+                        <!-- Descuento a factura -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Descuento en Factura</label>
+                            <select id="selectDescuentoFactura" class="form-select form-select-sm bg-light border-0"
+                                    onchange="applyInvoiceDiscount(this)">
+                                <option value="">Sin descuento en factura</option>
+                                {% for d in invoice_discounts %}
+                                <option value="{{ d.cod_descuento }}" data-pct="{{ d.porcentaje }}">
+                                    {{ d.descripcion }} ({{ d.porcentaje }}%)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" name="cod_descuento_factura" id="codDescuentoFactura">
+                            <input type="hidden" name="valor_descuento_factura" id="valorDescuentoFactura" value="0">
+                            <input type="hidden" id="pctDescuentoFactura" value="0">
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2 small" id="rowDescFactura" style="display:none!important;">
+                            <span class="text-muted">(-) Desc. factura:</span>
+                            <span class="fw-bold text-danger" id="dispDescFactura">$ 0.00</span>
+                        </div>
+
                         <div class="d-flex justify-content-between mb-2 small">
                             <span class="text-muted">Base gravable:</span>
                             <span class="fw-bold" id="dispBase">$ 0.00</span>
@@ -216,107 +270,287 @@
 
 {% block scripts %}
 <script>
-const productosData = {
-    {% for p in productos %}
-    {{ p.cod_producto }}: { sku: "{{ p.sku }}", nombre: "{{ p.nombre }}", precio: {{ p.precio_unitario }}, tax: {{ p.tax_porcentaje or 0 }} },
-    {% endfor %}
-};
+const fmt = v => '$ ' + parseFloat(v || 0).toLocaleString('es-CO', {minimumFractionDigits: 2});
 
-document.addEventListener("DOMContentLoaded", () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.querySelector('input[name="fecha"]').value = now.toISOString().slice(0, 16);
-    calcTotales();
+// ── Búsqueda de Cliente ───────────────────────────────────────────────────────
+const clienteSearch   = document.getElementById('clienteSearch');
+const clienteDropdown = document.getElementById('clienteDropdown');
+let clienteTimer;
+
+clienteSearch.addEventListener('input', function() {
+    clearTimeout(clienteTimer);
+    document.getElementById('codCliente').value = '';
+    document.getElementById('clienteSeleccionado').classList.add('d-none');
+    const q = this.value.trim();
+    if (q.length < 2) { clienteDropdown.style.display = 'none'; return; }
+    clienteTimer = setTimeout(() => fetchClientes(q), 300);
 });
 
-function updatePrice(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    const row = sel.closest('tr');
-    row.querySelector('.price-input').value = opt.dataset.price || 0;
-    row.querySelector('.desc-input').value = 0;
-    row.dataset.tax = opt.dataset.tax || 0;
-    calcRow(sel);
+clienteSearch.addEventListener('blur', () =>
+    setTimeout(() => { clienteDropdown.style.display = 'none'; }, 200));
+
+async function fetchClientes(q) {
+    try {
+        const res  = await fetch('/invoice/api/customers/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        clienteDropdown.innerHTML = '';
+        if (data.length === 0) {
+            clienteDropdown.innerHTML = '<div class="list-group-item text-muted small py-2">No se encontraron clientes</div>';
+        } else {
+            data.forEach(c => {
+                const btn = document.createElement('button');
+                btn.type      = 'button';
+                btn.className = 'list-group-item list-group-item-action py-2 small';
+                btn.innerHTML = `<strong>${c.full_name}</strong>
+                    <span class="text-muted ms-2 small">${c.document_type || ''}${c.document_number || ''}</span>`;
+                btn.addEventListener('mousedown', e => { e.preventDefault(); selectCliente(c); });
+                clienteDropdown.appendChild(btn);
+            });
+        }
+        clienteDropdown.style.display = 'block';
+    } catch (err) { console.error('Error buscando clientes:', err); }
 }
 
+function selectCliente(c) {
+    document.getElementById('codCliente').value = c.customer_id;
+    clienteSearch.value = c.full_name + ' — ' + (c.document_type || '') + (c.document_number || '');
+    clienteDropdown.style.display = 'none';
+    document.getElementById('clienteNombreDisplay').textContent = c.full_name;
+    document.getElementById('clienteSeleccionado').classList.remove('d-none');
+}
+
+function clearCliente() {
+    document.getElementById('codCliente').value = '';
+    clienteSearch.value = '';
+    document.getElementById('clienteSeleccionado').classList.add('d-none');
+    clienteSearch.focus();
+}
+
+// ── Búsqueda de Producto por fila ─────────────────────────────────────────────
+function initProductSearch(row) {
+    const searchInput = row.querySelector('.producto-search');
+    const dropdown    = row.querySelector('.producto-dropdown');
+    let timer;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        row.querySelector('.cod-producto').value = '';
+        const q = this.value.trim();
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        timer = setTimeout(() => fetchProductos(q, row, dropdown), 300);
+    });
+
+    searchInput.addEventListener('blur', () =>
+        setTimeout(() => { dropdown.style.display = 'none'; }, 200));
+}
+
+async function fetchProductos(q, row, dropdown) {
+    try {
+        const res  = await fetch('/invoice/api/products/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        dropdown.innerHTML = '';
+        if (data.length === 0) {
+            dropdown.innerHTML = '<div class="list-group-item text-muted small py-2">No se encontraron productos</div>';
+        } else {
+            data.forEach(p => {
+                const btn = document.createElement('button');
+                btn.type      = 'button';
+                btn.className = 'list-group-item list-group-item-action py-2 small';
+                btn.innerHTML = `<strong>[${p.sku}]</strong> ${p.nombre}
+                    <span class="text-muted ms-2">${fmt(p.precio_unitario)}</span>`;
+                btn.addEventListener('mousedown', e => { e.preventDefault(); selectProducto(p, row, dropdown); });
+                dropdown.appendChild(btn);
+            });
+        }
+        dropdown.style.display = 'block';
+    } catch (err) { console.error('Error buscando productos:', err); }
+}
+
+async function selectProducto(p, row, dropdown) {
+    row.querySelector('.cod-producto').value     = p.cod_producto;
+    row.querySelector('.producto-search').value  = '[' + p.sku + '] ' + p.nombre;
+    row.querySelector('.price-input').value      = p.precio_unitario;
+    row.dataset.tax = p.tax_porcentaje;
+    dropdown.style.display = 'none';
+    await loadProductDiscounts(row, p.cod_producto);
+    calcRow(row.querySelector('.desc-select'));
+    // Si esta es la última fila, agregar automáticamente una nueva
+    const rows = document.querySelectorAll('.product-row');
+    if (rows[rows.length - 1] === row) {
+        addRow();
+    }
+}
+
+async function loadProductDiscounts(row, codProducto) {
+    const select = row.querySelector('.desc-select');
+    select.innerHTML = '<option value="0">Sin descuento</option>';
+    try {
+        const res       = await fetch('/invoice/api/products/' + codProducto + '/discounts');
+        const discounts = await res.json();
+        discounts.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value       = d.porcentaje;
+            opt.textContent = d.descripcion + ' (' + d.porcentaje + '%)';
+            select.appendChild(opt);
+        });
+    } catch (err) { console.error('Error cargando descuentos:', err); }
+}
+
+// ── Descuento a factura ───────────────────────────────────────────────────────
+function applyInvoiceDiscount(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    const cod = opt.value || '';
+    const pct = cod ? parseFloat(opt.dataset.pct || 0) : 0;
+    document.getElementById('codDescuentoFactura').value = cod;
+    document.getElementById('pctDescuentoFactura').value = pct;
+    calcTotales();
+}
+
+// ── Cálculos ──────────────────────────────────────────────────────────────────
 function calcRow(el) {
-    const row = el.closest('tr');
+    const row   = el.closest('tr');
     const precio = parseFloat(row.querySelector('.price-input').value) || 0;
     const cant   = parseFloat(row.querySelector('.qty-input').value)   || 0;
-    const desc   = parseFloat(row.querySelector('.desc-input').value)  || 0;
-    const tax    = parseFloat(row.dataset.tax || row.querySelector('.product-select').options[row.querySelector('.product-select').selectedIndex]?.dataset?.tax || 0);
+    const desc   = parseFloat(row.querySelector('.desc-select').value) || 0;
+    const tax    = parseFloat(row.dataset.tax || 0);
 
-    const bruto = precio * cant;
+    const bruto   = precio * cant;
     const descVal = bruto * desc / 100;
-    const base = bruto - descVal;
-    const iva = base * tax / 100;
+    const base    = bruto - descVal;
+    const iva     = base * tax / 100;
 
-    row.querySelector('.base-display').value = '$ ' + base.toLocaleString('es-CO', {minimumFractionDigits: 2});
-    row.querySelector('.tax-display').value  = tax > 0 ? '$ ' + iva.toLocaleString('es-CO', {minimumFractionDigits: 2}) + ' (' + tax + '%)' : 'EXENTO';
-    row.dataset.bruto = bruto;
+    row.querySelector('.base-display').value = fmt(base);
+    row.querySelector('.tax-display').value  = tax > 0
+        ? fmt(iva) + ' (' + tax + '%)'
+        : 'EXENTO';
+
+    row.dataset.bruto   = bruto;
     row.dataset.descval = descVal;
-    row.dataset.base = base;
-    row.dataset.iva = iva;
+    row.dataset.base    = base;
+    row.dataset.iva     = iva;
     calcTotales();
 }
 
 function calcTotales() {
-    let subtotal = 0, descTot = 0, ivaTot = 0;
+    let subtotal = 0, descProd = 0, ivaTot = 0;
     document.querySelectorAll('.product-row').forEach(r => {
-        subtotal += parseFloat(r.dataset.bruto || 0);
-        descTot  += parseFloat(r.dataset.descval || 0);
-        ivaTot   += parseFloat(r.dataset.iva || 0);
+        subtotal += parseFloat(r.dataset.bruto   || 0);
+        descProd += parseFloat(r.dataset.descval || 0);
+        ivaTot   += parseFloat(r.dataset.iva     || 0);
     });
-    const base  = subtotal - descTot;
-    const total = base + ivaTot;
 
-    const fmt = v => '$ ' + v.toLocaleString('es-CO', {minimumFractionDigits: 2});
-    document.getElementById('dispSubtotal').textContent  = fmt(subtotal);
-    document.getElementById('dispDescuentos').textContent = fmt(descTot);
-    document.getElementById('dispBase').textContent       = fmt(base);
-    document.getElementById('dispImpuestos').textContent  = fmt(ivaTot);
-    document.getElementById('dispTotal').textContent      = fmt(total);
-    document.getElementById('hidTotal').value             = total.toFixed(2);
+    const baseProds    = subtotal - descProd;
+    const invPct       = parseFloat(document.getElementById('pctDescuentoFactura').value || 0);
+    const invDiscVal   = baseProds * invPct / 100;
+    const baseAfterAll = baseProds - invDiscVal;
+    const total        = baseAfterAll + ivaTot;
+
+    document.getElementById('valorDescuentoFactura').value = invDiscVal.toFixed(2);
+
+    document.getElementById('dispSubtotal').textContent     = fmt(subtotal);
+    document.getElementById('dispDescProductos').textContent = fmt(descProd);
+    document.getElementById('dispBase').textContent          = fmt(baseAfterAll);
+    document.getElementById('dispImpuestos').textContent     = fmt(ivaTot);
+    document.getElementById('dispTotal').textContent         = fmt(total);
+    document.getElementById('hidTotal').value                = total.toFixed(2);
+
+    const rowDescFactura = document.getElementById('rowDescFactura');
+    if (invDiscVal > 0) {
+        document.getElementById('dispDescFactura').textContent = fmt(invDiscVal);
+        rowDescFactura.style.removeProperty('display');
+    } else {
+        rowDescFactura.style.setProperty('display', 'none', 'important');
+    }
 }
 
-function buildSelect(selectedId) {
-    let html = '<option value="" data-price="0" data-tax="0" disabled>Seleccionar...</option>';
-    for (const [id, p] of Object.entries(productosData)) {
-        const sel = id == selectedId ? 'selected' : '';
-        html += `<option value="${id}" data-price="${p.precio}" data-tax="${p.tax}" ${sel}>[${p.sku}] ${p.nombre}</option>`;
-    }
-    return html;
+// ── Filas de producto ─────────────────────────────────────────────────────────
+function buildRowHTML() {
+    return `
+        <td class="ps-3">
+            <div class="position-relative producto-container">
+                <input type="text" class="form-control form-control-sm border-0 bg-light producto-search"
+                       placeholder="Código o nombre del producto..." autocomplete="off">
+                <div class="producto-dropdown list-group position-absolute w-100 shadow-sm"
+                     style="z-index:2000;display:none;max-height:220px;overflow-y:auto;top:100%;left:0;min-width:300px;"></div>
+                <input type="hidden" name="cod_producto" class="cod-producto">
+            </div>
+        </td>
+        <td><input type="number" name="precio_unitario"
+                   class="form-control form-control-sm border-0 bg-light price-input"
+                   readonly step="0.01" min="0" value="0"></td>
+        <td><input type="number" name="cantidad"
+                   class="form-control form-control-sm border-0 bg-light qty-input"
+                   value="1" min="1" required onchange="calcRow(this)"></td>
+        <td>
+            <select name="descuento_porcentaje"
+                    class="form-select form-select-sm border-0 bg-light desc-select"
+                    onchange="calcRow(this)">
+                <option value="0">Sin descuento</option>
+            </select>
+        </td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light base-display"
+                   readonly style="font-size:0.8rem;font-weight:600;"></td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success"
+                   readonly style="font-size:0.8rem;"></td>
+        <td class="text-center pe-3">
+            <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>`;
 }
 
 function addRow() {
     const tbody = document.getElementById('tbodyProductos');
-    const tr = document.createElement('tr');
-    tr.className = 'product-row border-bottom';
-    tr.dataset.bruto = 0; tr.dataset.descval = 0; tr.dataset.base = 0; tr.dataset.iva = 0; tr.dataset.tax = 0;
-    tr.innerHTML = `
-        <td class="ps-3">
-            <select name="cod_producto" class="form-select form-select-sm border-0 bg-light product-select"
-                    required onchange="updatePrice(this)">${buildSelect(null)}</select>
-        </td>
-        <td><input type="number" name="precio_unitario" class="form-control form-control-sm border-0 bg-light price-input" readonly step="0.01" min="0"></td>
-        <td><input type="number" name="cantidad" class="form-control form-control-sm border-0 bg-light qty-input" value="1" min="1" required onchange="calcRow(this)"></td>
-        <td>
-            <div class="input-group input-group-sm">
-                <input type="number" name="descuento_porcentaje" class="form-control border-0 bg-light desc-input" value="0" min="0" max="100" step="0.01" onchange="calcRow(this)">
-                <span class="input-group-text bg-light border-0" style="font-size:0.7rem;">%</span>
-            </div>
-        </td>
-        <td><input type="text" class="form-control form-control-sm border-0 bg-light base-display" readonly style="font-size:0.8rem;font-weight:600;"></td>
-        <td><input type="text" class="form-control form-control-sm border-0 bg-light tax-display text-success" readonly style="font-size:0.8rem;"></td>
-        <td class="text-center pe-3">
-            <button type="button" class="btn btn-sm btn-light border text-danger" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
-        </td>`;
+    const tr    = document.createElement('tr');
+    tr.className    = 'product-row border-bottom';
+    tr.dataset.bruto   = 0;
+    tr.dataset.descval = 0;
+    tr.dataset.base    = 0;
+    tr.dataset.iva     = 0;
+    tr.dataset.tax     = 0;
+    tr.innerHTML = buildRowHTML();
     tbody.appendChild(tr);
+    initProductSearch(tr);
+    tr.querySelector('.producto-search').focus();
 }
 
 function removeRow(btn) {
     const rows = document.querySelectorAll('.product-row');
-    if (rows.length > 1) { btn.closest('tr').remove(); calcTotales(); }
-    else alert('La factura debe tener al menos un producto.');
+    if (rows.length > 1) {
+        btn.closest('tr').remove();
+        calcTotales();
+    } else {
+        alert('La factura debe tener al menos un producto.');
+    }
 }
+
+// ── Validación y arranque ─────────────────────────────────────────────────────
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('codCliente').value) {
+        e.preventDefault();
+        alert('Debe seleccionar un cliente de la lista de resultados.');
+        document.getElementById('clienteSearch').focus();
+        return;
+    }
+
+    // Eliminar filas vacías (la que se agrega automáticamente al seleccionar producto)
+    document.querySelectorAll('.product-row').forEach(row => {
+        if (!row.querySelector('.cod-producto').value) {
+            row.remove();
+        }
+    });
+
+    if (document.querySelectorAll('.product-row').length === 0) {
+        e.preventDefault();
+        alert('Debe agregar al menos un producto a la factura.');
+        addRow();
+        return;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.product-row').forEach(row => initProductSearch(row));
+    calcTotales();
+});
 </script>
 {% endblock %}

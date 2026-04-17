@@ -1,15 +1,13 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, Response, JSONResponse
 from typing import List, Optional
+from datetime import datetime, date as date_type
 from services.invoice_service import (get_all_invoices_detailed, get_invoice_by_id,
                                        get_invoice_details, create_invoice,
                                        create_invoice_detail, update_invoice_status, delete_invoice)
-from services.customer_service import get_all_customers
 from services.branches import get_all_branches
 from services.payment_methods_service import get_all_payment_methods
 from services.invoice_payments_service import get_all_invoice_payments
-from services.products_service import get_all_products_detailed
-from services.taxes import get_all_invoice_taxes
 from services.pdf_service import generate_invoice_pdf
 from templates_config import templates
 from database import get_one, get_many
@@ -25,12 +23,15 @@ def invoice(request: Request):
 
 @router.get("/new", name="new_invoice")
 def new_invoice(request: Request):
+    invoice_discounts = get_many(
+        "SELECT cod_descuento, descripcion, porcentaje FROM descuentos "
+        "WHERE aplica_a_factura = 1 ORDER BY descripcion"
+    )
     return templates.TemplateResponse(request, "invoice/form.html", {
-        "customers": get_all_customers(),
         "empresas": get_all_branches(),
         "metodos_pago": get_all_payment_methods(),
         "pagos_factura": get_all_invoice_payments(),
-        "productos": get_all_products_detailed(),
+        "invoice_discounts": invoice_discounts,
         "invoice": None,
     })
 
@@ -40,8 +41,6 @@ async def create_invoice_post(
     request: Request,
     cod_cliente: int = Form(...),
     cod_empresa: int = Form(...),
-    fecha: str = Form(...),
-    fecha_vencimiento: str = Form(""),
     cod_metodo_pago: int = Form(...),
     cod_pago: int = Form(...),
     tipo_factura: str = Form("FV"),
@@ -50,7 +49,11 @@ async def create_invoice_post(
     precio_unitario: List[float] = Form(...),
     cantidad: List[int] = Form(...),
     descuento_porcentaje: List[float] = Form(None),
+    valor_descuento_factura: float = Form(0.0),
 ):
+    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    fecha_vencimiento = date_type.today().strftime("%Y-%m-%d")
+
     subtotal_bruto = 0.0
     total_descuentos = 0.0
     total_impuestos = 0.0
@@ -89,6 +92,7 @@ async def create_invoice_post(
             "impuesto_valor":       imp_valor,
         })
 
+    total_descuentos = round(total_descuentos + valor_descuento_factura, 2)
     total = round(subtotal_bruto - total_descuentos + total_impuestos, 2)
     subtotal_neto = round(subtotal_bruto - total_descuentos, 2)
 
@@ -167,7 +171,7 @@ def delete_invoice_get(invoice_id: int):
 @router.get("/api/customers/search", name="api_customers_search")
 def api_customers_search(q: str = ""):
     results = get_many(
-        "SELECT customer_id, full_name, document_number FROM customers "
+        "SELECT customer_id, full_name, document_number, document_type FROM customers "
         "WHERE full_name LIKE %s OR document_number LIKE %s ORDER BY full_name LIMIT 10",
         (f"%{q}%", f"%{q}%"),
     )
@@ -178,16 +182,15 @@ def api_customers_search(q: str = ""):
 def api_products_search(q: str = ""):
     results = get_many(
         "SELECT p.cod_producto, p.sku, p.nombre, p.precio_unitario, "
-        "i.porcentaje AS tax_pct "
+        "i.porcentaje AS tax_porcentaje "
         "FROM productos p LEFT JOIN impuestos i ON p.cod_impuesto = i.cod_impuesto "
         "WHERE p.activo = 1 AND (p.sku LIKE %s OR p.nombre LIKE %s) "
         "ORDER BY p.nombre LIMIT 10",
         (f"%{q}%", f"%{q}%"),
     )
-    # Convertir Decimal a float para JSON
     for r in results:
         r["precio_unitario"] = float(r["precio_unitario"])
-        r["tax_pct"] = float(r["tax_pct"] or 0)
+        r["tax_porcentaje"] = float(r["tax_porcentaje"] or 0)
     return JSONResponse(content=results)
 
 
