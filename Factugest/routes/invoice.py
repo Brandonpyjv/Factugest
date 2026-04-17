@@ -23,12 +23,18 @@ def invoice(request: Request):
 
 @router.get("/new", name="new_invoice")
 def new_invoice(request: Request):
+    session_user = request.session.get("user", {})
+    cod_empresa = session_user.get("cod_empresa")
+    empresa = get_one(
+        "SELECT cod_empresa, nombre, nit, dv FROM empresas WHERE cod_empresa = %s",
+        (cod_empresa,)
+    ) if cod_empresa else None
     invoice_discounts = get_many(
         "SELECT cod_descuento, descripcion, porcentaje FROM descuentos "
         "WHERE aplica_a_factura = 1 ORDER BY descripcion"
     )
     return templates.TemplateResponse(request, "invoice/form.html", {
-        "empresas": get_all_branches(),
+        "empresa": empresa,
         "metodos_pago": get_all_payment_methods(),
         "pagos_factura": get_all_invoice_payments(),
         "invoice_discounts": invoice_discounts,
@@ -40,7 +46,6 @@ def new_invoice(request: Request):
 async def create_invoice_post(
     request: Request,
     cod_cliente: int = Form(...),
-    cod_empresa: int = Form(...),
     cod_metodo_pago: int = Form(...),
     cod_pago: int = Form(...),
     tipo_factura: str = Form("FV"),
@@ -98,6 +103,7 @@ async def create_invoice_post(
 
     session_user = request.session.get("user", {})
     cod_usuario = session_user.get("cod_usuario", 1)
+    cod_empresa = session_user.get("cod_empresa", 1)
 
     invoice_id = create_invoice(
         cod_cliente=cod_cliente, cod_usuario=cod_usuario, cod_empresa=cod_empresa,

@@ -42,7 +42,7 @@
                                    {{ 'required' if not user }} placeholder="••••••••">
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Rol *</label>
                             <select name="rol" class="form-select bg-light border-0" required>
                                 <option value="">Seleccionar rol...</option>
@@ -50,6 +50,22 @@
                                 <option value="CAJERO" {{ 'selected' if user and user.rol == 'CAJERO' }}>Cajero</option>
                                 <option value="VENDEDOR" {{ 'selected' if user and user.rol == 'VENDEDOR' }}>Vendedor</option>
                             </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-secondary">Sucursal / Empresa *</label>
+                            <select name="cod_empresa" class="form-select bg-light border-0" required>
+                                <option value="">Seleccionar sucursal...</option>
+                                {% for e in empresas %}
+                                <option value="{{ e.cod_empresa }}"
+                                    {{ 'selected' if user and user.cod_empresa == e.cod_empresa }}>
+                                    {{ e.nombre }}{% if e.nit %} — NIT {{ e.nit }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text text-muted small">
+                                <i class="bi bi-info-circle me-1"></i>Determina la empresa que aparecerá automáticamente al crear facturas.
+                            </div>
                         </div>
 
                         <div class="d-flex gap-2 justify-content-end">

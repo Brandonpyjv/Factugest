@@ -31,10 +31,12 @@ def login_post(
         )
 
     request.session["user"] = {
-        "cod_usuario": user["cod_usuario"],
-        "nombre":      user["nombre"],
-        "correo":      user["correo"],
-        "rol":         user["rol"],
+        "cod_usuario":   user["cod_usuario"],
+        "nombre":        user["nombre"],
+        "correo":        user["correo"],
+        "rol":           user["rol"],
+        "cod_empresa":   user.get("cod_empresa"),
+        "empresa_nombre": user.get("empresa_nombre"),
     }
     return RedirectResponse("/", status_code=303)
 

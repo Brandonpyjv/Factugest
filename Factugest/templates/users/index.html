@@ -31,6 +31,7 @@
                             <th scope="col">Nombre</th>
                             <th scope="col">Correo</th>
                             <th scope="col">Rol</th>
+                            <th scope="col">Sucursal</th>
                             <th scope="col" class="pe-4 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -42,6 +43,17 @@
                             <td class="text-muted">{{ u.correo }}</td>
                             <td>
                                 <span class="badge border text-secondary fw-normal">{{ u.rol }}</span>
+                            </td>
+                            <td>
+                                {% if u.empresa_nombre %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-normal">
+                                    <i class="bi bi-building me-1"></i>{{ u.empresa_nombre }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-normal">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Sin sucursal
+                                </span>
+                                {% endif %}
                             </td>
                             <td class="pe-4 text-center">
                                 <div class="btn-group" role="group">

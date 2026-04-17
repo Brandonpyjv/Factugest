@@ -12,7 +12,8 @@
       "Bash(sudo apt-get *)",
       "Bash(python3 -m venv .venv)",
       "Bash(mysql *)",
-      "Bash(/opt/lampp/bin/mysql *)"
+      "Bash(/opt/lampp/bin/mysql *)",
+      "Bash(grep *)"
     ]
   }
 }

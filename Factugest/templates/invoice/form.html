@@ -58,17 +58,22 @@
                                 </div>
                             </div>
 
-                            <!-- Empresa -->
+                            <!-- Empresa (asignada al usuario, solo lectura) -->
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary">Empresa Emisora *</label>
-                                <select name="cod_empresa" class="form-select bg-light border-0" required>
-                                    <option value="" disabled selected>Seleccionar empresa...</option>
-                                    {% for e in empresas %}
-                                    <option value="{{ e.cod_empresa }}">
-                                        {{ e.nombre }} — NIT {{ e.nit }}{% if e.dv %}-{{ e.dv }}{% endif %}
-                                    </option>
-                                    {% endfor %}
-                                </select>
+                                <label class="form-label small fw-bold text-secondary">Empresa Emisora</label>
+                                {% if empresa %}
+                                <div class="form-control bg-light border-0 d-flex align-items-center gap-2" style="min-height:38px;">
+                                    <i class="bi bi-building text-primary" style="font-size:0.9rem;"></i>
+                                    <span class="fw-bold text-dark">{{ empresa.nombre }}</span>
+                                    <span class="text-muted small ms-1">— NIT {{ empresa.nit }}{% if empresa.dv %}-{{ empresa.dv }}{% endif %}</span>
+                                </div>
+                                <input type="hidden" name="cod_empresa" value="{{ empresa.cod_empresa }}">
+                                {% else %}
+                                <div class="form-control bg-danger-subtle border-0 d-flex align-items-center gap-2 text-danger" style="min-height:38px;">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <span class="small">Usuario sin sucursal asignada. Contacta al administrador.</span>
+                                </div>
+                                {% endif %}
                             </div>
 
                             <!-- Fechas: automáticas -->
