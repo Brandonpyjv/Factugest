@@ -242,7 +242,7 @@ def get_dashboard_stats():
     stats['productos_bajo_stock'] = row['total'] if row else 0
 
     stats['facturas_recientes'] = get_many("""
-        SELECT f.cod_factura, f.fecha, f.total, f.tipo_factura,
+        SELECT f.cod_factura, f.numero_factura, f.fecha, f.total, f.tipo_factura,
                c.full_name AS cliente,
                pf.status AS estado_pago
         FROM facturas f

@@ -16,7 +16,17 @@
       "Bash(grep *)",
       "Bash(python3 *)",
       "Bash(.venv/bin/pip list *)",
-      "Bash(.venv/bin/pip install *)"
+      "Bash(.venv/bin/pip install *)",
+      "Bash(python -m uvicorn main:app)",
+      "Bash(/home/brandon/Proyects/Factugest/.venv/bin/python -m uvicorn main:app)",
+      "Bash(kill 8103 *)",
+      "Bash(/home/brandon/Proyects/Factugest/.venv/bin/uvicorn main:app *)",
+      "Bash(curl -s http://127.0.0.1:8000/)",
+      "Bash(/home/brandon/Proyects/Factugest/.venv/bin/python *)",
+      "Bash(curl -sv http://127.0.0.1:8000/login)",
+      "Bash(jobs -l)",
+      "Bash(kill 8576)",
+      "Bash(tee /tmp/factugest.log)"
     ]
   }
 }

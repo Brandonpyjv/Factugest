@@ -70,6 +70,7 @@ pip install -r requirements.txt
 
 Desde la carpeta `Factugest/` (donde está el `main.py`):
 
+
 ### Modo desarrollo (con recarga automática)
 ```bash
 uvicorn main:app --reload
