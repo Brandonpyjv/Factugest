@@ -116,7 +116,7 @@ def generate_invoice_pdf(invoice: dict, details: list) -> bytes:
     fecha_val = invoice.get('fecha')
     from datetime import datetime
     if hasattr(fecha_val, 'strftime'):
-        fecha_str = fecha_val.strftime('%d/%m/%Y, %-I:%M %p')
+        fecha_str = fecha_val.strftime('%d/%m/%Y, %I:%M %p').replace(' 0', ' ', 1)
     else:
         fecha_str = str(fecha_val or '')
 
