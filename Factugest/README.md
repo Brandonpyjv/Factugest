@@ -26,28 +26,50 @@ Sistema de facturación electrónica para Colombia. Este documento explica los c
 
 ## Instalación
 
+### Paso 1 — Requisito previo (solo Linux/Mac)
+
+Si estás en Linux (Ubuntu/Debian/Mint), instala el paquete para crear entornos virtuales:
 ```bash
-# 1. Clonar el repositorio y entrar a la carpeta del proyecto
-cd Factugest
+sudo apt install python3.12-venv -y
+```
 
-# 2. Crear entorno virtual (si no existe)
-python -m venv .venv
+En Windows no es necesario ningún paso previo.
 
-# 3. Activar el entorno virtual
-# Windows:
-.venv\Scripts\activate
-# Mac/Linux:
+### Paso 2 — Configurar el intérprete en PyCharm
+
+1. Abre el proyecto en PyCharm
+2. Ve a `File → Settings → Project: Factugest → Python Interpreter`
+3. Click en el engranaje ⚙ → **Add New Interpreter → Add Local Interpreter**
+4. Selecciona **Virtualenv Environment**
+5. En **Location** escribe la ruta al `.venv` dentro del proyecto:
+   - Linux/Mac: `/ruta/al/proyecto/Factugest/.venv`
+   - Windows: `C:\ruta\al\proyecto\Factugest\.venv`
+6. En **Base interpreter** selecciona tu Python 3.10 o superior
+7. Click **OK**
+
+### Paso 3 — Instalar todas las dependencias
+
+Con el entorno virtual activado, instala todos los paquetes del proyecto de una sola vez:
+
+```bash
+# Linux/Mac — activar primero el entorno virtual
 source .venv/bin/activate
 
-# 4. Instalar dependencias
+# Windows
+.venv\Scripts\activate
+
+# Instalar dependencias (ambos sistemas)
 pip install -r requirements.txt
 ```
+
+> No instales los paquetes uno por uno desde PyCharm — usa siempre este comando para asegurarte de instalar todo de una vez.
 
 ---
 
 ## Cómo iniciar el proyecto
 
 Desde la carpeta `Factugest/` (donde está el `main.py`):
+
 
 ### Modo desarrollo (con recarga automática)
 ```bash

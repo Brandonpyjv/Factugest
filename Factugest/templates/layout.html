@@ -1,25 +1,21 @@
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}SAAS{% endblock %}</title>
+    <title>{% block title %}Factugest{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
-
     <style>
-        /* Ajuste para que el contenido no quede debajo del navbar */
         body { padding-top: 60px; }
         .sidebar { top: 60px; height: calc(100vh - 60px); }
         .content { margin-left: 240px; padding: 20px; }
     </style>
 </head>
-
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm" id="miNavbar" style="background: linear-gradient(135deg, #4e73df, #6ea0f5);">
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm" id="miNavbar"
+     style="background: linear-gradient(135deg, #4e73df, #6ea0f5);">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
             <img src="{{ url_for('static', path='img/logodark.png') }}" alt="Logo" width="35" height="35">
@@ -34,63 +30,45 @@
             <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-4">
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('new_invoice') }}">
-                        <i class="bi bi-plus-square"></i> New Sale
+                        <i class="bi bi-plus-square"></i> Nueva Factura
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('product') }}">
-                        <i class="bi bi-box"></i> Stock
+                        <i class="bi bi-box"></i> Productos
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('customer') }}">
-                        <i class="bi bi-person-plus"></i> Customers
+                        <i class="bi bi-person-plus"></i> Clientes
                     </a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-graph-up"></i> Daily Sales
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ url_for('invoice') }}">
+                        <i class="bi bi-receipt"></i> Facturas
                     </a>
-                    <ul class="dropdown-menu shadow">
-                        <li><a class="dropdown-item" href="{{ url_for('logs') }}">Ventas del día</a></li>
-                        <li><a class="dropdown-item" href="#">Cash Closeout</a></li>
-                    </ul>
                 </li>
             </ul>
 
             <div class="d-flex align-items-center gap-3">
-                <form class="d-none d-md-flex" role="search" action="#" method="get">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0" id="search-addon" style="border-radius: 20px 0 0 20px;">
-                            <i class="bi bi-search text-muted"></i>
-                        </span>
-                        <input class="form-control form-control-sm bg-light border-0" type="search" name="q"
-                               placeholder="Search invoice or customer..." style="border-radius: 0 20px 20px 0; width: 220px;">
-                    </div>
-                </form>
-
-                <div class="position-relative">
-                    <a href="#" class="text-white opacity-75 hover-opacity-100">
-                        <i class="bi bi-bell-fill fs-5"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                            3+
-                        </span>
-                    </a>
-                </div>
-
                 <div class="dropdown">
-                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#"
+                       id="userDropdown" data-bs-toggle="dropdown">
                         <div class="text-end me-2 d-none d-sm-block">
-                            <div class="text-white small fw-bold" style="line-height: 1;">Brandon</div>
-                            <small class="text-white-50" style="font-size: 0.7rem;">Admin</small>
+                            <div class="text-white small fw-bold" style="line-height: 1;">Admin</div>
+                            <small class="text-white-50" style="font-size: 0.7rem;">Administrador</small>
                         </div>
-                        <img src="{{ url_for('static', path='img/prof_brandon.png') }}" alt="profile" width="35" height="35" class="rounded-circle border border-2 border-white shadow-sm">
+                        <img src="{{ url_for('static', path='img/prof_brandon.png') }}" alt="profile"
+                             width="35" height="35" class="rounded-circle border border-2 border-white shadow-sm">
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2"></i> My Profile</a></li>
-                        <li><a class="dropdown-item py-2" href="{{ url_for('setting') }}"><i class="bi bi-gear me-2"></i> Settings</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('users') }}">
+                            <i class="bi bi-people me-2"></i> Usuarios</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('setting') }}">
+                            <i class="bi bi-gear me-2"></i> Configuración</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item py-2 text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                        <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('logout') }}">
+                            <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
                     </ul>
                 </div>
             </div>
@@ -98,68 +76,97 @@
     </div>
 </nav>
 
-    <div class="sidebar d-flex flex-column">
-
+<div class="sidebar d-flex flex-column">
+    {% set rol = request.session.get('user', {}).get('rol', '') %}
     <div class="flex-grow-1 overflow-y-auto px-2 custom-scrollbar">
 
         <div class="mb-2">
             <a class="d-flex justify-content-between align-items-center text-uppercase opacity-75 sidebar-header"
-               data-bs-toggle="collapse" href="#collapseBilling" role="button" aria-expanded="false">
-                <span><i class="bi bi-receipt me-2"></i> Billing</span>
+               data-bs-toggle="collapse" href="#collapseBilling" role="button" aria-expanded="true">
+                <span><i class="bi bi-receipt me-2"></i> Facturación</span>
                 <i class="bi bi-chevron-down small"></i>
             </a>
             <div class="collapse show" id="collapseBilling">
-                <a href="{{ url_for('invoice') }}" class="ps-4 py-2 small">Invoices</a>
-                <a href="{{ url_for('invoice_payments') }}" class="ps-4 py-2 small">Payments</a>
-                <a href="{{ url_for('discount') }}" class="ps-4 py-2 small">Discounts</a>
-                <a href="{{ url_for('invoice_taxes') }}" class="ps-4 py-2 small">Taxes</a>
+                <a href="{{ url_for('invoice') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-file-earmark-text me-1"></i> Facturas
+                </a>
+                <a href="{{ url_for('new_invoice') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-plus-circle me-1"></i> Nueva Factura
+                </a>
+                {% if rol != 'CAJERO' %}
+                <a href="{{ url_for('invoice_payments') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-credit-card me-1"></i> Estados de Pago
+                </a>
+                {% endif %}
+                <a href="{{ url_for('discount') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-tag me-1"></i> Descuentos
+                </a>
+                {% if rol != 'CAJERO' %}
+                <a href="{{ url_for('invoice_taxes') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-percent me-1"></i> Impuestos
+                </a>
+                {% endif %}
             </div>
         </div>
 
         <div class="mb-2">
             <a class="d-flex justify-content-between align-items-center text-uppercase opacity-75 sidebar-header"
                data-bs-toggle="collapse" href="#collapseCatalog" role="button">
-                <span><i class="bi bi-box-seam me-2"></i> Catalog</span>
+                <span><i class="bi bi-box-seam me-2"></i> Catálogo</span>
                 <i class="bi bi-chevron-down small"></i>
             </a>
             <div class="collapse" id="collapseCatalog">
-                <a href="{{ url_for('product') }}" class="ps-4 py-2 small">Products</a>
-                <a href="{{ url_for('product_discounts') }}" class="ps-4 py-2 small">Product Discounts</a>
-                <a href="{{ url_for('payment_methods') }}" class="ps-4 py-2 small">Payment Methods</a>
+                <a href="{{ url_for('product') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-box me-1"></i> Productos
+                </a>
+                {% if rol != 'CAJERO' %}
+                <a href="{{ url_for('payment_methods') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-wallet2 me-1"></i> Métodos de Pago
+                </a>
+                {% endif %}
             </div>
         </div>
-
 
         <div class="mb-2">
             <a class="d-flex justify-content-between align-items-center text-uppercase opacity-75 sidebar-header"
-                data-bs-toggle="collapse" href="#collapseMgmt" role="button">
-                <span><i class="bi bi-person-badge me-2"></i> ADMIN</span>
+               data-bs-toggle="collapse" href="#collapseMgmt" role="button">
+                <span><i class="bi bi-person-badge me-2"></i> Administración</span>
                 <i class="bi bi-chevron-down small"></i>
             </a>
-        </div>
-
-
             <div class="collapse" id="collapseMgmt">
-                <a href="{{ url_for('customer') }}" class="ps-4 py-2 small">Customers</a>
-                <a href="{{ url_for('branches') }}" class="ps-4 py-2 small">Branches</a>
-                <a href="{{ url_for('users') }}" class="ps-4 py-2 small">Users</a>
-                <a href="{{ url_for('logs') }}" class="ps-4 py-2 small">Logs</a>
+                <a href="{{ url_for('customer') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-people me-1"></i> Clientes
+                </a>
+                {% if rol != 'CAJERO' %}
+                <a href="{{ url_for('branches') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-building me-1"></i> Empresas
+                </a>
+                <a href="{{ url_for('users') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-person-gear me-1"></i> Usuarios
+                </a>
+                <a href="{{ url_for('logs') }}" class="ps-4 py-2 small">
+                    <i class="bi bi-journal-text me-1"></i> Logs
+                </a>
+                {% endif %}
             </div>
         </div>
 
-        <div class="mt-auto">
-            <hr class="mx-3 border-light opacity-25">
-            <a href="{{ url_for('setting') }}"><i class="bi bi-gear me-2"></i> Settings</a>
-        </div>
+    </div>
+
+    <div class="mt-auto">
+        <hr class="mx-3 border-light opacity-25">
+        <a href="{{ url_for('setting') }}" class="ps-3 py-2 small d-flex align-items-center">
+            <i class="bi bi-gear me-2"></i> Configuración
+        </a>
     </div>
 </div>
 
-    <div class="content">
-            {% block content %}
-            {% endblock %}
-        </div>
-    </div>
+<div class="content">
+    {% block content %}
+    {% endblock %}
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,51 +1,119 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Formulario Producto</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-	
-<div class="container mt-5">
-    <h2 th:text="${producto.codProducto != null} ? 'Editar Producto' : 'Nuevo Producto'"></h2>
-    <form th:action="@{/productos/guardar}" th:object="${producto}" method="post">
-        <input type="hidden" th:field="*{codProducto}">
+{% extends "layout.html" %}
 
-        <div class="mb-3">
-            <label class="form-label">Nombre</label>
-            <input type="text" th:field="*{nombre}" class="form-control" required>
+{% block title %}{{ 'Editar Producto' if product else 'Nuevo Producto' }} | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-1 fw-bold">
+            <i class="bi bi-box-seam text-primary me-2"></i>
+            {{ 'Editar Producto' if product else 'Nuevo Producto' }}
+        </h1>
+        <p class="text-muted small mb-0">{{ 'Modifica los datos del producto.' if product else 'Ingresa los datos del nuevo producto.' }}</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-xl-9">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h6 class="m-0 fw-bold text-primary">Información del Producto</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('update_product', product_id=product.cod_producto) if product else url_for('create_product') }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">SKU *</label>
+                                <input type="text" name="sku" class="form-control bg-light border-0 font-monospace" required
+                                       value="{{ product.sku if product else '' }}" placeholder="TEC-001">
+                            </div>
+
+                            <div class="col-md-9">
+                                <label class="form-label small fw-bold text-secondary">Nombre del Producto *</label>
+                                <input type="text" name="nombre" class="form-control bg-light border-0" required
+                                       value="{{ product.nombre if product else '' }}"
+                                       placeholder="Ej: Teclado Mecánico RGB">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-secondary">Descripción</label>
+                                <textarea name="descripcion" class="form-control bg-light border-0" rows="2"
+                                          placeholder="Descripción detallada del producto...">{{ product.descripcion if product else '' }}</textarea>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Precio Unitario *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0">$</span>
+                                    <input type="number" name="precio_unitario" class="form-control bg-light border-0" required
+                                           step="0.01" min="0"
+                                           value="{{ product.precio_unitario if product else '' }}"
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-secondary">Stock Actual</label>
+                                <input type="number" name="stock" class="form-control bg-light border-0" min="0"
+                                       value="{{ product.stock if product else 0 }}">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-secondary">Stock Mínimo</label>
+                                <input type="number" name="stock_minimo" class="form-control bg-light border-0" min="0"
+                                       value="{{ product.stock_minimo if product else 5 }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Impuesto *</label>
+                                <select name="cod_impuesto" class="form-select bg-light border-0" required>
+                                    {% for tax in taxes %}
+                                    <option value="{{ tax.cod_impuesto }}"
+                                        {{ 'selected' if product and product.cod_impuesto == tax.cod_impuesto }}>
+                                        {{ tax.descripcion }} ({{ tax.porcentaje }}%)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-secondary">Unidad Medida</label>
+                                <select name="unidad_medida" class="form-select bg-light border-0">
+                                    <option value="C62" {{ 'selected' if product and product.unidad_medida == 'C62' }}>C62 - Unidad</option>
+                                    <option value="94" {{ 'selected' if product and product.unidad_medida == '94' }}>94 - Unidad</option>
+                                    <option value="WSD" {{ 'selected' if product and product.unidad_medida == 'WSD' }}>WSD - Servicio</option>
+                                    <option value="KGM" {{ 'selected' if product and product.unidad_medida == 'KGM' }}>KGM - Kilogramo</option>
+                                    <option value="LTR" {{ 'selected' if product and product.unidad_medida == 'LTR' }}>LTR - Litro</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Código de Barras</label>
+                                <input type="text" name="codigo_barras" class="form-control bg-light border-0 font-monospace"
+                                       value="{{ product.codigo_barras if product else '' }}"
+                                       placeholder="Opcional">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-secondary">Estado</label>
+                                <select name="activo" class="form-select bg-light border-0">
+                                    <option value="1" {{ 'selected' if not product or product.activo == 1 }}>Activo</option>
+                                    <option value="0" {{ 'selected' if product and product.activo == 0 }}>Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{{ url_for('product') }}" class="btn btn-light border px-4">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> {{ 'Actualizar' if product else 'Guardar' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label">Descripción</label>
-            <textarea th:field="*{descripcion}" class="form-control"></textarea>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input type="number" th:field="*{precio}" class="form-control" required step="0.01">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Stock</label>
-            <input type="number" th:field="*{stock}" class="form-control" required>
-        </div>
-
-        <div class="mb-3 form-check">
-            <input type="checkbox" th:field="*{activo}" class="form-check-input" id="activo">
-            <label class="form-check-label" for="activo">Activo</label>
-        </div>
-
-        <button type="submit" class="btn btn-success">
-            <i class="fas fa-save"></i> Guardar
-        </button>
-        <a href="{{url_for('product')}}" class="btn btn-secondary">
-            <i class="fas fa-times"></i> Cancelar
-        </a>
-    </form>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}
