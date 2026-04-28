@@ -21,6 +21,7 @@
 11. [Cumplimiento DIAN](#11-cumplimiento-dian)
 12. [Cambios Realizados vs Versión Anterior](#12-cambios-realizados-vs-versión-anterior)
 13. [Cómo Ejecutar el Proyecto](#13-cómo-ejecutar-el-proyecto)
+14. [Dependencias del Proyecto](#14-dependencias-del-proyecto)
 
 ---
 
@@ -663,6 +664,30 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 Abrir el navegador en: `http://127.0.0.1:8000`
 
 La documentación automática de la API (Swagger UI) está disponible en: `http://127.0.0.1:8000/docs`
+
+---
+
+---
+
+## 14. Dependencias del Proyecto
+
+Todos los paquetes listados en `Factugest/requirements.txt` y para qué se usa cada uno:
+
+| Paquete | Versión | Para qué se usa |
+|---|---|---|
+| `fastapi` | 0.135.1 | Framework web principal. Maneja las rutas HTTP, recibe peticiones del navegador y devuelve respuestas. Es el núcleo del backend. |
+| `uvicorn[standard]` | 0.41.0 | Servidor ASGI que corre la aplicación FastAPI. Es el proceso que escucha en `http://127.0.0.1:8000`. El extra `[standard]` incluye soporte para recarga automática (`--reload`). |
+| `python-multipart` | 0.0.22 | Necesario para que FastAPI pueda leer datos enviados desde formularios HTML (`<form method="POST">`). Sin este paquete los formularios no funcionan. |
+| `mysql-connector-python` | 9.5.0 | Driver oficial de MySQL para Python. Permite conectarse a la base de datos, ejecutar consultas SQL y obtener los resultados. |
+| `jinja2` | >=3.1.6 | Motor de plantillas que procesa los archivos HTML de la carpeta `templates/`. Permite usar variables `{{ variable }}`, condicionales `{% if %}` y bucles `{% for %}` dentro del HTML. |
+| `reportlab` | 4.2.5 | Librería para generar archivos PDF desde código Python. Se usa en `services/pdf_service.py` para crear el PDF de cada factura. |
+| `bcrypt` | 4.2.1 | Algoritmo de hasheo de contraseñas. Cuando se guarda o verifica una contraseña de usuario, bcrypt la convierte en un hash seguro que no puede revertirse. |
+| `python-dotenv` | 1.0.1 | Lee el archivo `.env` y carga las variables de entorno (credenciales de BD, claves secretas) para que el código las use sin hardcodear datos sensibles. |
+| `itsdangerous` | 2.2.0 | Firma y verifica datos de forma segura. Se usa para las cookies de sesión: garantiza que el contenido de la sesión no haya sido manipulado por el usuario. |
+| `qrcode[pil]` | 8.0 | Genera imágenes de códigos QR. Se usa al generar el PDF de la factura para incluir el QR de verificación DIAN. El extra `[pil]` incluye Pillow para renderizar la imagen. |
+| `num2words` | 0.5.14 | Convierte números a texto en español. Por ejemplo: `1500000` → `"un millón quinientos mil"`. Se usa en el PDF de la factura para escribir el valor total en letras, como exige la DIAN. |
+
+> Si instalas un paquete nuevo que el proyecto necesita, agrégalo al `requirements.txt` con su versión exacta (`pip freeze | findstr nombre-paquete`) para que los demás del equipo lo instalen automáticamente.
 
 ---
 
