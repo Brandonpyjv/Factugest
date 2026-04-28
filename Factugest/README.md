@@ -9,6 +9,7 @@ Sistema de facturación electrónica para Colombia. Este documento explica los c
 1. [Requisitos](#requisitos)
 2. [Instalación](#instalación)
 3. [Cómo iniciar el proyecto](#cómo-iniciar-el-proyecto)
+
 4. [Estructura del proyecto](#estructura-del-proyecto)
 5. [Migración Flask → FastAPI: qué cambió](#migración-flask--fastapi-qué-cambió)
 6. [Guía de adaptación para el equipo](#guía-de-adaptación-para-el-equipo)
@@ -18,66 +19,79 @@ Sistema de facturación electrónica para Colombia. Este documento explica los c
 
 ## Requisitos
 
-- Python 3.10 o superior
-- MySQL corriendo en localhost
-- Base de datos `factugest` creada (script en `/base/factugest.sql`)
+- Python 3.10 o superior — [descargar en python.org](https://www.python.org/downloads/)
+- XAMPP (incluye MySQL y phpMyAdmin) — [descargar en apachefriends.org](https://www.apachefriends.org/es/index.html)
 
 ---
 
 ## Instalación
 
-### Paso 1 — Requisito previo (solo Linux/Mac)
+### Paso 1 — Clonar el repositorio
 
-Si estás en Linux (Ubuntu/Debian/Mint), instala el paquete para crear entornos virtuales:
-```bash
-sudo apt install python3.12-venv -y
+```powershell
+git clone <url-del-repositorio>
+cd "Factugest Python\Factugest\Factugest"
 ```
 
-En Windows no es necesario ningún paso previo.
+### Paso 2 — Importar la base de datos en phpMyAdmin
 
-### Paso 2 — Configurar el intérprete en PyCharm
+1. Abre XAMPP y arranca los servicios **Apache** y **MySQL**
+2. Entra a **phpMyAdmin** desde `http://localhost/phpmyadmin`
+3. Crea una base de datos nueva llamada `factugest`
+4. Selecciona la base de datos `factugest` en el panel izquierdo
+5. Ve a la pestaña **Importar**
+6. Haz click en **Seleccionar archivo** y elige el archivo `base\factugest.sql` del proyecto
+7. Click en **Importar** al final de la página
 
-1. Abre el proyecto en PyCharm
-2. Ve a `File → Settings → Project: Factugest → Python Interpreter`
-3. Click en el engranaje ⚙ → **Add New Interpreter → Add Local Interpreter**
-4. Selecciona **Virtualenv Environment**
-5. En **Location** escribe la ruta al `.venv` dentro del proyecto:
-   - Linux/Mac: `/ruta/al/proyecto/Factugest/.venv`
-   - Windows: `C:\ruta\al\proyecto\Factugest\.venv`
-6. En **Base interpreter** selecciona tu Python 3.10 o superior
-7. Click **OK**
+> Si haces cambios en la estructura de la base de datos (crear/modificar/eliminar tablas o columnas), debes exportarla desde phpMyAdmin y reemplazar el archivo `base\factugest.sql` para que los demás del equipo tengan el esquema actualizado.
 
-### Paso 3 — Instalar todas las dependencias
+### Paso 3 — Crear el entorno virtual
 
-Con el entorno virtual activado, instala todos los paquetes del proyecto de una sola vez:
+Abre PowerShell en la carpeta `Factugest\` (donde está `main.py`) y ejecuta:
 
-```bash
-# Linux/Mac — activar primero el entorno virtual
-source .venv/bin/activate
+```powershell
+python -m venv .venv
+```
 
-# Windows
+### Paso 4 — Activar el entorno virtual
+
+```powershell
 .venv\Scripts\activate
+```
 
-# Instalar dependencias (ambos sistemas)
+Sabrás que está activo porque el prompt mostrará `(.venv)` al inicio.
+
+### Paso 5 — Instalar todas las dependencias
+
+```powershell
 pip install -r requirements.txt
 ```
 
-> No instales los paquetes uno por uno desde PyCharm — usa siempre este comando para asegurarte de instalar todo de una vez.
+> No instales los paquetes uno por uno — usa siempre este comando para instalar todo de una vez.
+
+### Paso 6 — Configurar el intérprete en PyCharm (opcional)
+
+Si usas PyCharm:
+
+1. Ve a `File → Settings → Project: Factugest → Python Interpreter`
+2. Click en el engranaje ⚙ → **Add New Interpreter → Add Local Interpreter**
+3. Selecciona **Virtualenv Environment → Existing**
+4. En **Location** apunta al `.venv` dentro del proyecto: `C:\ruta\al\proyecto\Factugest\.venv`
+5. Click **OK**
 
 ---
 
 ## Cómo iniciar el proyecto
 
-Desde la carpeta `Factugest/` (donde está el `main.py`):
-
+Asegúrate de que MySQL esté corriendo en XAMPP, luego desde la carpeta `Factugest\` (donde está `main.py`) con el entorno virtual activo:
 
 ### Modo desarrollo (con recarga automática)
-```bash
+```powershell
 uvicorn main:app --reload
 ```
 
 ### Modo simple
-```bash
+```powershell
 python main.py
 ```
 
@@ -376,8 +390,7 @@ Para un sistema de facturación que necesita respuesta rápida en cada transacci
 
 ## Notas finales
 
-- La rama `main` conserva el código original en Flask como respaldo.
-- La rama `Brandon-TransformToFastApi` contiene la versión FastAPI.
-- El diseño visual (templates, CSS, imágenes) **no cambió**.
+- El diseño visual (templates, CSS, imágenes) **no cambió** respecto a la versión Flask.
 - La base de datos y las consultas SQL **no cambiaron**.
-- Para cualquier duda sobre la migración, revisar primero este documento.
+- Si modificas la estructura de la BD, exporta el archivo SQL y reemplaza `base\factugest.sql` antes de hacer commit.
+- Para cualquier duda sobre la migración Flask → FastAPI, revisar primero este documento.
