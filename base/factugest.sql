@@ -2,8 +2,8 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: localhost
--- Tiempo de generación: 17-04-2026 a las 19:45:47
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 28-04-2026 a las 02:03:16
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -201,7 +201,13 @@ CREATE TABLE `detalle_factura` (
 
 INSERT INTO `detalle_factura` (`cantidad`, `cod_destalle`, `cod_factura`, `cod_producto`, `precio_unitario`, `subtotal`, `descuento_porcentaje`, `descuento_valor`, `impuesto_porcentaje`, `impuesto_valor`, `descripcion_descuento`) VALUES
 (1, 12, 21, 3, 650000, 585000, 10, 65000, 19, 111150, 'Seasonal Discount'),
-(1, 13, 21, 4, 95000, 95000, 0, 0, 19, 18050, NULL);
+(1, 13, 21, 4, 95000, 95000, 0, 0, 19, 18050, NULL),
+(1, 14, 22, 3, 650000, 650000, 0, 0, 19, 123500, NULL),
+(1, 15, 23, 3, 650000, 650000, 0, 0, 19, 123500, NULL),
+(1, 16, 24, 3, 650000, 585000, 10, 65000, 19, 111150, 'Seasonal Discount'),
+(1, 17, 24, 4, 95000, 95000, 0, 0, 19, 18050, NULL),
+(1, 18, 25, 8, 55000, 55000, 0, 0, 19, 10450, NULL),
+(1, 19, 26, 4, 95000, 95000, 0, 0, 19, 18050, NULL);
 
 -- --------------------------------------------------------
 
@@ -243,7 +249,7 @@ CREATE TABLE `empresas` (
 
 INSERT INTO `empresas` (`cod_empresa`, `nombre`, `nit`, `direccion`, `ciudad`, `telefono`, `correo`, `dv`, `regimen_tributario`, `actividad_economica`, `tipo_documento`, `cod_municipio`, `website`, `tarifa_ica`, `autoretenedor`, `gran_contribuyente`, `prefijo_factura`, `resolucion_dian`, `resolucion_fecha_desde`, `resolucion_fecha_hasta`, `resolucion_desde`, `resolucion_hasta`, `consecutivo_actual`, `consecutivo_nc`, `consecutivo_nd`) VALUES
 (1, 'Verdad y Reconciliacion', '980256314', 'Cll 28 # 9-47', 'Cali', '3206841435', 'verdadyreconciliacion@factugest.com', NULL, 'RESPONSABLE_IVA', NULL, 'NIT', '76001', NULL, 0.0000, 0, 0, 'FV', NULL, NULL, NULL, NULL, NULL, 1, 1, 1),
-(2, 'Pillar of Autumn', '987654321', 'Av Caracas # 2-56', 'Cucuta', '3132156472', 'pillarofautumn@factugest.com', NULL, 'RESPONSABLE_IVA', NULL, 'NIT', '54001', NULL, 0.0000, 0, 0, 'FV', NULL, NULL, NULL, NULL, NULL, 1, 1, 1),
+(2, 'Pillar of Autumn', '987654321', 'Av Caracas # 2-56', 'San José De Cúcuta', '3132156472', 'pillarofautumn@factugest.com', NULL, 'RESPONSABLE_IVA', NULL, 'NIT', '54001', NULL, NULL, 0, 0, 'PA', '23456', '2026-04-20', '2026-07-20', NULL, NULL, 6, 1, 1),
 (6, 'Gran Caridad', '890345555', 'AV 10  # 3-21', 'Bogotá, D.C.', '312398888', 'grancaridad@factugest.com', NULL, 'RESPONSABLE_IVA', NULL, 'NIT', '11001', NULL, NULL, 0, 0, 'FV', '1234575432', '2026-04-16', '2026-06-16', 1, 5000, 2, 1, 1);
 
 -- --------------------------------------------------------
@@ -283,7 +289,12 @@ CREATE TABLE `facturas` (
 --
 
 INSERT INTO `facturas` (`cod_factura`, `fecha`, `cod_cliente`, `cod_usuario`, `cod_pago`, `total`, `cod_empresa`, `cod_metodo_pago`, `fecha_vencimiento`, `subtotal`, `total_descuentos`, `total_impuestos`, `tipo_factura`, `observaciones`, `cufe`, `numero_factura`, `forma_pago`, `orden_compra`, `nombre_vendedor`, `cod_descuento_factura`, `descripcion_descuento_factura`, `cod_factura_referencia`, `motivo_nota`) VALUES
-(21, '2026-04-17 00:08:37.000000', 10, 2, 1, 752556, 6, 1, '2026-04-17', 632400, 112600, 120156, 'FV', NULL, '4d8b571867ac8452312b4ca3c741b19a588cd69408cf4b9e6d9cfcf5d7506cd4cd809761cf88374c0732e113ccf26fce', 'FV1', 'CONTADO', NULL, NULL, 55507, 'Special VIP Discount', NULL, NULL);
+(21, '2026-04-17 00:08:37.000000', 10, 2, 1, 752556, 6, 1, '2026-04-17', 632400, 112600, 120156, 'FV', NULL, '4d8b571867ac8452312b4ca3c741b19a588cd69408cf4b9e6d9cfcf5d7506cd4cd809761cf88374c0732e113ccf26fce', 'FV1', 'CONTADO', NULL, NULL, 55507, 'Special VIP Discount', NULL, NULL),
+(22, '2026-04-20 18:58:00.000000', 8, 3, 1, 773500, 2, 1, '2026-04-20', 650000, 0, 123500, 'FV', NULL, '8f49b4d0311650e848f604b5161af714859cad305478f0d216b8c3e5cf9d8b7da90a10466a298aea532baeff254dc230', 'FV1', 'CONTADO', NULL, NULL, NULL, NULL, NULL, NULL),
+(23, '2026-04-20 18:59:41.000000', 8, 3, 1, 773500, 2, 1, '2026-04-20', 650000, 0, 123500, 'FV', NULL, 'cdc8bf5209c0105adcaf0d33cb59c2b27aca490f865143590592175b4eec8ad98172936e0e32865d318750a98676f5ef', 'PA2', 'CONTADO', NULL, NULL, NULL, NULL, NULL, NULL),
+(24, '2026-04-20 19:13:20.000000', 8, 3, 1, 768740, 2, 1, '2026-04-20', 646000, 99000, 122740, 'FV', NULL, '93ee86e2453b5b4ae4f595e5d7fa666d93826a6225901045dcb0e117a0b1f866f79ca0a4c865d219b5d4353b749ce67f', 'PA3', 'CONTADO', NULL, NULL, 55502, 'Frequent Customer Promotion', NULL, NULL),
+(25, '2026-04-20 19:16:05.000000', 8, 3, 1, 65450, 2, 1, '2026-04-20', 55000, 0, 10450, 'FV', NULL, 'df2a2eb61d73cdb336988d7571a7d790885412401742608f81009b6dc2d5963d5596133ac3a490a310b27de66907a03e', 'PA4', 'CONTADO', NULL, NULL, NULL, NULL, NULL, NULL),
+(26, '2026-04-25 20:02:41.000000', 8, 3, 1, 113050, 2, 1, '2026-04-25', 95000, 0, 18050, 'FV', 'asdas', '06cd2a2005aea6b428f35e2d56f2b25985463ffbf39a4b3de2fd33ffed74efeadfa23e65d0c17d2720bd929290f4e834', 'PA5', 'CONTADO', NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1817,7 +1828,7 @@ ALTER TABLE `descuentos`
 -- AUTO_INCREMENT de la tabla `detalle_factura`
 --
 ALTER TABLE `detalle_factura`
-  MODIFY `cod_destalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `cod_destalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `empresas`
@@ -1829,7 +1840,7 @@ ALTER TABLE `empresas`
 -- AUTO_INCREMENT de la tabla `facturas`
 --
 ALTER TABLE `facturas`
-  MODIFY `cod_factura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `cod_factura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT de la tabla `factura_impuesto`
