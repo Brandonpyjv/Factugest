@@ -13,7 +13,7 @@ Sistema de facturación electrónica para Colombia. Este documento explica los c
 4. [Estructura del proyecto](#estructura-del-proyecto)
 5. [Migración Flask → FastAPI: qué cambió](#migración-flask--fastapi-qué-cambió)
 6. [Guía de adaptación para el equipo](#guía-de-adaptación-para-el-equipo)
-7. [Por qué FastAPI](#por-qué-fastapi)
+7. [Por qué FastAPI](#por-qué-fastapi)  
 
 ---
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from templates_config import templates
-
+ 
 app = FastAPI(title="Factugest")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(users_router)
