@@ -32,7 +32,12 @@
       "Bash(flutter create *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(\"D:/01. Proyectos/Factugest Python/Factugest/Factugest/.venv/Scripts/pip.exe\" list)",
+      "Bash(\"D:/01. Proyectos/Factugest Python/Factugest/Factugest/.venv/Scripts/pip.exe\" install \"python-jose[cryptography]==3.3.0\")",
+      "Bash(D:/01. Proyectos/Factugest Python/Factugest/Factugest/.venv/Scripts/python.exe *)",
+      "Bash(\"./.venv/Scripts/python.exe\" -c \"import main; print\\('main.py OK, CORS registrado'\\); print\\('Middlewares:', [m.cls.__name__ for m in main.app.user_middleware]\\)\")",
+      "Bash(./.venv/Scripts/python.exe -c ' *)"
     ]
   }
 }

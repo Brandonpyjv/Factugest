@@ -3,7 +3,14 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-_PUBLIC_PREFIXES = ("/login", "/static")
+_PUBLIC_PREFIXES = (
+    "/login",
+    "/static",
+    "/api/v1/",     # endpoints JSON nuevos: autenticados vía JWT, no por sesión
+    "/docs",        # Swagger UI
+    "/redoc",       # ReDoc UI
+    "/openapi.json",
+)
 
 # Roles con permisos completos de administración
 ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}

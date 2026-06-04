@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
@@ -21,6 +22,7 @@ from routes.productos import router as products_router
 from routes.logs import router as logs_router
 from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
+from routes.api.v1.auth import router as api_v1_auth_router
 from services.invoice_service import get_dashboard_stats
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
@@ -29,6 +31,19 @@ app = FastAPI(title="Factugest", description="Sistema de Facturación Electróni
 # AuthMiddleware corre primero, luego SessionMiddleware lo prepara.
 app.add_middleware(AuthMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "factugest-dev-secret"))
+
+# CORS: el cliente Flutter Web hace requests desde otro origen (localhost:xxxx aleatorio).
+# Se agrega al final para que quede como capa más externa y atienda el preflight OPTIONS
+# antes que AuthMiddleware redirija a /login.
+# Para producción: reemplazar allow_origin_regex por una lista de dominios reales.
+_cors_regex = os.getenv("CORS_ORIGIN_REGEX", r"https?://(localhost|127\.0\.0\.1)(:\d+)?")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=_cors_regex,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -45,6 +60,9 @@ app.include_router(products_router)
 app.include_router(logs_router)
 app.include_router(product_discount_router)
 app.include_router(ubicacion_router)
+
+# ── API JSON para cliente móvil (autenticación vía JWT) ─────────────────────
+app.include_router(api_v1_auth_router)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for
