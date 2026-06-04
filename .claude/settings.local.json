@@ -26,7 +26,13 @@
       "Bash(curl -sv http://127.0.0.1:8000/login)",
       "Bash(jobs -l)",
       "Bash(kill 8576)",
-      "Bash(tee /tmp/factugest.log)"
+      "Bash(tee /tmp/factugest.log)",
+      "Bash(flutter --version)",
+      "Read(//d/01. Proyectos/**)",
+      "Bash(flutter create *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
