@@ -23,6 +23,8 @@ from routes.logs import router as logs_router
 from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
 from routes.api.v1.auth import router as api_v1_auth_router
+from routes.api.v1.dashboard import router as api_v1_dashboard_router
+from routes.api.v1.customers import router as api_v1_customers_router
 from services.invoice_service import get_dashboard_stats
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
@@ -63,6 +65,8 @@ app.include_router(ubicacion_router)
 
 # ── API JSON para cliente móvil (autenticación vía JWT) ─────────────────────
 app.include_router(api_v1_auth_router)
+app.include_router(api_v1_dashboard_router)
+app.include_router(api_v1_customers_router)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for
