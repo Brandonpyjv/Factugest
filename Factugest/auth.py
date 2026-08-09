@@ -29,6 +29,7 @@ def can_manage(actor_rol: str, target_rol: str) -> bool:
 _ADMIN_ONLY_PREFIXES = (
     "/users", "/logs", "/branches",
     "/payment_methods", "/invoice_taxes", "/invoice_payments",
+    "/inventory",
 )
 
 # Acciones de escritura bloqueadas para CAJERO.

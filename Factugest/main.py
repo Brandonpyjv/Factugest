@@ -18,6 +18,7 @@ from routes.taxes import router as invoice_taxes_router
 from routes.branches import router as branches_router
 from routes.invoice_payments import router as invoice_payments_router
 from routes.productos import router as products_router
+from routes.inventory import router as inventory_router
 from routes.logs import router as logs_router
 from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
@@ -42,6 +43,7 @@ app.include_router(invoice_taxes_router)
 app.include_router(branches_router)
 app.include_router(invoice_payments_router)
 app.include_router(products_router)
+app.include_router(inventory_router)
 app.include_router(logs_router)
 app.include_router(product_discount_router)
 app.include_router(ubicacion_router)

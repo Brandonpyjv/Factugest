@@ -12,6 +12,7 @@ def get_all_products_detailed():
                    p.precio_unitario,
                    p.stock,
                    p.stock_minimo,
+                   p.controla_stock,
                    p.cod_impuesto,
                    p.unidad_medida,
                    p.codigo_barras,
