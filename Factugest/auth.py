@@ -31,9 +31,11 @@ _ADMIN_ONLY_PREFIXES = (
     "/payment_methods", "/invoice_taxes", "/invoice_payments",
 )
 
-# Acciones de escritura bloqueadas para CAJERO
+# Acciones de escritura bloqueadas para CAJERO.
+# Los productos viven bajo /products/product/... (el router tiene prefix="/products");
+# las rutas cortas /product/... nunca existieron y dejaban el gate sin efecto.
 _CAJERO_BLOCKED_PREFIXES = (
-    "/product/new", "/product/edit", "/product/delete",
+    "/products/product/new", "/products/product/edit", "/products/product/delete",
     "/discount/new", "/discount/edit", "/discount/delete",
     "/invoice/delete",
 )

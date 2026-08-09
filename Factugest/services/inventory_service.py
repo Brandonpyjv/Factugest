@@ -212,6 +212,44 @@ def ajustar_stock(cod_producto, nuevo_stock, cod_usuario=None, observaciones=Non
         db.close()
 
 
+def registrar_saldo_inicial(cod_producto, cod_usuario=None, observaciones=None):
+    """Abre el kardex de un producto con el stock que ya tiene registrado.
+
+    No modifica `productos.stock`: lo toma como saldo de apertura. Se usa al crear
+    un producto o al activarle el control de inventario.
+    """
+    prod = get_one(
+        "SELECT nombre, stock, controla_stock, precio_unitario "
+        "FROM productos WHERE cod_producto = %s",
+        (cod_producto,),
+    )
+    if not prod or not prod["controla_stock"]:
+        return None
+
+    cantidad = int(prod["stock"] or 0)
+    db = create_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            """INSERT INTO movimientos_inventario
+                   (cod_producto, tipo, motivo, cantidad, stock_anterior, stock_nuevo,
+                    costo_unitario, cod_usuario, observaciones, fecha)
+               VALUES (%s, 'ENTRADA', 'INICIAL', %s, 0, %s, %s, %s, %s, %s)""",
+            (cod_producto, cantidad, cantidad, prod["precio_unitario"], cod_usuario,
+             observaciones or "Saldo de apertura",
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")),
+        )
+        db.commit()
+        return {"cod_movimiento": cursor.lastrowid, "producto": prod["nombre"],
+                "stock_nuevo": cantidad}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        cursor.close()
+        db.close()
+
+
 def revertir_movimientos_de_factura(cod_factura, cod_usuario=None):
     """Deshace el efecto en inventario de un documento que se elimina.
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from services.products_service import (get_all_products_detailed, get_product_by_id,
                                         create_product, update_product, delete_product)
+from services.inventory_service import ajustar_stock, registrar_saldo_inicial
 from services.taxes import get_all_invoice_taxes
 from templates_config import templates
 
@@ -22,6 +23,7 @@ def product_new(request: Request):
 
 @router.post("/product/new", name="create_product")
 def create_product_post(
+    request: Request,
     sku: str = Form(...),
     nombre: str = Form(...),
     descripcion: str = Form(""),
@@ -32,9 +34,15 @@ def create_product_post(
     unidad_medida: str = Form("C62"),
     codigo_barras: str = Form(""),
     activo: int = Form(1),
+    controla_stock: int = Form(1),
 ):
-    create_product(sku, nombre, descripcion, precio_unitario, stock, stock_minimo,
-                   cod_impuesto, unidad_medida, codigo_barras, activo)
+    product_id = create_product(sku, nombre, descripcion, precio_unitario, stock, stock_minimo,
+                                cod_impuesto, unidad_medida, codigo_barras, activo, controla_stock)
+    registrar_saldo_inicial(
+        product_id,
+        cod_usuario=request.session.get("user", {}).get("cod_usuario"),
+        observaciones="Saldo inicial al crear el producto",
+    )
     return RedirectResponse(url="/products/product", status_code=303)
 
 
@@ -49,6 +57,7 @@ def edit_product(request: Request, product_id: int):
 
 @router.post("/product/edit/{product_id}", name="update_product")
 def update_product_post(
+    request: Request,
     product_id: int,
     sku: str = Form(...),
     nombre: str = Form(...),
@@ -60,9 +69,30 @@ def update_product_post(
     unidad_medida: str = Form("C62"),
     codigo_barras: str = Form(""),
     activo: int = Form(1),
+    controla_stock: int = Form(1),
 ):
-    update_product(product_id, sku, nombre, descripcion, precio_unitario, stock, stock_minimo,
-                   cod_impuesto, unidad_medida, codigo_barras, activo)
+    anterior = get_product_by_id(product_id)
+    if not anterior:
+        return RedirectResponse(url="/products/product", status_code=302)
+
+    cod_usuario = request.session.get("user", {}).get("cod_usuario")
+    ya_controlaba = bool(anterior.get("controla_stock"))
+
+    # Si el producto ya lleva kardex, el stock no se pisa desde el formulario: se
+    # conserva el saldo y la diferencia entra como un ajuste trazable.
+    stock_a_guardar = anterior["stock"] if (controla_stock and ya_controlaba) else stock
+
+    update_product(product_id, sku, nombre, descripcion, precio_unitario, stock_a_guardar,
+                   stock_minimo, cod_impuesto, unidad_medida, codigo_barras, activo,
+                   controla_stock)
+
+    if controla_stock and ya_controlaba:
+        ajustar_stock(product_id, stock, cod_usuario=cod_usuario,
+                      observaciones="Ajuste desde el formulario de producto")
+    elif controla_stock and not ya_controlaba:
+        registrar_saldo_inicial(product_id, cod_usuario=cod_usuario,
+                                observaciones="Saldo de apertura al activar control de inventario")
+
     return RedirectResponse(url="/products/product", status_code=303)
 
 
