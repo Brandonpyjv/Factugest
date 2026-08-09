@@ -253,28 +253,48 @@ def revertir_movimientos_de_factura(cod_factura, cod_usuario=None):
 # ── Lectura ──────────────────────────────────────────────────────────────────
 
 def verificar_disponibilidad(lineas):
-    """Retorna la lista de líneas sin stock suficiente, sin tocar la BD en escritura.
+    """Retorna los productos sin stock suficiente, sin escribir en la BD.
 
-    Permite avisar al usuario antes de intentar emitir la factura.
+    Permite avisar al usuario antes de intentar emitir la factura. Las cantidades
+    se suman por producto: un mismo producto en dos líneas compite contra el mismo
+    saldo.
     """
-    faltantes = []
+    solicitado_por_producto = {}
     for linea in lineas:
+        cod = linea["cod_producto"]
+        solicitado_por_producto[cod] = solicitado_por_producto.get(cod, 0) + abs(int(linea["cantidad"]))
+
+    faltantes = []
+    for cod, solicitado in solicitado_por_producto.items():
         prod = get_one(
             "SELECT nombre, stock, controla_stock FROM productos WHERE cod_producto = %s",
-            (linea["cod_producto"],),
+            (cod,),
         )
         if not prod or not prod["controla_stock"]:
             continue
         disponible = int(prod["stock"] or 0)
-        solicitado = abs(int(linea["cantidad"]))
         if solicitado > disponible:
             faltantes.append({
-                "cod_producto": linea["cod_producto"],
+                "cod_producto": cod,
                 "producto":     prod["nombre"],
                 "disponible":   disponible,
                 "solicitado":   solicitado,
             })
     return faltantes
+
+
+def documento_afecto_inventario(cod_factura) -> bool:
+    """¿Este documento llegó a descontar inventario?
+
+    Las facturas emitidas antes de existir el kardex no descontaron stock; devolver
+    unidades por una nota crédito sobre ellas inflaría el inventario.
+    """
+    row = get_one(
+        "SELECT COUNT(*) AS n FROM movimientos_inventario "
+        "WHERE cod_factura = %s AND motivo = 'VENTA'",
+        (cod_factura,),
+    )
+    return bool(row and row["n"])
 
 
 def get_inventario_detallado(solo_alertas=False, busqueda=None):
