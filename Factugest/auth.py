@@ -3,7 +3,7 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-_PUBLIC_PREFIXES = ("/login", "/static")
+_PUBLIC_PREFIXES = ("/login", "/static", "/favicon.ico")
 
 # Roles con permisos completos de administración
 ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}
@@ -16,14 +16,39 @@ ROLE_HIERARCHY = {
     "CAJERO":      1,
 }
 
+ROLE_LABELS = {
+    "ADMIN":       "Administrador",
+    "JEFE_TIENDA": "Jefe de Tienda",
+    "SUPERVISOR":  "Supervisor",
+    "CAJERO":      "Cajero",
+}
+
 
 def role_level(rol: str) -> int:
     return ROLE_HIERARCHY.get(rol, 0)
 
 
+def role_label(rol: str) -> str:
+    return ROLE_LABELS.get(rol, rol or "")
+
+
 def can_manage(actor_rol: str, target_rol: str) -> bool:
     """Retorna True si actor_rol puede crear/editar/eliminar a target_rol."""
     return role_level(actor_rol) > role_level(target_rol)
+
+
+def puede_cambiar_foto(actor: dict, objetivo: dict) -> bool:
+    """Quién puede cambiar la foto de quién.
+
+    Un superior puede cambiar la de sus inferiores. Además cada quien puede
+    cambiar la suya: sin esto ningún ADMIN podría tener foto, porque `can_manage`
+    exige un rol estrictamente mayor y no hay ninguno por encima de ADMIN.
+    """
+    if not actor or not objetivo:
+        return False
+    if actor.get("cod_usuario") == objetivo.get("cod_usuario"):
+        return True
+    return can_manage(actor.get("rol", ""), objetivo.get("rol", ""))
 
 # Rutas exclusivas de roles admin (bloqueadas para CAJERO)
 _ADMIN_ONLY_PREFIXES = (

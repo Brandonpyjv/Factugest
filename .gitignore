@@ -32,3 +32,7 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Fotos de perfil subidas por los usuarios (contenido, no código)
+Factugest/static/img/perfiles/*
+!Factugest/static/img/perfiles/.gitkeep

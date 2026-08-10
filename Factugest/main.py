@@ -1,12 +1,13 @@
 import os
 from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from auth import AuthMiddleware, hash_password
+from auth import AuthMiddleware, hash_password, role_label, puede_cambiar_foto
 from templates_config import templates
 from routes.login import router as login_router
 from routes.invoice import router as invoice_router
@@ -24,6 +25,7 @@ from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
 from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
+from routes.perfil import router as perfil_router
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
@@ -49,10 +51,23 @@ app.include_router(logs_router)
 app.include_router(product_discount_router)
 app.include_router(ubicacion_router)
 app.include_router(reports_router)
+app.include_router(perfil_router)
 app.include_router(dashboard_router)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for
+
+
+def avatar_url(foto: str = None) -> str:
+    """URL de la foto de perfil, o la silueta genérica si no tiene."""
+    if foto:
+        return app.url_path_for("static", path=f"img/perfiles/{foto}")
+    return app.url_path_for("static", path="img/avatar-generico.svg")
+
+
+templates.env.globals["avatar_url"] = avatar_url
+templates.env.globals["role_label"] = role_label
+templates.env.globals["puede_cambiar_foto"] = puede_cambiar_foto
 
 
 @app.on_event("startup")
@@ -68,6 +83,12 @@ def migrate_passwords():
                 "UPDATE usuarios SET contrasena=%s WHERE cod_usuario=%s",
                 (hashed, u["cod_usuario"]),
             )
+
+
+# El navegador pide /favicon.ico en la raíz aunque los <link> apunten a /static.
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return FileResponse("static/img/favicon.ico", media_type="image/x-icon")
 
 
 @app.get("/settings", name="setting")
