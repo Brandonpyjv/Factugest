@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, Response, JSONResponse
 from typing import List, Optional
-from datetime import datetime, date as date_type
+from datetime import datetime, timedelta, date as date_type
 from services.invoice_service import (get_all_invoices_detailed, get_invoice_by_id,
                                        get_invoice_by_numero_factura, get_invoice_details,
                                        create_invoice, create_invoice_detail,
@@ -83,9 +83,15 @@ async def create_invoice_post(
     descuento_descripcion: Optional[List[str]] = Form(None),
     cod_descuento_factura: Optional[int] = Form(None),
     valor_descuento_factura: float = Form(0.0),
+    plazo_pago: int = Form(0),
 ):
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    fecha_vencimiento = date_type.today().strftime("%Y-%m-%d")
+
+    # El vencimiento se deriva del plazo pactado, no se escribe a mano: así el
+    # PDF, el XML y la cartera cuentan siempre la misma historia. 0 días = contado.
+    plazo_pago = max(0, min(int(plazo_pago), 365))
+    forma_pago = "CONTADO" if plazo_pago == 0 else "CREDITO"
+    fecha_vencimiento = (date_type.today() + timedelta(days=plazo_pago)).strftime("%Y-%m-%d")
 
     subtotal_bruto = 0.0
     total_descuentos = 0.0
@@ -191,7 +197,7 @@ async def create_invoice_post(
         fecha_vencimiento=fecha_vencimiento or None,
         cufe=cufe,
         numero_factura=numero_factura,
-        forma_pago='CONTADO',
+        forma_pago=forma_pago,
         cod_descuento_factura=cod_descuento_factura,
         descripcion_descuento_factura=descripcion_descuento_factura,
     )

@@ -81,6 +81,21 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
         <cbc:BaseAmount currencyID="COP">{_fmt(subtotal_bruto_xml)}</cbc:BaseAmount>
     </cac:AllowanceCharge>"""
 
+    # Forma de pago (UBL 2.1 / anexo técnico DIAN)
+    #   cac:PaymentMeans/cbc:ID          → 1 contado, 2 crédito
+    #   cbc:PaymentMeansCode             → medio de pago (10 efectivo, 20 cheque…)
+    #   cbc:PaymentDueDate               → obligatoria cuando la venta es a crédito
+    # Antes se ponía siempre ID=1 y el medio de pago se derivaba de forma_pago,
+    # que estaba fijo en CONTADO: toda factura se declaraba de contado.
+    es_credito = (invoice.get('forma_pago') or 'CONTADO').upper() == 'CREDITO'
+    payment_means_id = '2' if es_credito else '1'
+    payment_means_code = '20' if es_credito else '10'
+    payment_due_date = ''
+    if es_credito and invoice.get('fecha_vencimiento'):
+        venc = invoice['fecha_vencimiento']
+        venc = venc.strftime('%Y-%m-%d') if hasattr(venc, 'strftime') else str(venc)[:10]
+        payment_due_date = f"\n        <cbc:PaymentDueDate>{venc}</cbc:PaymentDueDate>"
+
     # Líneas
     lines_xml = ''
     for i, d in enumerate(details, start=1):
@@ -249,8 +264,8 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     </cac:AccountingCustomerParty>
 
     <cac:PaymentMeans>
-        <cbc:ID>1</cbc:ID>
-        <cbc:PaymentMeansCode>{'10' if invoice.get('forma_pago','CONTADO')=='CONTADO' else '20'}</cbc:PaymentMeansCode>
+        <cbc:ID>{payment_means_id}</cbc:ID>
+        <cbc:PaymentMeansCode>{payment_means_code}</cbc:PaymentMeansCode>{payment_due_date}
     </cac:PaymentMeans>
     {allowance_factura_xml}
     <cac:TaxTotal>

@@ -114,12 +114,31 @@
                                 </select>
                             </div>
 
+                            <!-- Forma de Pago: define el vencimiento -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Forma de Pago *</label>
+                                <select name="plazo_pago" id="plazoPago" class="form-select bg-light border-0"
+                                        required onchange="actualizarVencimiento()">
+                                    <option value="0" selected>Contado</option>
+                                    <option value="8">Crédito 8 días</option>
+                                    <option value="15">Crédito 15 días</option>
+                                    <option value="30">Crédito 30 días</option>
+                                    <option value="60">Crédito 60 días</option>
+                                    <option value="90">Crédito 90 días</option>
+                                </select>
+                                <div class="form-text small" id="avisoVencimiento">
+                                    Se paga al momento de la entrega.
+                                </div>
+                            </div>
+
                             <!-- Estado Pago -->
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">Estado Pago *</label>
-                                <select name="cod_pago" class="form-select bg-light border-0" required>
+                                <select name="cod_pago" id="estadoPago" class="form-select bg-light border-0" required>
                                     {% for s in pagos_factura %}
-                                    <option value="{{ s.cod_pago_factura }}" {{ 'selected' if s.cod_pago_factura == 1 }}>{{ s.status | capitalize }}</option>
+                                    <option value="{{ s.cod_pago_factura }}" {{ 'selected' if s.cod_pago_factura == 1 }}>
+                                        {{ etiqueta_estado(s.status) }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -635,8 +654,39 @@ document.getElementById('invoiceForm').addEventListener('submit', function(e) {
     }
 });
 
+// ── Forma de pago ─────────────────────────────────────────────────────────────
+// El vencimiento no se escribe a mano: sale del plazo pactado. El cajero ve la
+// fecha resultante antes de emitir, para no descubrirla en el PDF.
+function actualizarVencimiento() {
+    const dias   = parseInt(document.getElementById('plazoPago').value, 10) || 0;
+    const aviso  = document.getElementById('avisoVencimiento');
+    const estado = document.getElementById('estadoPago');
+
+    if (dias === 0) {
+        aviso.textContent = 'Se paga al momento de la entrega.';
+        aviso.className   = 'form-text small';
+    } else {
+        const vence = new Date();
+        vence.setDate(vence.getDate() + dias);
+        aviso.textContent = 'Vence el ' + vence.toLocaleDateString('es-CO',
+            {day: '2-digit', month: '2-digit', year: 'numeric'});
+        aviso.className   = 'form-text small text-primary fw-bold';
+    }
+
+    // A crédito la factura nace sin cobrar; de contado, pagada. El cajero puede
+    // cambiarlo, pero el valor por defecto deja de ser el equivocado.
+    const buscado = dias === 0 ? 'pagado' : 'pendiente';
+    for (const opt of estado.options) {
+        if (opt.textContent.trim().toLowerCase() === buscado) {
+            estado.value = opt.value;
+            break;
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.product-row').forEach(row => initProductSearch(row));
+    actualizarVencimiento();
     calcTotales();
 });
 </script>
