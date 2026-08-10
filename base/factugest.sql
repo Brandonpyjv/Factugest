@@ -94,7 +94,7 @@ CREATE TABLE `customers` (
   UNIQUE KEY `document_number` (`document_number`),
   KEY `fk_customer_municipio` (`cod_municipio`),
   CONSTRAINT `fk_customer_municipio` FOREIGN KEY (`cod_municipio`) REFERENCES `municipios` (`cod_municipio`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -178,7 +178,7 @@ CREATE TABLE `detalle_factura` (
   `impuesto_valor` double NOT NULL DEFAULT 0,
   `descripcion_descuento` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`cod_destalle`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1616 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -339,7 +339,7 @@ CREATE TABLE `facturas` (
   CONSTRAINT `facturas_ibfk_2` FOREIGN KEY (`cod_usuario`) REFERENCES `usuarios` (`cod_usuario`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `facturas_ibfk_3` FOREIGN KEY (`cod_empresa`) REFERENCES `empresas` (`cod_empresa`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `facturas_ibfk_4` FOREIGN KEY (`cod_pago`) REFERENCES `pagos_factura` (`cod_pago_factura`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=909 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -459,7 +459,7 @@ CREATE TABLE `movimientos_inventario` (
   KEY `fk_mov_usuario` (`cod_usuario`),
   CONSTRAINT `fk_mov_producto` FOREIGN KEY (`cod_producto`) REFERENCES `productos` (`cod_producto`) ON DELETE CASCADE,
   CONSTRAINT `fk_mov_usuario` FOREIGN KEY (`cod_usuario`) REFERENCES `usuarios` (`cod_usuario`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1605 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -574,7 +574,7 @@ CREATE TABLE `productos` (
   UNIQUE KEY `sku` (`sku`),
   KEY `fk_producto_impuesto` (`cod_impuesto`),
   CONSTRAINT `fk_producto_impuesto` FOREIGN KEY (`cod_impuesto`) REFERENCES `impuestos` (`cod_impuesto`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -632,7 +632,7 @@ CREATE TABLE `schema_migrations` (
 
 LOCK TABLES `schema_migrations` WRITE;
 /*!40000 ALTER TABLE `schema_migrations` DISABLE KEYS */;
-INSERT INTO `schema_migrations` VALUES ('001','Módulo de inventario: kardex de movimientos y flag controla_stock','2026-08-09 18:29:28');
+INSERT INTO `schema_migrations` VALUES ('001','Módulo de inventario: kardex de movimientos y flag controla_stock','2026-08-09 18:29:28'),('002','Foto de perfil de usuario','2026-08-09 19:55:12');
 /*!40000 ALTER TABLE `schema_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -649,13 +649,14 @@ CREATE TABLE `usuarios` (
   `correo` varchar(255) DEFAULT NULL,
   `contrasena` varchar(255) DEFAULT NULL,
   `rol` varchar(255) DEFAULT NULL,
+  `foto` varchar(255) DEFAULT NULL COMMENT 'Nombre del archivo dentro de static/img/perfiles; NULL = avatar genérico',
   `cod_empresa` int(11) DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`cod_usuario`),
   UNIQUE KEY `correo` (`correo`),
   KEY `fk_usuario_empresa` (`cod_empresa`),
   CONSTRAINT `fk_usuario_empresa` FOREIGN KEY (`cod_empresa`) REFERENCES `empresas` (`cod_empresa`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -664,7 +665,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'Administrator','administrador@factugest.com','$2b$12$Pg7Xv8AuOi7Zjmg2DIjM4OvAcoOFF3CLidz6VMAEUM7KAXNN8uPDm','ADMIN',6,1),(2,'Brandon','brandon@factugest.com','$2b$12$nrHaD3rYzV7S8CKrHM3FPevndd5fuFlIxTYIQsQ2VQuFKTf/SAf5m','ADMIN',6,1),(3,'Johan','johan@factugest.com','$2b$12$NqQnvTFgb4fR5Olhvd5W4uXue0rjco5O3fm7jf6ZonbOGCf.AMdyq','ADMIN',2,1),(4,'Wilmer','wilmer@factugest.com','$2b$12$JJPYM1JMt2bgk5xX121AdOEQiUzShPYT1iQfbqKGukNxv6MpwD7Di','ADMIN',1,1),(5,'Yuliana','yuliana@factugest.com','$2b$12$56M/ZdFU6v.L1CnTW9QyqeVWbmMYke9X18vaUL4I34Av5.7oXx/6u','CAJERO',6,1),(6,'Diana Pedraza','diana@factugest.com','$2b$12$xeLuVjKbtnBzCgYBiEZPf.QwVl7pPBKpRfBhnt0N6.8iZKqj1LvI.','SUPERVISOR',2,0),(7,'Valeria Padraza','valeria@factugest.com','$2b$12$JdVCOVXjFYTjevFGeFlileL.39oYNW0c0EAvUwSrxDMRz/.1BwMTa','JEFE_TIENDA',1,1),(8,'juan','juan@factugest.com','$2b$12$kJhBVgt/pQ9/6g8LNfkFQ.CrzVq3JnS8Hq38hK/6rcX2d3rr6S5n.','SUPERVISOR',1,1);
+INSERT INTO `usuarios` VALUES (1,'Administrator','administrador@factugest.com','$2b$12$Pg7Xv8AuOi7Zjmg2DIjM4OvAcoOFF3CLidz6VMAEUM7KAXNN8uPDm','ADMIN',NULL,6,1),(2,'Brandon','brandon@factugest.com','$2b$12$nrHaD3rYzV7S8CKrHM3FPevndd5fuFlIxTYIQsQ2VQuFKTf/SAf5m','ADMIN',NULL,6,1),(3,'Johan','johan@factugest.com','$2b$12$NqQnvTFgb4fR5Olhvd5W4uXue0rjco5O3fm7jf6ZonbOGCf.AMdyq','ADMIN',NULL,2,1),(4,'Wilmer','wilmer@factugest.com','$2b$12$JJPYM1JMt2bgk5xX121AdOEQiUzShPYT1iQfbqKGukNxv6MpwD7Di','ADMIN',NULL,1,1),(5,'Yuliana','yuliana@factugest.com','$2b$12$56M/ZdFU6v.L1CnTW9QyqeVWbmMYke9X18vaUL4I34Av5.7oXx/6u','CAJERO',NULL,6,1),(6,'Diana Pedraza','diana@factugest.com','$2b$12$xeLuVjKbtnBzCgYBiEZPf.QwVl7pPBKpRfBhnt0N6.8iZKqj1LvI.','SUPERVISOR',NULL,2,0),(7,'Valeria Padraza','valeria@factugest.com','$2b$12$JdVCOVXjFYTjevFGeFlileL.39oYNW0c0EAvUwSrxDMRz/.1BwMTa','JEFE_TIENDA',NULL,1,1),(8,'juan','juan@factugest.com','$2b$12$kJhBVgt/pQ9/6g8LNfkFQ.CrzVq3JnS8Hq38hK/6rcX2d3rr6S5n.','SUPERVISOR',NULL,1,1);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -685,4 +686,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-09 19:32:55
+-- Dump completed on 2026-08-09 20:27:19

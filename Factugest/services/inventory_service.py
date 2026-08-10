@@ -39,10 +39,17 @@ class StockInsuficienteError(Exception):
 
 # ── Escritura ────────────────────────────────────────────────────────────────
 
+def _ahora():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+
+
 def _aplicar_movimiento(cursor, cod_producto, tipo, motivo, cantidad,
                         cod_usuario=None, cod_factura=None, observaciones=None,
-                        costo_unitario=None, permitir_negativo=False):
+                        costo_unitario=None, permitir_negativo=False, fecha=None):
     """Aplica un movimiento dentro de una transacción ya abierta.
+
+    `fecha` permite fechar el movimiento en el pasado; se usa al cargar datos
+    históricos. En la operación normal se omite y queda la fecha del momento.
 
     Retorna el dict del movimiento, o None si el producto no controla stock.
     """
@@ -75,7 +82,7 @@ def _aplicar_movimiento(cursor, cod_producto, tipo, motivo, cantidad,
     if stock_nuevo < 0 and not permitir_negativo:
         raise StockInsuficienteError(prod["nombre"], stock_anterior, cantidad)
 
-    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+    fecha = fecha or _ahora()
 
     cursor.execute(
         "UPDATE productos SET stock = %s WHERE cod_producto = %s",
@@ -105,7 +112,7 @@ def _aplicar_movimiento(cursor, cod_producto, tipo, motivo, cantidad,
 
 def registrar_movimiento(cod_producto, tipo, motivo, cantidad, cod_usuario=None,
                          cod_factura=None, observaciones=None, costo_unitario=None,
-                         permitir_negativo=False):
+                         permitir_negativo=False, fecha=None):
     """Registra un movimiento individual con su propia transacción."""
     db = create_connection()
     cursor = db.cursor(dictionary=True)
@@ -114,7 +121,7 @@ def registrar_movimiento(cod_producto, tipo, motivo, cantidad, cod_usuario=None,
             cursor, cod_producto, tipo, motivo, cantidad,
             cod_usuario=cod_usuario, cod_factura=cod_factura,
             observaciones=observaciones, costo_unitario=costo_unitario,
-            permitir_negativo=permitir_negativo,
+            permitir_negativo=permitir_negativo, fecha=fecha,
         )
         db.commit()
         return mov
@@ -128,7 +135,7 @@ def registrar_movimiento(cod_producto, tipo, motivo, cantidad, cod_usuario=None,
 
 def registrar_movimientos_documento(lineas, tipo, motivo, cod_factura=None,
                                     cod_usuario=None, observaciones=None,
-                                    permitir_negativo=False):
+                                    permitir_negativo=False, fecha=None):
     """Aplica en bloque los movimientos de un documento (factura, NC…).
 
     `lineas` es una lista de dicts con al menos `cod_producto` y `cantidad`.
@@ -146,7 +153,7 @@ def registrar_movimientos_documento(lineas, tipo, motivo, cod_factura=None,
                 cod_usuario=cod_usuario, cod_factura=cod_factura,
                 observaciones=observaciones,
                 costo_unitario=linea.get("precio_unitario"),
-                permitir_negativo=permitir_negativo,
+                permitir_negativo=permitir_negativo, fecha=fecha,
             )
             if mov:
                 aplicados.append(mov)
@@ -160,7 +167,8 @@ def registrar_movimientos_documento(lineas, tipo, motivo, cod_factura=None,
         db.close()
 
 
-def ajustar_stock(cod_producto, nuevo_stock, cod_usuario=None, observaciones=None):
+def ajustar_stock(cod_producto, nuevo_stock, cod_usuario=None, observaciones=None,
+                  fecha=None):
     """Fija el stock a un valor absoluto (conteo físico) y registra la diferencia."""
     nuevo_stock = int(nuevo_stock)
     if nuevo_stock < 0:
@@ -185,7 +193,7 @@ def ajustar_stock(cod_producto, nuevo_stock, cod_usuario=None, observaciones=Non
         if diferencia == 0:
             return None
 
-        fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        fecha = fecha or _ahora()
         cursor.execute("UPDATE productos SET stock = %s WHERE cod_producto = %s",
                        (nuevo_stock, cod_producto))
         cursor.execute(
@@ -212,7 +220,8 @@ def ajustar_stock(cod_producto, nuevo_stock, cod_usuario=None, observaciones=Non
         db.close()
 
 
-def registrar_saldo_inicial(cod_producto, cod_usuario=None, observaciones=None):
+def registrar_saldo_inicial(cod_producto, cod_usuario=None, observaciones=None,
+                            fecha=None):
     """Abre el kardex de un producto con el stock que ya tiene registrado.
 
     No modifica `productos.stock`: lo toma como saldo de apertura. Se usa al crear
@@ -236,8 +245,7 @@ def registrar_saldo_inicial(cod_producto, cod_usuario=None, observaciones=None):
                     costo_unitario, cod_usuario, observaciones, fecha)
                VALUES (%s, 'ENTRADA', 'INICIAL', %s, 0, %s, %s, %s, %s, %s)""",
             (cod_producto, cantidad, cantidad, prod["precio_unitario"], cod_usuario,
-             observaciones or "Saldo de apertura",
-             datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")),
+             observaciones or "Saldo de apertura", fecha or _ahora()),
         )
         db.commit()
         return {"cod_movimiento": cursor.lastrowid, "producto": prod["nombre"],
