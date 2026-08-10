@@ -23,6 +23,7 @@ from routes.logs import router as logs_router
 from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
 from routes.dashboard import router as dashboard_router
+from routes.reports import router as reports_router
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
@@ -47,6 +48,7 @@ app.include_router(inventory_router)
 app.include_router(logs_router)
 app.include_router(product_discount_router)
 app.include_router(ubicacion_router)
+app.include_router(reports_router)
 app.include_router(dashboard_router)
 
 # Registrar url_for como global en Jinja2

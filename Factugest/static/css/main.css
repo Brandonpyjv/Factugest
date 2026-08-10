@@ -524,3 +524,9 @@ body {
 .panel-control .tabla-datos td:first-child {
     font-variant-numeric: normal;
 }
+
+/* Reporte seleccionado en el catálogo lateral */
+.list-group-item.active-report {
+    background: #f4f7ff;
+    border-left: 3px solid #4e73df;
+}
