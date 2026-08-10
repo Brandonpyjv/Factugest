@@ -419,14 +419,15 @@
                                     <td>
                                         {% set ep = (inv.estado_pago or '').lower() %}
                                         {% if ep == 'paid' %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Pagado</span>
-                                        {% elif ep == 'pending' %}
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pendiente</span>
+                                            {% set tono = 'bg-success-subtle text-success border-success-subtle' %}
+                                        {% elif ep in ('pending', 'partially paid') %}
+                                            {% set tono = 'bg-warning-subtle text-warning-emphasis border-warning-subtle' %}
                                         {% elif ep == 'overdue' %}
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Vencido</span>
+                                            {% set tono = 'bg-danger-subtle text-danger border-danger-subtle' %}
                                         {% else %}
-                                            <span class="badge bg-secondary-subtle text-secondary border">{{ inv.estado_pago }}</span>
+                                            {% set tono = 'bg-secondary-subtle text-secondary' %}
                                         {% endif %}
+                                        <span class="badge border {{ tono }}">{{ etiqueta_estado(inv.estado_pago) }}</span>
                                     </td>
                                     <td class="pe-4 text-center">
                                         <a href="{{ url_for('view_invoice', numero_factura=inv.numero_factura or inv.cod_factura) }}"

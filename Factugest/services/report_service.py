@@ -21,6 +21,27 @@ from database import get_many, get_one
 COBRADO = (1,)
 CARTERA = (2, 3, 4)
 
+# `pagos_factura.status` guarda los estados en inglés (salvo los dos que se
+# agregaron después, en español). La interfaz es en español, así que se traducen
+# al mostrarlos en vez de tocar la tabla, que ya está referenciada por código.
+ESTADOS_PAGO = {
+    "paid":                 "Pagado",
+    "pending":              "Pendiente",
+    "partially paid":       "Pago parcial",
+    "overdue":              "Vencido",
+    "cancelled":            "Cancelado",
+    "disputed":             "En disputa",
+    "refunded":             "Reembolsado",
+    "Anulada":              "Anulada",
+    "Parcialmente Anulada": "Parcialmente anulada",
+}
+
+
+def etiqueta_estado(status: str) -> str:
+    if not status:
+        return "Sin estado"
+    return ESTADOS_PAGO.get(status, ESTADOS_PAGO.get(status.lower(), status))
+
 
 def rango_por_defecto(dias=30):
     """Ventana de los últimos `dias` días, ambos extremos incluidos."""
@@ -313,31 +334,63 @@ def get_ventas_por_usuario(desde, hasta, cod_empresa=None, limite=10):
 def get_impuestos_recaudados(desde, hasta, cod_empresa=None):
     """Base gravable e impuesto por tarifa, para el resumen tributario.
 
-    El IVA de las líneas no suma lo que declara la factura cuando hay descuento
-    global: ese descuento rebaja la base y `facturas.total_impuestos` ya viene
-    prorrateado. Aquí se aplica el mismo factor a cada línea para que el reporte
-    cuadre con los documentos emitidos.
+    Dos correcciones sobre la suma ingenua de las líneas:
+
+    * El IVA de las líneas no suma lo que declara la factura cuando hay descuento
+      global: ese descuento rebaja la base y `facturas.total_impuestos` ya viene
+      prorrateado. Se aplica el mismo factor a cada línea.
+    * Las notas débito llevan impuesto pero no tienen líneas de detalle, así que
+      un reporte construido solo sobre `detalle_factura` las omitiría. Se suman
+      aparte, con la tarifa efectiva que declara el documento.
     """
-    where, params = _filtro(desde, hasta, cod_empresa)
+    where, params = _filtro(desde, hasta, cod_empresa, alias="origen")
     return get_many(f"""
-        SELECT d.impuesto_porcentaje                            AS tarifa,
-               COALESCE(SUM(d.subtotal * f.factor), 0)          AS base_gravable,
-               COALESCE(SUM(d.impuesto_valor * f.factor), 0)    AS impuesto,
-               COUNT(DISTINCT f.cod_factura)                    AS documentos
-        FROM detalle_factura d
-            JOIN (
-                SELECT fa.cod_factura, fa.fecha, fa.cod_empresa,
-                       CASE WHEN l.iva_lineas <> 0
-                            THEN fa.total_impuestos / l.iva_lineas
-                            ELSE 1 END AS factor
-                FROM facturas fa
-                    JOIN (SELECT cod_factura, SUM(impuesto_valor) AS iva_lineas
-                          FROM detalle_factura GROUP BY cod_factura) l
-                      ON l.cod_factura = fa.cod_factura
-            ) f ON d.cod_factura = f.cod_factura
+        SELECT origen.tarifa                                AS tarifa,
+               COALESCE(SUM(origen.base_gravable), 0)       AS base_gravable,
+               COALESCE(SUM(origen.impuesto), 0)            AS impuesto,
+               COUNT(DISTINCT origen.cod_factura)           AS documentos
+        FROM (
+            SELECT d.impuesto_porcentaje        AS tarifa,
+                   d.subtotal * f.factor        AS base_gravable,
+                   d.impuesto_valor * f.factor  AS impuesto,
+                   f.cod_factura, f.fecha, f.cod_empresa
+            FROM detalle_factura d
+                JOIN (
+                    SELECT fa.cod_factura, fa.fecha, fa.cod_empresa,
+                           CASE WHEN l.iva_lineas <> 0
+                                THEN fa.total_impuestos / l.iva_lineas
+                                ELSE 1 END AS factor
+                    FROM facturas fa
+                        JOIN (SELECT cod_factura, SUM(impuesto_valor) AS iva_lineas
+                              FROM detalle_factura GROUP BY cod_factura) l
+                          ON l.cod_factura = fa.cod_factura
+                ) f ON d.cod_factura = f.cod_factura
+
+            UNION ALL
+
+            SELECT COALESCE((
+                       -- La nota débito calcula su IVA con la tasa promedio de la
+                       -- factura origen, que con descuentos globales no cae exacta
+                       -- en 19%. Se declara bajo la tarifa real de esa factura y no
+                       -- bajo un 18,34% que no existe en la normativa.
+                       SELECT d3.impuesto_porcentaje
+                       FROM detalle_factura d3
+                       WHERE d3.cod_factura = nd.cod_factura_referencia
+                       GROUP BY d3.impuesto_porcentaje
+                       ORDER BY SUM(ABS(d3.impuesto_valor)) DESC
+                       LIMIT 1),
+                     ROUND(nd.total_impuestos / NULLIF(nd.subtotal, 0) * 100, 0)
+                   ) AS tarifa,
+                   nd.subtotal, nd.total_impuestos,
+                   nd.cod_factura, nd.fecha, nd.cod_empresa
+            FROM facturas nd
+            WHERE nd.total_impuestos <> 0
+              AND NOT EXISTS (SELECT 1 FROM detalle_factura d2
+                              WHERE d2.cod_factura = nd.cod_factura)
+        ) origen
         WHERE {where}
-        GROUP BY d.impuesto_porcentaje
-        ORDER BY d.impuesto_porcentaje DESC
+        GROUP BY origen.tarifa
+        ORDER BY origen.tarifa DESC
     """, tuple(params))
 
 

@@ -48,7 +48,14 @@ def _cartera(desde, hasta, empresa):
     filas = rep.get_cartera_detalle(empresa, limite=500)
     for f in filas:
         f["dias_vencido"] = max(int(f.get("dias_vencido") or 0), 0)
-        f["estado_pago"] = (f.get("estado_pago") or "").capitalize()
+        f["estado_pago"] = rep.etiqueta_estado(f.get("estado_pago"))
+    return filas
+
+
+def _por_estado(desde, hasta, empresa):
+    filas = rep.get_ventas_por_estado(desde, hasta, empresa)
+    for f in filas:
+        f["estado"] = rep.etiqueta_estado(f.get("estado"))
     return filas
 
 
@@ -175,6 +182,17 @@ REPORTES = {
                      ("impuesto", "Impuesto", "dinero")],
         "datos": _impuestos,
         "no_totalizar": ["documentos"],
+    },
+    "por-estado": {
+        "titulo": "Facturación por estado de pago",
+        "descripcion": "Cómo se reparte lo facturado entre cobrado, pendiente, "
+                       "vencido y anulado.",
+        "icono": "bi-pie-chart",
+        "usa_periodo": True,
+        "columnas": [("estado", "Estado", "texto"),
+                     ("documentos", "Documentos", "numero"),
+                     ("total", "Total", "dinero")],
+        "datos": _por_estado,
     },
     "por-usuario": {
         "titulo": "Facturación por usuario",

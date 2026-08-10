@@ -246,7 +246,7 @@
                         </span>
                     {% else %}
                         <span class="badge bg-light text-dark border px-3 py-2 fs-6 mb-3 d-block text-center">
-                            {{ invoice.estado_pago }}
+                            {{ etiqueta_estado(invoice.estado_pago) }}
                         </span>
                     {% endif %}
 
