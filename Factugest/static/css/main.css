@@ -455,3 +455,72 @@ body {
     background: #fef08a;
     color: #854d0e;
 }
+
+/* ── Panel de control ──────────────────────────────────────────────────────
+   Las gráficas viven sobre tarjetas blancas: la paleta de series se validó
+   contra esa superficie, no contra el gris de la página. */
+
+.panel-control .cifra-principal {
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #0f172a;
+    /* Cifra grande: figuras proporcionales. tabular-nums solo en columnas. */
+    font-variant-numeric: proportional-nums;
+}
+
+.panel-control .punto-kpi {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Contenedor de canvas: alto explícito para que el eje X quepa dentro de la
+   tarjeta y no aparezca un scroll interno. */
+.panel-control .lienzo {
+    position: relative;
+    width: 100%;
+}
+
+.panel-control .leyenda {
+    display: flex;
+    gap: 1.25rem;
+    font-size: 0.8rem;
+    color: #5a5c69;
+}
+
+.panel-control .leyenda .clave-linea {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* El .table global pinta los encabezados en blanco sobre el degradado azul;
+   las tablas gemelas de las gráficas son texto plano dentro de la tarjeta. */
+.panel-control .tabla-datos th {
+    background: transparent !important;
+    color: #858796;
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #eef0f5;
+}
+
+.panel-control .tabla-datos td {
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+    color: #5a5c69;
+    font-variant-numeric: tabular-nums;
+}
+
+.panel-control .tabla-datos td:first-child {
+    font-variant-numeric: normal;
+}
