@@ -44,6 +44,7 @@ Factugest/
 │   ├── dashboard.py         # ruta "/" — tablero de control (y variante CAJERO)
 │   ├── reports.py           # /reports — 8 reportes + export CSV/PDF
 │   ├── inventory.py         # /inventory — panel, kardex, movimientos
+│   ├── perfil.py            # /perfil/foto — foto de perfil (fuera de /users a propósito)
 │   ├── invoice.py           # incluye también algunos /api/... AJAX legacy
 │   ├── customer.py
 │   ├── productos.py
@@ -63,6 +64,7 @@ Factugest/
 │   ├── inventory_service.py # kardex, alertas, valorización (único punto de escritura de stock)
 │   ├── report_service.py    # métricas del tablero: ventas, cartera, rankings, impuestos
 │   ├── export_service.py    # reportes → CSV y PDF
+│   ├── avatar_service.py    # valida y normaliza las fotos de perfil
 │   ├── pdf_service.py       # generate_invoice_pdf → bytes
 │   ├── xml_service.py       # generate_invoice_xml → str (DIAN)
 │   ├── cufe_service.py      # generate_cufe
@@ -184,12 +186,25 @@ CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursale
   comparativa contra el periodo anterior. Vista reducida para CAJERO.
 - **Reportes exportables** a CSV y PDF (`/reports`).
 
+### Datos de demostración
+
+`python seed_demo.py` genera seis meses de operación (ventas, notas crédito y
+débito, compras, mermas, cartera en todos los tramos) para poder mostrar el
+tablero y los reportes con contenido. `python seed_demo.py --limpiar` lo deshace
+exactamente. Es determinista y se verifica a sí mismo. **No usar en producción.**
+
 ### Alcance por rol
 
 - `ADMIN` / `JEFE_TIENDA` / `SUPERVISOR` → tablero completo, inventario y reportes,
   limitados a su propia empresa. Solo `ADMIN` puede consolidar todas las empresas.
 - `CAJERO` → panel operativo (facturar, clientes, consultar productos). Sin cifras
   financieras. `/inventory` y `/reports` están en `_ADMIN_ONLY_PREFIXES`.
+
+**Fotos de perfil**: `puede_cambiar_foto` permite a cada quien la suya y a un
+superior las de sus inferiores. La excepción del propio usuario no es un descuido:
+`can_manage` exige un rol estrictamente mayor y sin ella ningún ADMIN podría tener
+foto. Por eso las rutas viven en `/perfil` y no bajo `/users`, que es solo para
+roles administrativos.
 
 ---
 
