@@ -118,9 +118,28 @@ def migracion_001_inventario(cursor):
     return pasos
 
 
+# ── 002 · Foto de perfil ────────────────────────────────────────────────────
+
+def migracion_002_foto_perfil(cursor):
+    """Foto de perfil del usuario, mostrada en el navbar y el listado."""
+    pasos = []
+
+    if not _column_exists(cursor, "usuarios", "foto"):
+        cursor.execute(
+            "ALTER TABLE usuarios ADD COLUMN foto VARCHAR(255) DEFAULT NULL "
+            "COMMENT 'Nombre del archivo dentro de static/img/perfiles; NULL = avatar genérico' "
+            "AFTER rol"
+        )
+        pasos.append("columna usuarios.foto creada")
+
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
+    ("002", "Foto de perfil de usuario",
+     migracion_002_foto_perfil),
 ]
 
 

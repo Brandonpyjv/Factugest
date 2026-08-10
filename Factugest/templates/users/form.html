@@ -20,7 +20,29 @@
                     <h6 class="m-0 fw-bold text-primary">Datos del Usuario</h6>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ url_for('update_user', user_id=user.cod_usuario) if user else url_for('create_user') }}" method="POST">
+                    <form action="{{ url_for('update_user', user_id=user.cod_usuario) if user else url_for('create_user') }}"
+                          method="POST" enctype="multipart/form-data">
+
+                        <div class="d-flex align-items-center gap-4 mb-4 pb-4 border-bottom">
+                            <img id="vistaPrevia" src="{{ avatar_url(user.foto if user else None) }}"
+                                 alt="Foto de perfil" width="90" height="90"
+                                 class="rounded-circle border shadow-sm"
+                                 style="object-fit:cover;background:#fff;">
+                            <div class="flex-grow-1">
+                                <label class="form-label small fw-bold text-secondary">Foto de Perfil</label>
+                                <input type="file" name="foto" accept="image/*"
+                                       class="form-control form-control-sm bg-light border-0"
+                                       onchange="previsualizar(this)">
+                                <div class="form-text small">
+                                    Opcional. JPG, PNG, WEBP o GIF, máximo 5 MB.
+                                    {% if user and user.foto %}
+                                    <a href="{{ url_for('user_photo_delete', user_id=user.cod_usuario) }}?volver_a=/users/edit/{{ user.cod_usuario }}"
+                                       class="text-danger ms-1"
+                                       onclick="return confirm('¿Quitar la foto actual?')">Quitar foto actual</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Nombre Completo *</label>
@@ -83,4 +105,14 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previsualizar(entrada) {
+    const archivo = entrada.files && entrada.files[0];
+    if (!archivo) return;
+    document.getElementById('vistaPrevia').src = URL.createObjectURL(archivo);
+}
+</script>
 {% endblock %}

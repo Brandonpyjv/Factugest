@@ -30,6 +30,7 @@
                     <thead>
                         <tr class="text-uppercase small fw-bold" style="letter-spacing:0.5px;background:linear-gradient(135deg,#4e73df,#6ea0f5);">
                             <th scope="col" class="ps-4" style="background:transparent;color:#fff;">ID</th>
+                            <th scope="col" style="background:transparent;color:#fff;">Foto</th>
                             <th scope="col" style="background:transparent;color:#fff;">Nombre</th>
                             <th scope="col" style="background:transparent;color:#fff;">Correo</th>
                             <th scope="col" style="background:transparent;color:#fff;">Rol</th>
@@ -41,10 +42,15 @@
                         {% for u in usuarios %}
                         <tr style="transition: all 0.2s;">
                             <td class="ps-4 fw-bold text-dark">{{ u.cod_usuario }}</td>
+                            <td>
+                                <img src="{{ avatar_url(u.foto) }}" alt="Foto de {{ u.nombre }}"
+                                     width="40" height="40" class="rounded-circle border"
+                                     style="object-fit:cover;background:#fff;">
+                            </td>
                             <td>{{ u.nombre }}</td>
                             <td class="text-muted">{{ u.correo }}</td>
                             <td>
-                                <span class="badge border text-secondary fw-normal">{{ u.rol }}</span>
+                                <span class="badge border text-secondary fw-normal">{{ role_label(u.rol) }}</span>
                             </td>
                             <td>
                                 {% if u.empresa_nombre %}
@@ -59,8 +65,17 @@
                             </td>
                             <td class="pe-4 text-center">
                                 {% set hierarchy = {'ADMIN': 4, 'JEFE_TIENDA': 3, 'SUPERVISOR': 2, 'CAJERO': 1} %}
-                                {% if hierarchy.get(actor_rol, 0) > hierarchy.get(u.rol, 0) %}
+                                {% set puede_gestionar = hierarchy.get(actor_rol, 0) > hierarchy.get(u.rol, 0) %}
+                                {% set puede_foto = puede_cambiar_foto(request.session.get('user', {}), u) %}
+                                {% if puede_gestionar or puede_foto %}
                                 <div class="btn-group" role="group">
+                                    {% if puede_foto %}
+                                    <a href="{{ url_for('user_photo_form', user_id=u.cod_usuario) }}"
+                                       class="btn btn-sm btn-light border text-primary" title="Cambiar foto">
+                                        <i class="bi bi-camera"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if puede_gestionar %}
                                     <a href="{{ url_for('edit_user', user_id=u.cod_usuario) }}"
                                        class="btn btn-sm btn-light border text-warning" title="Editar">
                                         <i class="bi bi-pencil-square"></i>
@@ -70,6 +85,7 @@
                                        onclick="return confirm('¿Desactivar usuario {{ u.nombre }}?')">
                                         <i class="bi bi-trash"></i>
                                     </a>
+                                    {% endif %}
                                 </div>
                                 {% else %}
                                 <span class="text-muted small">—</span>
@@ -78,7 +94,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">No hay usuarios registrados.</td>
+                            <td colspan="7" class="text-center py-5 text-muted">No hay usuarios registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

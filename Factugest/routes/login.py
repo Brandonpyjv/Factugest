@@ -37,6 +37,7 @@ def login_post(
         "rol":           user["rol"],
         "cod_empresa":   user.get("cod_empresa"),
         "empresa_nombre": user.get("empresa_nombre"),
+        "foto":          user.get("foto"),
     }
     return RedirectResponse("/", status_code=303)
 
