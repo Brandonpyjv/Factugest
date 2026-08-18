@@ -2,13 +2,16 @@ from fastapi import APIRouter, File, Request, Form, UploadFile
 from fastapi.responses import RedirectResponse
 from typing import Optional
 from services.user_service import (get_all_users, get_user_by_id, create_user, update_user,
-                                    delete_user, update_user_photo)
+                                    delete_user, update_user_photo, validar_usuario)
 from services.avatar_service import FotoInvalidaError, eliminar_foto, guardar_foto
 from services.branches import get_all_branches
+from routes.formularios import formulario_invalido
 from auth import can_manage, ROLE_HIERARCHY, ROLE_LABELS
 from templates_config import templates
 
 router = APIRouter(prefix="/users")
+
+PLANTILLA = "users/form.html"
 
 # Roles que un actor puede asignar, filtrados por jerarquía
 def _assignable_roles(actor_rol: str) -> list:
@@ -66,13 +69,26 @@ async def create_user_post(
     correo: str = Form(...),
     contrasena: str = Form(...),
     rol: str = Form(...),
-    cod_empresa: Optional[int] = Form(None),
+    cod_empresa: Optional[str] = Form(None),
     foto: UploadFile = File(None),
 ):
     actor = request.session.get("user", {})
     if not can_manage(actor.get("rol", ""), rol):
         return RedirectResponse(url="/users", status_code=303)
-    nuevo_id = create_user(nombre, correo, contrasena, rol, cod_empresa)
+
+    enviado = {"nombre": nombre, "correo": correo, "contrasena": contrasena,
+               "rol": rol, "cod_empresa": cod_empresa}
+    v = validar_usuario(enviado)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v, {
+            "user": None,
+            "empresas": get_all_branches(),
+            "roles_disponibles": _assignable_roles(actor.get("rol", "")),
+        }, enviado)
+
+    d = v.datos
+    nuevo_id = create_user(d["nombre"], d["correo"], d["contrasena"], d["rol"],
+                           d["cod_empresa"])
     await _aplicar_foto(foto, nuevo_id)
     return RedirectResponse(url="/users", status_code=303)
 
@@ -99,7 +115,7 @@ async def update_user_post(
     correo: str = Form(...),
     rol: str = Form(...),
     contrasena: str = Form(""),
-    cod_empresa: Optional[int] = Form(None),
+    cod_empresa: Optional[str] = Form(None),
     foto: UploadFile = File(None),
 ):
     actor = request.session.get("user", {})
@@ -108,7 +124,20 @@ async def update_user_post(
         return RedirectResponse(url="/users", status_code=303)
     if not can_manage(actor.get("rol", ""), rol):
         return RedirectResponse(url="/users", status_code=303)
-    update_user(user_id, nombre, correo, rol, contrasena if contrasena else None, cod_empresa)
+
+    enviado = {"nombre": nombre, "correo": correo, "contrasena": contrasena,
+               "rol": rol, "cod_empresa": cod_empresa}
+    v = validar_usuario(enviado, user_id=user_id)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v, {
+            "user": target,
+            "empresas": get_all_branches(),
+            "roles_disponibles": _assignable_roles(actor.get("rol", "")),
+        }, enviado)
+
+    d = v.datos
+    update_user(user_id, d["nombre"], d["correo"], d["rol"],
+                d["contrasena"] or None, d["cod_empresa"])
     await _aplicar_foto(foto, user_id, target.get("foto"))
     return RedirectResponse(url="/users", status_code=303)
 

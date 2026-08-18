@@ -1,4 +1,9 @@
 {% extends "layout.html" %}
+{% import "_form.html" as f %}
+
+{# `valores` llega cuando la validacion rechazo el envio: se prefiere sobre el
+   registro guardado para no borrar lo que la persona acababa de escribir. #}
+{% set v = valores or user or {} %}
 
 {% block title %}{{ 'Editar Usuario' if user else 'Nuevo Usuario' }} | Factugest{% endblock %}
 
@@ -20,6 +25,7 @@
                     <h6 class="m-0 fw-bold text-primary">Datos del Usuario</h6>
                 </div>
                 <div class="card-body p-4">
+                    {{ f.alerta(errores) }}
                     <form action="{{ url_for('update_user', user_id=user.cod_usuario) if user else url_for('create_user') }}"
                           method="POST" enctype="multipart/form-data">
 
@@ -46,30 +52,32 @@
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Nombre Completo *</label>
-                            <input type="text" name="nombre" class="form-control bg-light border-0" required
-                                   value="{{ user.nombre if user else '' }}" placeholder="Ej: Brandon Pérez">
+                            <input type="text" name="nombre" class="form-control bg-light border-0{{ f.invalido(errores, 'nombre') }}" required
+                                   value="{{ v.nombre or '' }}" placeholder="Ej: Brandon Pérez">
+                            {{ f.mensaje(errores, 'nombre') }}
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Correo Electrónico *</label>
-                            <input type="email" name="correo" class="form-control bg-light border-0" required
-                                   value="{{ user.correo if user else '' }}" placeholder="usuario@empresa.com">
+                            <input type="email" name="correo" class="form-control bg-light border-0{{ f.invalido(errores, 'correo') }}" required
+                                   value="{{ v.correo or '' }}" placeholder="usuario@empresa.com">
+                            {{ f.mensaje(errores, 'correo') }}
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">
                                 Contraseña {{ '*' if not user else '(dejar vacío para no cambiar)' }}
                             </label>
-                            <input type="password" name="contrasena" class="form-control bg-light border-0"
+                            <input type="password" name="contrasena" class="form-control bg-light border-0{{ f.invalido(errores, 'contrasena') }}"
                                    {{ 'required' if not user }} placeholder="••••••••">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Rol *</label>
-                            <select name="rol" class="form-select bg-light border-0" required>
+                            <select name="rol" class="form-select bg-light border-0{{ f.invalido(errores, 'rol') }}" required>
                                 <option value="">Seleccionar rol...</option>
                                 {% for r in roles_disponibles %}
-                                <option value="{{ r.value }}" {{ 'selected' if user and user.rol == r.value }}>
+                                <option value="{{ r.value }}" {{ 'selected' if v.rol == r.value }}>
                                     {{ r.label }}
                                 </option>
                                 {% endfor %}
@@ -78,11 +86,11 @@
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">Sucursal / Empresa *</label>
-                            <select name="cod_empresa" class="form-select bg-light border-0" required>
+                            <select name="cod_empresa" class="form-select bg-light border-0{{ f.invalido(errores, 'cod_empresa') }}" required>
                                 <option value="">Seleccionar sucursal...</option>
                                 {% for e in empresas %}
                                 <option value="{{ e.cod_empresa }}"
-                                    {{ 'selected' if user and user.cod_empresa == e.cod_empresa }}>
+                                    {{ 'selected' if v.cod_empresa|string == e.cod_empresa|string }}>
                                     {{ e.nombre }}{% if e.nit %} — NIT {{ e.nit }}{% endif %}
                                 </option>
                                 {% endfor %}

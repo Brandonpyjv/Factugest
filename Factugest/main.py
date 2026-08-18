@@ -68,7 +68,22 @@ def avatar_url(foto: str = None) -> str:
     return app.url_path_for("static", path="img/avatar-generico.svg")
 
 
+def fecha_iso(valor) -> str:
+    """Valor de un <input type="date">.
+
+    Al volver de una validación fallida la fecha llega como el texto que envió el
+    formulario; desde la base llega como date. El template no debería tener que
+    saber cuál de las dos es.
+    """
+    if not valor:
+        return ""
+    if hasattr(valor, "strftime"):
+        return valor.strftime("%Y-%m-%d")
+    return str(valor)[:10]
+
+
 templates.env.globals["avatar_url"] = avatar_url
+templates.env.globals["fecha_iso"] = fecha_iso
 templates.env.globals["role_label"] = role_label
 templates.env.globals["puede_cambiar_foto"] = puede_cambiar_foto
 templates.env.globals["etiqueta_estado"] = etiqueta_estado

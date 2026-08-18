@@ -40,6 +40,21 @@ class Validador:
             self.errores[e.campo] = e.mensaje
         return self
 
+    def pareja(self, nombres, funcion, *args, **kwargs):
+        """Para reglas que miran dos campos a la vez, como un rango o unas fechas.
+
+        La función recibe los nombres de los campos y devuelve los dos valores ya
+        normalizados; el error queda asociado al campo que la regla señale.
+        """
+        try:
+            resultados = funcion(*args, **kwargs)
+        except ErrorValidacion as e:
+            self.errores[e.campo] = e.mensaje
+            return self
+        for nombre, valor in zip(nombres, resultados):
+            self.datos[nombre] = valor
+        return self
+
     @property
     def valido(self) -> bool:
         return not self.errores
@@ -316,6 +331,61 @@ def calcular_dv(nit: str) -> int:
     suma = sum(int(d) * _PESOS_DV[i] for i, d in enumerate(reversed(digitos)))
     resto = suma % 11
     return resto if resto < 2 else 11 - resto
+
+
+def nit(valor, campo: str = "nit") -> str:
+    """El NIT es el documento tipo 31: solo dígitos, sin el de verificación."""
+    return numero_documento(valor, "31", campo)
+
+
+def codigo_ciiu(valor, campo: str = "actividad_economica", requerido: bool = False) -> str:
+    """Actividad económica: el CIIU son cuatro dígitos."""
+    valor = (valor or "").strip()
+    if not valor:
+        if requerido:
+            raise ErrorValidacion(campo, "Es obligatoria")
+        return ""
+    if not valor.isdigit() or len(valor) != 4:
+        raise ErrorValidacion(campo, "El código CIIU son cuatro dígitos")
+    return valor
+
+
+def prefijo(valor, campo: str = "prefijo_factura", maximo: int = 10) -> str:
+    """Prefijo de la numeración autorizada, como FV o SETP."""
+    valor = (valor or "").strip().upper()
+    if not valor:
+        raise ErrorValidacion(campo, "Es obligatorio")
+    if len(valor) > maximo:
+        raise ErrorValidacion(campo, f"No puede pasar de {maximo} caracteres")
+    if not valor.isalnum():
+        raise ErrorValidacion(campo, "Solo puede contener letras y números")
+    return valor
+
+
+def contrasena(valor, campo: str = "contrasena", minimo: int = 8,
+               requerido: bool = True) -> str:
+    """Al editar se deja vacía para conservar la actual, de ahí `requerido`."""
+    valor = valor or ""
+    if not valor:
+        if requerido:
+            raise ErrorValidacion(campo, "Es obligatoria")
+        return ""
+    if len(valor) < minimo:
+        raise ErrorValidacion(campo, f"Debe tener al menos {minimo} caracteres")
+    if len(valor) > 100:
+        raise ErrorValidacion(campo, "No puede pasar de 100 caracteres")
+    return valor
+
+
+def sitio_web(valor, campo: str = "website", requerido: bool = False) -> str:
+    valor = (valor or "").strip()
+    if not valor:
+        if requerido:
+            raise ErrorValidacion(campo, "Es obligatorio")
+        return ""
+    if len(valor) > 255 or " " in valor or "." not in valor:
+        raise ErrorValidacion(campo, "No parece una dirección web válida")
+    return valor
 
 
 def dv(valor, nit: str, campo: str = "dv") -> str:

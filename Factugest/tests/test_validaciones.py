@@ -239,6 +239,59 @@ def test_una_fecha_mal_escrita_se_rechaza():
     assert error(fecha, "2026-13-45") == "No es una fecha válida"
 
 
+# ── Identidad de la empresa emisora ─────────────────────────────────────────
+
+def test_el_nit_solo_admite_digitos_y_de_8_a_10():
+    from services.validaciones import nit
+    assert nit("901555444") == "901555444"
+    assert nit("901.555.444") == "901555444"
+    assert error(nit, "90A555444") == "El NIT solo admite números"
+    assert "entre 8 y 10" in error(nit, "123")
+
+
+def test_el_ciiu_son_cuatro_digitos():
+    from services.validaciones import codigo_ciiu
+    assert codigo_ciiu("4741") == "4741"
+    assert codigo_ciiu("") == ""
+    assert error(codigo_ciiu, "47") == "El código CIIU son cuatro dígitos"
+    assert error(codigo_ciiu, "47A1") == "El código CIIU son cuatro dígitos"
+
+
+def test_el_prefijo_se_normaliza_y_no_admite_simbolos():
+    from services.validaciones import prefijo
+    assert prefijo("setp") == "SETP"
+    assert error(prefijo, "SE-TP") == "Solo puede contener letras y números"
+    assert error(prefijo, "") == "Es obligatorio"
+
+
+def test_la_contrasena_exige_largo_minimo_salvo_al_editar():
+    from services.validaciones import contrasena
+    assert contrasena("clave-segura-1") == "clave-segura-1"
+    assert error(contrasena, "123") == "Debe tener al menos 8 caracteres"
+    assert error(contrasena, "") == "Es obligatoria"
+    # Al editar, vacía significa «déjala como está».
+    assert contrasena("", requerido=False) == ""
+
+
+def test_el_sitio_web_rechaza_lo_que_no_parece_dominio():
+    from services.validaciones import sitio_web
+    assert sitio_web("siste.co") == "siste.co"
+    assert sitio_web("") == ""
+    assert error(sitio_web, "sin punto") == "No parece una dirección web válida"
+
+
+def test_la_pareja_asigna_los_dos_campos_o_marca_el_que_falla():
+    from services.validaciones import rango
+    v = Validador()
+    v.pareja(("desde", "hasta"), rango, 1, 5000, "desde", "hasta")
+    assert v.valido and v.datos == {"desde": 1, "hasta": 5000}
+
+    v = Validador()
+    v.pareja(("desde", "hasta"), rango, 5000, 1, "desde", "hasta")
+    assert not v.valido
+    assert list(v.errores) == ["hasta"]
+
+
 # ── Catálogos ───────────────────────────────────────────────────────────────
 
 def test_la_opcion_debe_estar_en_la_lista_blanca():
