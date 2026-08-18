@@ -81,7 +81,7 @@
                                 {% elif ep == 'refunded' %}
                                     <span class="badge rounded-pill bg-primary-subtle text-primary px-3 border border-primary-subtle">Reembolsado</span>
                                 {% else %}
-                                    <span class="badge rounded-pill bg-light text-dark px-3">{{ invoice.estado_pago }}</span>
+                                    <span class="badge rounded-pill bg-light text-dark px-3">{{ etiqueta_estado(invoice.estado_pago) }}</span>
                                 {% endif %}
                             </td>
                             <td class="pe-4 text-center">

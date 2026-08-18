@@ -52,16 +52,29 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary">Maneja Inventario</label>
+                                <select name="controla_stock" id="controlaStock" class="form-select bg-light border-0"
+                                        onchange="toggleCamposStock()">
+                                    <option value="1" {{ 'selected' if not product or product.controla_stock == 1 }}>Sí — descuenta al facturar</option>
+                                    <option value="0" {{ 'selected' if product and product.controla_stock == 0 }}>No — servicio o intangible</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3 campo-stock">
                                 <label class="form-label small fw-bold text-secondary">Stock Actual</label>
                                 <input type="number" name="stock" class="form-control bg-light border-0" min="0"
                                        value="{{ product.stock if product else 0 }}">
+                                {% if product and product.controla_stock %}
+                                <div class="form-text small">Cambiarlo registra un ajuste en el kardex.</div>
+                                {% endif %}
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-md-3 campo-stock">
                                 <label class="form-label small fw-bold text-secondary">Stock Mínimo</label>
                                 <input type="number" name="stock_minimo" class="form-control bg-light border-0" min="0"
                                        value="{{ product.stock_minimo if product else 5 }}">
+                                <div class="form-text small">Por debajo de este valor se genera una alerta.</div>
                             </div>
 
                             <div class="col-md-3">
@@ -116,4 +129,16 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCamposStock() {
+    const controla = document.getElementById('controlaStock').value === '1';
+    document.querySelectorAll('.campo-stock').forEach(c => {
+        c.style.display = controla ? '' : 'none';
+    });
+}
+document.addEventListener('DOMContentLoaded', toggleCamposStock);
+</script>
 {% endblock %}

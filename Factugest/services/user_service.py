@@ -46,5 +46,11 @@ def update_user(user_id: int, nombre: str, correo: str, rol: str, contrasena: st
         return execute_update(query, (nombre, correo, rol, cod_empresa, user_id))
 
 
+def update_user_photo(user_id: int, foto: str = None):
+    """Asocia (o quita, con None) el archivo de foto de perfil."""
+    return execute_update("UPDATE usuarios SET foto = %s WHERE cod_usuario = %s",
+                          (foto, user_id))
+
+
 def delete_user(user_id: int):
     return execute_update("UPDATE usuarios SET activo = 0 WHERE cod_usuario = %s", (user_id,))

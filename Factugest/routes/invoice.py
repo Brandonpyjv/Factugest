@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, Response, JSONResponse
 from typing import List, Optional
-from datetime import datetime, date as date_type
+from datetime import datetime, timedelta, date as date_type
 from services.invoice_service import (get_all_invoices_detailed, get_invoice_by_id,
                                        get_invoice_by_numero_factura, get_invoice_details,
                                        create_invoice, create_invoice_detail,
@@ -14,6 +14,11 @@ from services.pdf_service import generate_invoice_pdf
 from services.xml_service import generate_invoice_xml
 from services.cufe_service import generate_cufe
 from services.user_service import get_user_by_id
+from services.inventory_service import (verificar_disponibilidad,
+                                         registrar_movimientos_documento,
+                                         revertir_movimientos_de_factura,
+                                         documento_afecto_inventario,
+                                         StockInsuficienteError)
 from templates_config import templates
 from database import get_one, get_many, execute_update
 
@@ -26,8 +31,7 @@ def invoice(request: Request):
     return templates.TemplateResponse(request, "invoice/index.html", {"all_invoices": data})
 
 
-@router.get("/new", name="new_invoice")
-def new_invoice(request: Request):
+def _render_invoice_form(request: Request, error: str = None):
     session_user = request.session.get("user", {})
     cod_empresa = session_user.get("cod_empresa")
 
@@ -55,7 +59,13 @@ def new_invoice(request: Request):
         "pagos_factura": get_all_invoice_payments(),
         "invoice_discounts": invoice_discounts,
         "invoice": None,
+        "error": error,
     })
+
+
+@router.get("/new", name="new_invoice")
+def new_invoice(request: Request):
+    return _render_invoice_form(request)
 
 
 @router.post("/new", name="create_invoice")
@@ -73,9 +83,15 @@ async def create_invoice_post(
     descuento_descripcion: Optional[List[str]] = Form(None),
     cod_descuento_factura: Optional[int] = Form(None),
     valor_descuento_factura: float = Form(0.0),
+    plazo_pago: int = Form(0),
 ):
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    fecha_vencimiento = date_type.today().strftime("%Y-%m-%d")
+
+    # El vencimiento se deriva del plazo pactado, no se escribe a mano: así el
+    # PDF, el XML y la cartera cuentan siempre la misma historia. 0 días = contado.
+    plazo_pago = max(0, min(int(plazo_pago), 365))
+    forma_pago = "CONTADO" if plazo_pago == 0 else "CREDITO"
+    fecha_vencimiento = (date_type.today() + timedelta(days=plazo_pago)).strftime("%Y-%m-%d")
 
     subtotal_bruto = 0.0
     total_descuentos = 0.0
@@ -137,6 +153,16 @@ async def create_invoice_post(
     subtotal_neto = round(subtotal_bruto - total_descuentos, 2)
     total = round(subtotal_neto + total_impuestos, 2)
 
+    # Validar inventario antes de consumir un consecutivo autorizado: una factura
+    # rechazada por falta de stock no debe quemar un número de la resolución DIAN.
+    faltantes = verificar_disponibilidad(lineas)
+    if faltantes:
+        detalle = "; ".join(
+            f"«{f['producto']}»: disponible {f['disponible']}, solicitado {f['solicitado']}"
+            for f in faltantes
+        )
+        return _render_invoice_form(request, error=f"Stock insuficiente — {detalle}")
+
     session_user = request.session.get("user", {})
     cod_usuario = session_user.get("cod_usuario", 1)
     cod_empresa = session_user.get("cod_empresa", 1)
@@ -171,15 +197,9 @@ async def create_invoice_post(
         fecha_vencimiento=fecha_vencimiento or None,
         cufe=cufe,
         numero_factura=numero_factura,
-        forma_pago='CONTADO',
+        forma_pago=forma_pago,
         cod_descuento_factura=cod_descuento_factura,
         descripcion_descuento_factura=descripcion_descuento_factura,
-    )
-
-    # Avanzar consecutivo de la empresa
-    execute_update(
-        "UPDATE empresas SET consecutivo_actual = %s WHERE cod_empresa = %s",
-        (consecutivo + 1, cod_empresa)
     )
 
     for linea in lineas:
@@ -195,6 +215,25 @@ async def create_invoice_post(
             impuesto_porcentaje=linea["impuesto_porcentaje"],
             impuesto_valor=linea["impuesto_valor"],
         )
+
+    # Descontar inventario. Entre la validación de arriba y este punto otra venta
+    # pudo consumir el saldo, así que si falla se deshace la factura completa y el
+    # consecutivo queda libre para el siguiente intento.
+    try:
+        registrar_movimientos_documento(
+            lineas, tipo="SALIDA", motivo="VENTA",
+            cod_factura=invoice_id, cod_usuario=cod_usuario,
+            observaciones=f"Venta {numero_factura}",
+        )
+    except StockInsuficienteError as e:
+        delete_invoice(invoice_id)
+        return _render_invoice_form(request, error=f"Stock insuficiente — {e}")
+
+    # Avanzar consecutivo de la empresa
+    execute_update(
+        "UPDATE empresas SET consecutivo_actual = %s WHERE cod_empresa = %s",
+        (consecutivo + 1, cod_empresa)
+    )
 
     return RedirectResponse(url=f"/invoice/{numero_factura}", status_code=303)
 
@@ -261,7 +300,9 @@ def invoice_xml_download(invoice_id: int):
 
 
 @router.get("/delete/{invoice_id}", name="delete_invoice")
-def delete_invoice_get(invoice_id: int):
+def delete_invoice_get(request: Request, invoice_id: int):
+    cod_usuario = request.session.get("user", {}).get("cod_usuario")
+    revertir_movimientos_de_factura(invoice_id, cod_usuario=cod_usuario)
     delete_invoice(invoice_id)
     return RedirectResponse(url="/invoice", status_code=302)
 
@@ -382,6 +423,17 @@ async def create_nota_credito_post(
             impuesto_valor=d['impuesto_valor'],
         )
 
+    # Reingresar al inventario lo devuelto, solo si la factura original llegó a
+    # descontarlo (las emitidas antes del kardex no lo hicieron).
+    if documento_afecto_inventario(invoice_id):
+        registrar_movimientos_documento(
+            [{"cod_producto": d["cod_producto"], "cantidad": abs(int(d["cantidad"]))}
+             for d in lineas_nc],
+            tipo="ENTRADA", motivo="DEVOLUCION",
+            cod_factura=nc_id, cod_usuario=cod_usuario,
+            observaciones=f"Devolución por {numero_nc} sobre {inv.get('numero_factura')}",
+        )
+
     execute_update(
         "UPDATE empresas SET consecutivo_nc = %s WHERE cod_empresa = %s",
         (consec_nc + 1, cod_empresa)
@@ -484,6 +536,7 @@ def api_customers_search(q: str = ""):
 def api_products_search(q: str = ""):
     results = get_many(
         "SELECT p.cod_producto, p.sku, p.nombre, p.precio_unitario, "
+        "p.stock, p.controla_stock, "
         "i.porcentaje AS tax_porcentaje "
         "FROM productos p LEFT JOIN impuestos i ON p.cod_impuesto = i.cod_impuesto "
         "WHERE p.activo = 1 AND (p.sku LIKE %s OR p.nombre LIKE %s) "
@@ -493,6 +546,8 @@ def api_products_search(q: str = ""):
     for r in results:
         r["precio_unitario"] = float(r["precio_unitario"])
         r["tax_porcentaje"] = float(r["tax_porcentaje"] or 0)
+        r["stock"] = int(r["stock"] or 0)
+        r["controla_stock"] = int(r["controla_stock"] or 0)
     return JSONResponse(content=results)
 
 

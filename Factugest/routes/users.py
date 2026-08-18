@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, File, Request, Form, UploadFile
 from fastapi.responses import RedirectResponse
 from typing import Optional
-from services.user_service import get_all_users, get_user_by_id, create_user, update_user, delete_user
+from services.user_service import (get_all_users, get_user_by_id, create_user, update_user,
+                                    delete_user, update_user_photo)
+from services.avatar_service import FotoInvalidaError, eliminar_foto, guardar_foto
 from services.branches import get_all_branches
-from auth import can_manage, ROLE_HIERARCHY
+from auth import can_manage, ROLE_HIERARCHY, ROLE_LABELS
 from templates_config import templates
 
 router = APIRouter(prefix="/users")
@@ -12,17 +14,28 @@ router = APIRouter(prefix="/users")
 def _assignable_roles(actor_rol: str) -> list:
     actor_level = ROLE_HIERARCHY.get(actor_rol, 0)
     order = ["ADMIN", "JEFE_TIENDA", "SUPERVISOR", "CAJERO"]
-    labels = {
-        "ADMIN": "Administrador",
-        "JEFE_TIENDA": "Jefe de Tienda",
-        "SUPERVISOR": "Supervisor",
-        "CAJERO": "Cajero",
-    }
     return [
-        {"value": r, "label": labels[r]}
+        {"value": r, "label": ROLE_LABELS[r]}
         for r in order
         if ROLE_HIERARCHY[r] < actor_level
     ]
+
+
+async def _aplicar_foto(archivo: UploadFile, cod_usuario: int, foto_anterior=None):
+    """Guarda la foto adjunta al formulario, si viene alguna.
+
+    Un fallo aquí no debe tumbar el alta o la edición del usuario: los datos ya
+    se guardaron y la foto es accesoria. Se reporta pero no se revierte nada.
+    """
+    if not archivo or not archivo.filename:
+        return None
+    try:
+        nombre = guardar_foto(await archivo.read(), cod_usuario)
+    except FotoInvalidaError:
+        return None
+    eliminar_foto(foto_anterior)
+    update_user_photo(cod_usuario, nombre)
+    return nombre
 
 
 @router.get("", name="users")
@@ -47,18 +60,20 @@ def new_user(request: Request):
 
 
 @router.post("/new", name="create_user")
-def create_user_post(
+async def create_user_post(
     request: Request,
     nombre: str = Form(...),
     correo: str = Form(...),
     contrasena: str = Form(...),
     rol: str = Form(...),
     cod_empresa: Optional[int] = Form(None),
+    foto: UploadFile = File(None),
 ):
     actor = request.session.get("user", {})
     if not can_manage(actor.get("rol", ""), rol):
         return RedirectResponse(url="/users", status_code=303)
-    create_user(nombre, correo, contrasena, rol, cod_empresa)
+    nuevo_id = create_user(nombre, correo, contrasena, rol, cod_empresa)
+    await _aplicar_foto(foto, nuevo_id)
     return RedirectResponse(url="/users", status_code=303)
 
 
@@ -77,7 +92,7 @@ def edit_user(request: Request, user_id: int):
 
 
 @router.post("/edit/{user_id}", name="update_user")
-def update_user_post(
+async def update_user_post(
     request: Request,
     user_id: int,
     nombre: str = Form(...),
@@ -85,6 +100,7 @@ def update_user_post(
     rol: str = Form(...),
     contrasena: str = Form(""),
     cod_empresa: Optional[int] = Form(None),
+    foto: UploadFile = File(None),
 ):
     actor = request.session.get("user", {})
     target = get_user_by_id(user_id)
@@ -93,6 +109,7 @@ def update_user_post(
     if not can_manage(actor.get("rol", ""), rol):
         return RedirectResponse(url="/users", status_code=303)
     update_user(user_id, nombre, correo, rol, contrasena if contrasena else None, cod_empresa)
+    await _aplicar_foto(foto, user_id, target.get("foto"))
     return RedirectResponse(url="/users", status_code=303)
 
 

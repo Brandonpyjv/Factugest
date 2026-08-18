@@ -41,6 +41,10 @@ Factugest/
 ├── database.py              # helpers: execute_query, execute_update, get_one, get_many
 ├── templates_config.py      # Jinja2 setup
 ├── routes/                  # APIRouter por dominio (web Jinja)
+│   ├── dashboard.py         # ruta "/" — tablero de control (y variante CAJERO)
+│   ├── reports.py           # /reports — 8 reportes + export CSV/PDF
+│   ├── inventory.py         # /inventory — panel, kardex, movimientos
+│   ├── perfil.py            # /perfil/foto — foto de perfil (fuera de /users a propósito)
 │   ├── invoice.py           # incluye también algunos /api/... AJAX legacy
 │   ├── customer.py
 │   ├── productos.py
@@ -57,6 +61,10 @@ Factugest/
 │   └── api/v1/              # ← NUEVO: endpoints JSON para mobile (en construcción)
 ├── services/                # lógica de negocio reutilizable por web y API
 │   ├── invoice_service.py   # CRUD facturas + get_dashboard_stats
+│   ├── inventory_service.py # kardex, alertas, valorización (único punto de escritura de stock)
+│   ├── report_service.py    # métricas del tablero: ventas, cartera, rankings, impuestos
+│   ├── export_service.py    # reportes → CSV y PDF
+│   ├── avatar_service.py    # valida y normaliza las fotos de perfil
 │   ├── pdf_service.py       # generate_invoice_pdf → bytes
 │   ├── xml_service.py       # generate_invoice_xml → str (DIAN)
 │   ├── cufe_service.py      # generate_cufe
@@ -123,7 +131,16 @@ ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}  # acceso completo
 
 - **Local**: `localhost`, user `root` sin contraseña, db `factugest`.
 - Configurable vía `.env` (variables que lee `database.py`).
-- **No hay migraciones formales** — el esquema se mantiene manualmente. Cuando agregues columnas, documenta el ALTER en el PR.
+- **Migraciones**: `python migrate.py` aplica los cambios de esquema versionados y
+  registra lo aplicado en `schema_migrations`. Cada migración es idempotente.
+  Al agregar columnas o tablas, añade una migración ahí y regenera `base/factugest.sql`.
+
+### Invariante de inventario
+
+Toda modificación de `productos.stock` pasa por `services/inventory_service.py`.
+Nunca un `UPDATE productos SET stock = ...` suelto: cada cambio deja su fila en
+`movimientos_inventario` (kardex), de modo que el saldo siempre es reconstruible.
+Los productos con `controla_stock = 0` (servicios, intangibles) se ignoran sin error.
 
 ---
 
@@ -161,9 +178,33 @@ CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursale
 - Generación de **PDF** (`services/pdf_service.py`) y **XML DIAN** (`services/xml_service.py`).
 - **CUFE** (`services/cufe_service.py`) — actualmente simulado, no enviado a DIAN real.
 - **Notas Crédito** y **Notas Débito** con referencia a la factura origen.
-- **Dashboard** con KPIs en tiempo real (`services/invoice_service.py::get_dashboard_stats`).
 - **Prorrateo de IVA** sobre descuentos de factura.
 - Consecutivos de factura/NC/ND por empresa.
+- **Control de inventario**: facturar descuenta stock, la NC lo reingresa, kardex
+  completo con alertas por bajo mínimo y valorización.
+- **Tablero de control** con filtros de periodo y empresa, gráficas Chart.js y
+  comparativa contra el periodo anterior. Vista reducida para CAJERO.
+- **Reportes exportables** a CSV y PDF (`/reports`).
+
+### Datos de demostración
+
+`python seed_demo.py` genera seis meses de operación (ventas, notas crédito y
+débito, compras, mermas, cartera en todos los tramos) para poder mostrar el
+tablero y los reportes con contenido. `python seed_demo.py --limpiar` lo deshace
+exactamente. Es determinista y se verifica a sí mismo. **No usar en producción.**
+
+### Alcance por rol
+
+- `ADMIN` / `JEFE_TIENDA` / `SUPERVISOR` → tablero completo, inventario y reportes,
+  limitados a su propia empresa. Solo `ADMIN` puede consolidar todas las empresas.
+- `CAJERO` → panel operativo (facturar, clientes, consultar productos). Sin cifras
+  financieras. `/inventory` y `/reports` están en `_ADMIN_ONLY_PREFIXES`.
+
+**Fotos de perfil**: `puede_cambiar_foto` permite a cada quien la suya y a un
+superior las de sus inferiores. La excepción del propio usuario no es un descuido:
+`can_manage` exige un rol estrictamente mayor y sin ella ningún ADMIN podría tener
+foto. Por eso las rutas viven en `/perfil` y no bajo `/users`, que es solo para
+roles administrativos.
 
 ---
 
@@ -178,8 +219,14 @@ CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursale
 - Probablemente afecta **ambos frontends** (web y mobile). Verificar los dos flujos.
 
 ### ⚠️ Si tocas la BD
-- Documentar el `ALTER TABLE` en el PR.
+- Agregar una migración en `migrate.py` en lugar de un ALTER suelto, y regenerar
+  `base/factugest.sql`.
 - Verificar que ambos frontends sigan funcionando.
+
+### ⚠️ Si tocas el stock
+- Usar `inventory_service`, nunca un UPDATE directo (ver el invariante de inventario).
+- Una factura que falla por falta de stock **no debe consumir un consecutivo**: la
+  numeración de la resolución DIAN es un recurso autorizado y finito.
 
 ---
 
@@ -192,6 +239,17 @@ El backend nació como monolito FastAPI con frontend Jinja. Cuando se necesitó 
 3. Migrar el frontend web a SPA → fuera de alcance.
 
 **Resultado**: el backend tiene dos "caras" — Jinja (web actual) y JSON (mobile nuevo) — alimentadas por la misma capa de `services/`. La web sigue intacta; la API es aditiva.
+
+---
+
+## Objetivos específicos del anteproyecto
+
+| Objetivo | Estado |
+|---|---|
+| 1 — Emisión de FV/NC/ND con PDF, XML UBL 2.1 y CUFE | ✅ (CUFE en pre-producción) |
+| 2 — Control de inventarios con alertas y kardex | ✅ |
+| 3 — Tablero de control con métricas y reportes exportables | ✅ |
+| API REST de integración (`/api/v1/`) | ⏳ fuera del alcance actual |
 
 ---
 
