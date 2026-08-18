@@ -315,12 +315,15 @@ def get_invoice_by_id(invoice_id: int):
 
 
 def get_invoice_details(invoice_id: int):
+    # Una línea de concepto no tiene producto, así que el nombre, el SKU y la
+    # unidad salen de la propia línea o de un valor por defecto: el PDF y el XML
+    # no deberían tener que distinguir de qué clase de línea se trata.
     return get_many("""
         SELECT d.*,
-               p.nombre    AS producto_nombre,
-               p.sku,
-               p.tipo_item,
-               p.unidad_medida,
+               COALESCE(p.nombre, d.descripcion, 'Concepto') AS producto_nombre,
+               COALESCE(p.sku, '')            AS sku,
+               COALESCE(p.tipo_item, 'IS')    AS tipo_item,
+               COALESCE(p.unidad_medida, '94') AS unidad_medida,
                i.descripcion AS impuesto_nombre,
                i.codigo_dian AS impuesto_codigo_dian
         FROM detalle_factura d
@@ -367,16 +370,21 @@ def create_invoice_detail(cod_factura: int, cod_producto: int, cantidad: int,
                            descuento_porcentaje: float = 0, descuento_valor: float = 0,
                            descuento_descripcion: str = None,
                            impuesto_porcentaje: float = 0, impuesto_valor: float = 0,
-                           cursor=None):
+                           descripcion: str = None, cursor=None):
+    """Guarda una línea del documento.
+
+    `cod_producto` puede ir en NULL cuando la línea es un concepto —el flete o el
+    interés de una nota débito—; en ese caso `descripcion` es lo que se imprime.
+    """
     query = """
         INSERT INTO detalle_factura
-            (cod_factura, cod_producto, cantidad, precio_unitario, subtotal,
+            (cod_factura, cod_producto, descripcion, cantidad, precio_unitario, subtotal,
              descuento_porcentaje, descuento_valor, descripcion_descuento,
              impuesto_porcentaje, impuesto_valor)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
-        cod_factura, cod_producto, cantidad, precio_unitario, subtotal,
+        cod_factura, cod_producto, descripcion or None, cantidad, precio_unitario, subtotal,
         descuento_porcentaje, descuento_valor, descuento_descripcion or None,
         impuesto_porcentaje, impuesto_valor
     )

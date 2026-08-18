@@ -431,6 +431,8 @@ async def create_nota_credito_post(
             descuento_descripcion=d.get('descripcion_descuento', ''),
             impuesto_porcentaje=float(d.get('impuesto_porcentaje') or 0),
             impuesto_valor=d['impuesto_valor'],
+            # Se conserva por si la línea original era un concepto y no un producto.
+            descripcion=d.get('descripcion'),
         )
 
     # Reingresar al inventario lo devuelto, solo si la factura original llegó a
@@ -530,6 +532,16 @@ async def create_nota_debito_post(
         tipo_factura='ND', observaciones=motivo,
         numero_factura=numero_nd, cufe=cufe_nd,
         forma_pago=inv.get('forma_pago', 'CONTADO'),
+    )
+
+    # La nota débito también lleva su línea. Sin ella el XML sale sin InvoiceLine
+    # y la DIAN lo rechaza; el ajuste es un concepto —un flete, un interés—, así
+    # que la línea va sin producto y con el motivo como descripción.
+    tasa_nd = round(imp_nd / subtotal_nd * 100, 2) if subtotal_nd else 0
+    create_invoice_detail(
+        cod_factura=nd_id, cod_producto=None, descripcion=motivo[:300],
+        cantidad=1, precio_unitario=subtotal_nd, subtotal=subtotal_nd,
+        impuesto_porcentaje=tasa_nd, impuesto_valor=imp_nd,
     )
 
     execute_update(

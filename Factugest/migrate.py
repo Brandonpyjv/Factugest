@@ -373,6 +373,68 @@ def migracion_004_tipos_documento_dian(cursor):
     return pasos
 
 
+# ── 005 · Líneas de concepto en el detalle ──────────────────────────────────
+
+def migracion_005_lineas_de_concepto(cursor):
+    """Permite que una línea describa un concepto y no un producto del catálogo.
+
+    Una nota débito ajusta un flete, un interés o un cargo: no hay un producto
+    al que apuntar. Se emitían sin ninguna línea, así que su XML salía sin
+    InvoiceLine y la DIAN lo habría rechazado.
+    """
+    pasos = []
+
+    cursor.execute(
+        "SELECT IS_NULLABLE FROM information_schema.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'detalle_factura' "
+        "AND COLUMN_NAME = 'cod_producto'"
+    )
+    fila = cursor.fetchone()
+    if fila and fila[0] == "NO":
+        cursor.execute(
+            "ALTER TABLE detalle_factura MODIFY cod_producto INT(11) DEFAULT NULL "
+            "COMMENT 'NULL cuando la linea es un concepto y no un producto'"
+        )
+        pasos.append("detalle_factura.cod_producto ahora admite NULL")
+
+    if not _column_exists(cursor, "detalle_factura", "descripcion"):
+        cursor.execute(
+            "ALTER TABLE detalle_factura ADD COLUMN descripcion VARCHAR(300) DEFAULT NULL "
+            "COMMENT 'Texto de la linea cuando no hay producto; si hay, manda el del producto' "
+            "AFTER cod_producto"
+        )
+        pasos.append("columna detalle_factura.descripcion creada")
+
+    # Las notas débito ya emitidas no tienen líneas. Se reconstruye la suya a
+    # partir de la cabecera, que es donde quedó el ajuste, para que dejen de ser
+    # documentos que ningún proveedor aceptaría.
+    cursor.execute("""
+        SELECT f.cod_factura, f.subtotal, f.total_impuestos, f.motivo_nota
+        FROM facturas f
+        LEFT JOIN detalle_factura d ON f.cod_factura = d.cod_factura
+        WHERE f.tipo_factura = 'ND'
+        GROUP BY f.cod_factura, f.subtotal, f.total_impuestos, f.motivo_nota
+        HAVING COUNT(d.cod_destalle) = 0
+    """)
+    huerfanas = cursor.fetchall()
+    for cod_factura, subtotal, impuestos, motivo in huerfanas:
+        subtotal = float(subtotal or 0)
+        impuestos = float(impuestos or 0)
+        tasa = round(impuestos / subtotal * 100, 2) if subtotal else 0
+        cursor.execute(
+            "INSERT INTO detalle_factura "
+            "  (cod_factura, cod_producto, descripcion, cantidad, precio_unitario, "
+            "   subtotal, descuento_porcentaje, descuento_valor, "
+            "   impuesto_porcentaje, impuesto_valor) "
+            "VALUES (%s, NULL, %s, 1, %s, %s, 0, 0, %s, %s)",
+            (cod_factura, (motivo or "Ajuste")[:300], subtotal, subtotal, tasa, impuestos),
+        )
+    if huerfanas:
+        pasos.append(f"{len(huerfanas)} nota(s) debito sin lineas: linea reconstruida")
+
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -382,6 +444,8 @@ MIGRACIONES = [
      migracion_003_api_middleware),
     ("004", "Tipos de documento de cliente con los códigos de la DIAN",
      migracion_004_tipos_documento_dian),
+    ("005", "Líneas de concepto en detalle_factura y reconstrucción de las notas débito",
+     migracion_005_lineas_de_concepto),
 ]
 
 
