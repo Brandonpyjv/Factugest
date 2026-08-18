@@ -1,0 +1,309 @@
+"""
+Contrato de la API de integración.
+
+Estos modelos son lo que el sistema del cliente ve y contra lo que programa, así
+que cambiarlos rompe integraciones: cualquier cambio incompatible sale en
+`/api/v2/` y la v1 se mantiene hasta que migren.
+
+**Las reglas no se escriben aquí.** Salen de `services/validaciones.py`, las
+mismas que usan los formularios web. Repetirlas sería tener dos definiciones de
+«qué es una cédula válida» que empiezan iguales y terminan distintas. Esta es la
+tarea V.8 del track de validación.
+"""
+from datetime import datetime
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from services.validaciones import (CODIGOS_IMPUESTO_DIAN, ErrorValidacion,
+                                   REGIMENES_TRIBUTARIOS, TIPOS_PERSONA, cantidad,
+                                   correo, nombre_persona, numero_documento, opcion,
+                                   porcentaje, precio, razon_social, telefono, texto,
+                                   tipo_documento)
+
+FORMAS_PAGO = ("CONTADO", "CREDITO")
+
+
+def regla(funcion, *args, **kwargs):
+    """Aplica una regla del dominio como validador de Pydantic.
+
+    Traduce `ErrorValidacion` a `ValueError`, que es lo que Pydantic entiende y
+    lo que FastAPI convierte en un 422 con el campo señalado.
+    """
+    try:
+        return funcion(*args, **kwargs)
+    except ErrorValidacion as e:
+        raise ValueError(e.mensaje)
+
+
+# ── Petición ────────────────────────────────────────────────────────────────
+
+class Impuesto(BaseModel):
+    codigo: str = Field(default="01",
+                        description="Código del anexo técnico DIAN. 01 = IVA")
+    porcentaje: float = Field(default=0, description="Tarifa aplicada a la línea",
+                              examples=[19])
+
+    @field_validator("codigo")
+    @classmethod
+    def _codigo(cls, v):
+        return regla(opcion, (v or "01").strip().upper(),
+                     tuple(CODIGOS_IMPUESTO_DIAN), campo="codigo")
+
+    @field_validator("porcentaje")
+    @classmethod
+    def _porcentaje(cls, v):
+        return regla(porcentaje, v, campo="porcentaje")
+
+
+class Item(BaseModel):
+    codigo: str | None = Field(default=None, max_length=60,
+                               description="Referencia del producto en el sistema del "
+                                           "cliente. No se valida contra nuestro catálogo.")
+    descripcion: str = Field(description="Lo que se imprime en la factura",
+                             examples=["Teclado mecánico Redragon K552"])
+    cantidad: float = Field(description="Admite decimales: kilos, horas, metros",
+                            examples=[2])
+    precio_unitario: float = Field(description="Antes de impuestos", examples=[189000])
+    unidad_medida: str = Field(default="94", max_length=10)
+    descuento_porcentaje: float = Field(default=0, examples=[5])
+    descuento_descripcion: str | None = Field(default=None, max_length=200)
+    impuesto: Impuesto = Field(default_factory=Impuesto)
+
+    @field_validator("descripcion")
+    @classmethod
+    def _descripcion(cls, v):
+        return regla(texto, v, campo="descripcion", maximo=300, minimo=1)
+
+    @field_validator("cantidad")
+    @classmethod
+    def _cantidad(cls, v):
+        # Fraccionaria: la DIAN admite unidades no enteras y un POS puede vender
+        # medio kilo. El mínimo evita la línea de cantidad cero.
+        return regla(cantidad, v, campo="cantidad", minimo=0.001, fraccionaria=True)
+
+    @field_validator("precio_unitario")
+    @classmethod
+    def _precio(cls, v):
+        return regla(precio, v, campo="precio_unitario")
+
+    @field_validator("descuento_porcentaje")
+    @classmethod
+    def _descuento(cls, v):
+        return regla(porcentaje, v, campo="descuento_porcentaje")
+
+
+class Receptor(BaseModel):
+    tipo_documento: str = Field(description="Código DIAN: 13 cédula, 31 NIT, 41 pasaporte",
+                                examples=["13"])
+    numero_documento: str = Field(examples=["1090234567"])
+    dv: str | None = Field(default=None, max_length=1,
+                           description="Dígito de verificación, solo para NIT")
+    nombre: str = Field(examples=["María Fernanda Ospina"])
+    tipo_persona: str = Field(default="NATURAL")
+    regimen_tributario: str = Field(default="NO_RESPONSABLE_IVA")
+    email: str | None = Field(default=None,
+                              description="Si se envía, es a donde llega la factura")
+    telefono: str | None = None
+    direccion: str | None = Field(default=None, max_length=200)
+    cod_municipio: str | None = Field(default=None, max_length=5,
+                                      description="Código DANE. 54001 = Cúcuta",
+                                      examples=["54001"])
+
+    @field_validator("tipo_documento")
+    @classmethod
+    def _tipo(cls, v):
+        return regla(tipo_documento, v, campo="tipo_documento")
+
+    @field_validator("tipo_persona")
+    @classmethod
+    def _persona(cls, v):
+        return regla(opcion, v, TIPOS_PERSONA, campo="tipo_persona")
+
+    @field_validator("regimen_tributario")
+    @classmethod
+    def _regimen(cls, v):
+        return regla(opcion, v, REGIMENES_TRIBUTARIOS, campo="regimen_tributario")
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v):
+        return regla(correo, v, campo="email") or None
+
+    @field_validator("telefono")
+    @classmethod
+    def _telefono(cls, v):
+        return regla(telefono, v, campo="telefono") or None
+
+    @model_validator(mode="after")
+    def _documento_segun_su_tipo(self):
+        """La identificación depende del tipo: una cédula solo admite dígitos y un
+        pasaporte admite letras. Por eso se validan juntos y no por separado."""
+        self.numero_documento = regla(numero_documento, self.numero_documento,
+                                      tipo=self.tipo_documento,
+                                      campo="numero_documento")
+        # El nombre de una empresa lleva dígitos —«Comercial 3M S.A.S.»— y el de
+        # una persona no.
+        funcion = razon_social if self.tipo_persona == "JURIDICA" else nombre_persona
+        self.nombre = regla(funcion, self.nombre, campo="nombre")
+        return self
+
+
+class DescuentoGlobal(BaseModel):
+    valor: float = Field(default=0, description="En pesos, no en porcentaje")
+    descripcion: str | None = Field(default=None, max_length=200)
+
+    @field_validator("valor")
+    @classmethod
+    def _valor(cls, v):
+        if v is None:
+            return 0.0
+        if float(v) < 0:
+            raise ValueError("No puede ser negativo")
+        return round(float(v), 2)
+
+
+class FacturaRequest(BaseModel):
+    referencia_externa: str | None = Field(
+        default=None, max_length=80,
+        description="Identificador de la venta en el sistema del cliente. Si se "
+                    "reenvía el mismo, se devuelve el documento ya emitido en lugar "
+                    "de emitir otro.",
+        examples=["VENTA-1043"])
+    receptor: Receptor = Field(description="A quién se le factura")
+    items: list[Item] = Field(min_length=1, max_length=200,
+                              description="Líneas de la factura. Al menos una.")
+    forma_pago: str = Field(default="CONTADO",
+                            description="CONTADO o CREDITO. A crédito hace falta plazo.")
+    plazo_dias: int = Field(default=0, ge=0, le=365,
+                            description="Días para el vencimiento. 0 = contado")
+    descuento_global: DescuentoGlobal | None = Field(
+        default=None,
+        description="Descuento sobre el total, aparte de los de cada línea. "
+                    "El IVA se prorratea.")
+    observaciones: str | None = Field(default=None, max_length=1000,
+                                      description="Texto libre que sale en la factura")
+    orden_compra: str | None = Field(default=None, max_length=100,
+                                     description="Orden de compra del comprador, si la hay")
+    enviar_email: bool = Field(default=False,
+                               description="Enviar la factura al correo del receptor")
+
+    @field_validator("forma_pago")
+    @classmethod
+    def _forma(cls, v):
+        return regla(opcion, (v or "CONTADO").strip().upper(), FORMAS_PAGO,
+                     campo="forma_pago")
+
+    @model_validator(mode="after")
+    def _coherencia(self):
+        if self.forma_pago == "CREDITO" and self.plazo_dias == 0:
+            raise ValueError("Una venta a crédito necesita un plazo mayor que cero")
+        if self.forma_pago == "CONTADO" and self.plazo_dias:
+            raise ValueError("Una venta de contado no lleva plazo")
+
+        # El descuento de factura no puede pasarse de la base sobre la que se
+        # aplica: más allá, el total quedaría en negativo.
+        descuento = self.descuento_global.valor if self.descuento_global else 0
+        if descuento:
+            base = sum(i.precio_unitario * i.cantidad *
+                       (1 - i.descuento_porcentaje / 100) for i in self.items)
+            if descuento > round(base, 2):
+                raise ValueError(
+                    f"El descuento global ({descuento}) no puede pasar de la base "
+                    f"gravable ({round(base, 2)})")
+        return self
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "referencia_externa": "VENTA-1043",
+                "receptor": {
+                    "tipo_documento": "13",
+                    "numero_documento": "1090234567",
+                    "nombre": "María Fernanda Ospina",
+                    "email": "mospina@correo.com",
+                    "direccion": "Av. 0 # 12-45",
+                    "cod_municipio": "54001",
+                    "tipo_persona": "NATURAL",
+                    "regimen_tributario": "NO_RESPONSABLE_IVA",
+                },
+                "items": [{
+                    "codigo": "SKU-TEC-014",
+                    "descripcion": "Teclado mecánico Redragon K552",
+                    "cantidad": 2,
+                    "precio_unitario": 189000,
+                    "unidad_medida": "94",
+                    "descuento_porcentaje": 5,
+                    "impuesto": {"codigo": "01", "porcentaje": 19},
+                }],
+                "forma_pago": "CONTADO",
+                "plazo_dias": 0,
+                "enviar_email": True,
+            }]
+        }
+    }
+
+
+# ── Respuesta ───────────────────────────────────────────────────────────────
+
+class Totales(BaseModel):
+    bruto: float = Field(description="Suma de las líneas antes de descuentos")
+    descuentos: float
+    base_gravable: float = Field(description="Sobre lo que se calculan los impuestos")
+    impuestos: float
+    total: float = Field(description="Lo que paga el comprador")
+
+
+class ResultadoDian(BaseModel):
+    proveedor: str = Field(examples=["simulado"])
+    codigo: str = Field(examples=["00"])
+    mensaje: str
+
+
+class FacturaResponse(BaseModel):
+    id: str = Field(description="Identificador del documento en FactuGest",
+                    examples=["doc_7f21c9a4"])
+    numero: str = Field(description="Número con el prefijo de la resolución",
+                        examples=["SETP42"])
+    tipo: str = Field(default="FV", description="FV factura · NC nota crédito · ND nota débito")
+    cufe: str | None = Field(default=None,
+                             description="Código Único de Factura Electrónica")
+    estado: str = Field(description="ACEPTADO · RECHAZADO · PENDIENTE · ERROR")
+    fecha_emision: datetime = Field(description="Cuándo se emitió, hora de Colombia")
+    fecha_vencimiento: str | None = Field(default=None,
+                                          description="Solo en ventas a crédito")
+    totales: Totales = Field(description="Calculados por FactuGest, no por el cliente")
+    qr: str | None = Field(default=None,
+                           description="Enlace de verificación que va en la representación gráfica")
+    pdf_url: str | None = Field(default=None, description="Dónde descargar el PDF")
+    xml_url: str | None = Field(default=None, description="Dónde descargar el XML UBL")
+    dian: ResultadoDian = Field(description="Qué respondió el proveedor")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "id": "doc_7f21c9a4",
+                "numero": "SETP42",
+                "tipo": "FV",
+                "cufe": "a91f…3d70",
+                "estado": "ACEPTADO",
+                "fecha_emision": "2026-08-18T14:22:07",
+                "fecha_vencimiento": None,
+                "totales": {"bruto": 378000, "descuentos": 18900,
+                            "base_gravable": 359100, "impuestos": 68229,
+                            "total": 427329},
+                "qr": "https://catalogo-vpfe-hab.dian.gov.co/document/searchqr?documentkey=a91f…",
+                "pdf_url": "/api/v1/documentos/doc_7f21c9a4/pdf",
+                "xml_url": "/api/v1/documentos/doc_7f21c9a4/xml",
+                "dian": {"proveedor": "simulado", "codigo": "00",
+                         "mensaje": "Documento validado por el proveedor simulado"},
+            }]
+        }
+    }
+
+
+class ErrorRespuesta(BaseModel):
+    """Forma única de los errores de la API. La tarea 3.5 la aplica en todas partes."""
+    codigo: str = Field(examples=["llave_invalida"])
+    mensaje: str
+    campo: str | None = Field(default=None,
+                              description="Cuando el error es de un campo concreto")
