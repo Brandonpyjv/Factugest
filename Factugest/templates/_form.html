@@ -22,9 +22,13 @@
 {{ ' is-invalid border' if errores and campo in errores else '' }}
 {%- endmacro %}
 
-{# Mensaje bajo el campo. `d-block` porque Bootstrap solo muestra el feedback
-   cuando el input tiene `is-invalid` como hermano inmediato, y aquí no siempre
-   lo es. #}
-{% macro mensaje(errores, campo) -%}
-{% if errores and campo in errores %}<div class="invalid-feedback d-block">{{ errores[campo] }}</div>{% endif %}
+{# Mensaje bajo el campo, uno solo para los dos casos.
+
+   Si el servidor rechazó el dato, se muestra su mensaje con `d-block`, que lo
+   deja visible pase lo que pase. Si no, el mismo hueco queda como contenedor del
+   aviso del navegador, que Bootstrap revela cuando el formulario lleva
+   `was-validated` y el campo no cumple. Así nunca se pintan dos mensajes. #}
+{% macro mensaje(errores, campo, ayuda='') -%}
+{% if errores and campo in errores %}<div class="invalid-feedback d-block">{{ errores[campo] }}</div>
+{%- else %}<div class="invalid-feedback">{{ ayuda or 'Revisa este dato.' }}</div>{% endif %}
 {%- endmacro %}

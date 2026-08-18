@@ -26,13 +26,13 @@
                 </div>
                 <div class="card-body p-4">
                     {{ f.alerta(errores) }}
-                    <form action="{{ url_for('update_invoice_payment', payment_id=payment.cod_pago_factura) if payment else url_for('create_invoice_payment') }}" method="POST">
+                    <form action="{{ url_for('update_invoice_payment', payment_id=payment.cod_pago_factura) if payment else url_for('create_invoice_payment') }}" method="POST" class="needs-validation" novalidate>
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">Estado *</label>
                             <input type="text" name="status" class="form-control bg-light border-0{{ f.invalido(errores, 'status') }}" required
                                    value="{{ v.status or '' }}"
-                                   placeholder="Ej: paid, pending, overdue">
+                                   placeholder="Ej: paid, pending, overdue" minlength="2" maxlength="40">
                             <div class="form-text">Valores sugeridos: paid, pending, partially paid, overdue, cancelled, disputed, refunded</div>
                         </div>
 

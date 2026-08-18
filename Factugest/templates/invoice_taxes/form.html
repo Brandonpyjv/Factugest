@@ -26,13 +26,13 @@
                 </div>
                 <div class="card-body p-4">
                     {{ f.alerta(errores) }}
-                    <form action="{{ url_for('update_tax', tax_id=tax.cod_impuesto) if tax else url_for('create_tax') }}" method="POST">
+                    <form action="{{ url_for('update_tax', tax_id=tax.cod_impuesto) if tax else url_for('create_tax') }}" method="POST" class="needs-validation" novalidate>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Descripción *</label>
                             <input type="text" name="descripcion" class="form-control bg-light border-0{{ f.invalido(errores, 'descripcion') }}" required
                                    value="{{ v.descripcion or '' }}"
-                                   placeholder="Ej: IVA, RETEFUENTE, RETEICA">
+                                   placeholder="Ej: IVA, RETEFUENTE, RETEICA" minlength="2" maxlength="60">
                         </div>
 
                         <div class="mb-3">

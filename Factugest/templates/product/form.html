@@ -26,12 +26,12 @@
                 </div>
                 <div class="card-body p-4">
                     {{ f.alerta(errores) }}
-                    <form action="{{ url_for('update_product', product_id=product.cod_producto) if product else url_for('create_product') }}" method="POST">
+                    <form action="{{ url_for('update_product', product_id=product.cod_producto) if product else url_for('create_product') }}" method="POST" class="needs-validation" novalidate>
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">SKU *</label>
                                 <input type="text" name="sku" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'sku') }}" required
-                                       value="{{ v.sku or '' }}" placeholder="TEC-001">
+                                       value="{{ v.sku or '' }}" placeholder="TEC-001" maxlength="60" pattern="[A-Za-z0-9._/\-]+">
                                 {{ f.mensaje(errores, 'sku') }}
                             </div>
 
@@ -39,14 +39,14 @@
                                 <label class="form-label small fw-bold text-secondary">Nombre del Producto *</label>
                                 <input type="text" name="nombre" class="form-control bg-light border-0{{ f.invalido(errores, 'nombre') }}" required
                                        value="{{ v.nombre or '' }}"
-                                       placeholder="Ej: Teclado Mecánico RGB">
+                                       placeholder="Ej: Teclado Mecánico RGB" minlength="2" maxlength="150">
                                 {{ f.mensaje(errores, 'nombre') }}
                             </div>
 
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-secondary">Descripción</label>
                                 <textarea name="descripcion" class="form-control bg-light border-0{{ f.invalido(errores, 'descripcion') }}" rows="2"
-                                          placeholder="Descripción detallada del producto...">{{ v.descripcion or '' }}</textarea>
+                                          placeholder="Descripción detallada del producto..." maxlength="500">{{ v.descripcion or '' }}</textarea>
                                 {{ f.mensaje(errores, 'descripcion') }}
                             </div>
 
@@ -74,7 +74,7 @@
                             <div class="col-md-3 campo-stock">
                                 <label class="form-label small fw-bold text-secondary">Stock Actual</label>
                                 <input type="number" name="stock" class="form-control bg-light border-0{{ f.invalido(errores, 'stock') }}" min="0"
-                                       value="{{ v.stock if v.stock is not none and v.stock != '' else 0 }}">
+                                       value="{{ v.stock if v.stock is not none and v.stock != '' else 0 }}" step="1">
                                 {{ f.mensaje(errores, 'stock') }}
                                 {% if product and product.controla_stock %}
                                 <div class="form-text small">Cambiarlo registra un ajuste en el kardex.</div>
@@ -84,7 +84,7 @@
                             <div class="col-md-3 campo-stock">
                                 <label class="form-label small fw-bold text-secondary">Stock Mínimo</label>
                                 <input type="number" name="stock_minimo" class="form-control bg-light border-0{{ f.invalido(errores, 'stock_minimo') }}" min="0"
-                                       value="{{ v.stock_minimo if v.stock_minimo is not none and v.stock_minimo != '' else 5 }}">
+                                       value="{{ v.stock_minimo if v.stock_minimo is not none and v.stock_minimo != '' else 5 }}" step="1">
                                 {{ f.mensaje(errores, 'stock_minimo') }}
                                 <div class="form-text small">Por debajo de este valor se genera una alerta.</div>
                             </div>
@@ -117,7 +117,7 @@
                                 <label class="form-label small fw-bold text-secondary">Código de Barras</label>
                                 <input type="text" name="codigo_barras" class="form-control bg-light border-0 font-monospace"
                                        value="{{ v.codigo_barras or '' }}"
-                                       placeholder="Opcional">
+                                       placeholder="Opcional" maxlength="60">
                             </div>
 
                             <div class="col-md-2">

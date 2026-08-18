@@ -6,7 +6,8 @@ from services.invoice_service import (get_all_invoices_detailed, get_invoice_by_
                                        get_invoice_by_numero_factura, get_invoice_details,
                                        create_invoice, create_invoice_detail,
                                        update_invoice_status, delete_invoice,
-                                       get_notas_by_referencia, validar_factura)
+                                       get_notas_by_referencia, validar_factura,
+                                       validar_nota_credito, validar_nota_debito)
 from services.calculo_documento import calcular_documento
 from services.branches import get_all_branches, get_branch_by_id
 from services.payment_methods_service import get_all_payment_methods
@@ -322,12 +323,27 @@ async def create_nota_credito_post(
     invoice_id: int,
     motivo: str = Form(...),
     tipo_nc: str = Form("total"),
-    cod_producto: Optional[List[int]] = Form(None),
-    cantidad: Optional[List[int]] = Form(None),
+    cod_producto: Optional[List[str]] = Form(None),
+    cantidad: Optional[List[str]] = Form(None),
 ):
     inv = get_invoice_by_id(invoice_id)
     if not inv:
         return RedirectResponse(url="/invoice", status_code=302)
+
+    lineas_originales = get_invoice_details(invoice_id)
+    v = validar_nota_credito({"motivo": motivo, "tipo_nc": tipo_nc,
+                              "cod_producto": cod_producto, "cantidad": cantidad},
+                             lineas_originales)
+    if not v.valido:
+        return templates.TemplateResponse(request, "invoice/nota_credito_form.html", {
+            "invoice": inv,
+            "details": lineas_originales,
+            "pagos_factura": get_all_invoice_payments(),
+            "error": v.resumen(),
+        }, status_code=422)
+
+    motivo = v.datos["motivo"]
+    tipo_nc = v.datos["tipo_nc"]
 
     session_user = request.session.get("user", {})
     cod_usuario  = session_user.get("cod_usuario", 1)
@@ -360,7 +376,7 @@ async def create_nota_credito_post(
         lineas_orig = get_invoice_details(invoice_id)
         lineas_nc   = []
         total_nc = subtotal_nc = total_desc_nc = total_imp_nc = 0.0
-        qty_map = {cod_producto[i]: int(cantidad[i]) for i in range(len(cod_producto or []))}
+        qty_map = v.datos["devueltas"]
         for d in lineas_orig:
             nc_qty = qty_map.get(d['cod_producto'], 0)
             if nc_qty <= 0:
@@ -453,12 +469,25 @@ async def create_nota_debito_post(
     request: Request,
     invoice_id: int,
     motivo: str = Form(...),
-    valor_ajuste: float = Form(...),
+    valor_ajuste: str = Form(...),
     incluye_iva: str = Form("si"),
 ):
     inv = get_invoice_by_id(invoice_id)
     if not inv:
         return RedirectResponse(url="/invoice", status_code=302)
+
+    v = validar_nota_debito({"motivo": motivo, "valor_ajuste": valor_ajuste,
+                             "incluye_iva": incluye_iva})
+    if not v.valido:
+        return templates.TemplateResponse(request, "invoice/nota_debito_form.html", {
+            "invoice": inv,
+            "pagos_factura": get_all_invoice_payments(),
+            "error": v.resumen(),
+        }, status_code=422)
+
+    motivo = v.datos["motivo"]
+    valor_ajuste = v.datos["valor_ajuste"]
+    incluye_iva = v.datos["incluye_iva"]
 
     session_user = request.session.get("user", {})
     cod_usuario  = session_user.get("cod_usuario", 1)

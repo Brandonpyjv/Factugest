@@ -27,7 +27,7 @@
                 <div class="card-body p-4">
                     {{ f.alerta(errores) }}
                     <form action="{{ url_for('update_user', user_id=user.cod_usuario) if user else url_for('create_user') }}"
-                          method="POST" enctype="multipart/form-data">
+                          method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
 
                         <div class="d-flex align-items-center gap-4 mb-4 pb-4 border-bottom">
                             <img id="vistaPrevia" src="{{ avatar_url(user.foto if user else None) }}"
@@ -53,14 +53,14 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Nombre Completo *</label>
                             <input type="text" name="nombre" class="form-control bg-light border-0{{ f.invalido(errores, 'nombre') }}" required
-                                   value="{{ v.nombre or '' }}" placeholder="Ej: Brandon Pérez">
+                                   value="{{ v.nombre or '' }}" placeholder="Ej: Brandon Pérez" minlength="2" maxlength="200">
                             {{ f.mensaje(errores, 'nombre') }}
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Correo Electrónico *</label>
                             <input type="email" name="correo" class="form-control bg-light border-0{{ f.invalido(errores, 'correo') }}" required
-                                   value="{{ v.correo or '' }}" placeholder="usuario@empresa.com">
+                                   value="{{ v.correo or '' }}" placeholder="usuario@empresa.com" maxlength="150">
                             {{ f.mensaje(errores, 'correo') }}
                         </div>
 
@@ -69,7 +69,7 @@
                                 Contraseña {{ '*' if not user else '(dejar vacío para no cambiar)' }}
                             </label>
                             <input type="password" name="contrasena" class="form-control bg-light border-0{{ f.invalido(errores, 'contrasena') }}"
-                                   {{ 'required' if not user }} placeholder="••••••••">
+                                   {{ 'required' if not user }} placeholder="••••••••" minlength="8" maxlength="100">
                         </div>
 
                         <div class="mb-3">

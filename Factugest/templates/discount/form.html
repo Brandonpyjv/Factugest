@@ -26,13 +26,13 @@
                 </div>
                 <div class="card-body p-4">
                     {{ f.alerta(errores) }}
-                    <form action="{{ url_for('update_discount', discount_id=discount.cod_descuento) if discount else url_for('create_discount') }}" method="POST">
+                    <form action="{{ url_for('update_discount', discount_id=discount.cod_descuento) if discount else url_for('create_discount') }}" method="POST" class="needs-validation" novalidate>
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Descripción *</label>
                             <input type="text" name="descripcion" class="form-control bg-light border-0{{ f.invalido(errores, 'descripcion') }}" required
                                    value="{{ v.descripcion or '' }}"
-                                   placeholder="Ej: Descuento por volumen">
+                                   placeholder="Ej: Descuento por volumen" minlength="2" maxlength="100">
                         </div>
 
                         <div class="mb-3">

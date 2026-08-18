@@ -1,6 +1,6 @@
 from database import create_connection, execute_query, execute_update, get_one, get_many
 from services.validaciones import (TIPOS_DOCUMENTO_FISCAL, Validador, cantidad as validar_cantidad,
-                                   dinero, entero, opcion, porcentaje, texto)
+                                   dinero, entero, opcion, porcentaje, precio, texto)
 
 MAX_LINEAS = 200
 
@@ -118,6 +118,68 @@ def validar_factura(datos: dict) -> Validador:
     else:
         v.datos["cod_descuento_factura"] = None
 
+    return v
+
+
+def validar_nota_credito(datos: dict, lineas_originales: list) -> Validador:
+    """Valida una nota crédito contra la factura que corrige.
+
+    En la parcial, devolver más unidades de las que se vendieron acreditaría
+    dinero que nunca se cobró; el formulario ya lo limita con `max`, pero eso
+    solo lo respeta el navegador.
+    """
+    v = Validador()
+    v.campo("motivo", texto, datos.get("motivo"), maximo=1000, minimo=5)
+    v.campo("tipo_nc", opcion, datos.get("tipo_nc") or "total", ("total", "parcial"))
+
+    if v.datos.get("tipo_nc") != "parcial":
+        return v
+
+    vendidas = {l["cod_producto"]: int(l["cantidad"]) for l in lineas_originales}
+    productos = datos.get("cod_producto") or []
+    cantidades = datos.get("cantidad") or []
+    if len(productos) != len(cantidades):
+        v.errores["cantidad"] = "Los datos de los productos llegaron incompletos"
+        return v
+
+    devueltas = {}
+    for producto, cant in zip(productos, cantidades):
+        try:
+            producto = int(producto)
+            cant = int(cant)
+        except (TypeError, ValueError):
+            v.errores["cantidad"] = "Las cantidades deben ser números enteros"
+            return v
+        if producto not in vendidas:
+            v.errores["cod_producto"] = "Hay un producto que no está en la factura original"
+            return v
+        if cant < 0:
+            v.errores["cantidad"] = "Las cantidades a devolver no pueden ser negativas"
+            return v
+        if cant > vendidas[producto]:
+            v.errores["cantidad"] = (
+                f"No se pueden devolver {cant} unidades: en la factura se "
+                f"vendieron {vendidas[producto]}")
+            return v
+        if cant:
+            devueltas[producto] = cant
+
+    if not devueltas:
+        v.errores["cantidad"] = "Indica al menos una unidad a devolver"
+    v.datos["devueltas"] = devueltas
+    return v
+
+
+def validar_nota_debito(datos: dict) -> Validador:
+    """Valida una nota débito.
+
+    Una ND aumenta lo facturado. Con un valor negativo estaría bajando el total
+    haciéndose pasar por un cargo, que es lo que hace una nota crédito.
+    """
+    v = Validador()
+    v.campo("motivo", texto, datos.get("motivo"), maximo=1000, minimo=5)
+    v.campo("valor_ajuste", precio, datos.get("valor_ajuste"))
+    v.campo("incluye_iva", opcion, datos.get("incluye_iva") or "si", ("si", "no"))
     return v
 
 

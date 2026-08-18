@@ -26,20 +26,20 @@
                 </div>
                 <div class="card-body p-4">
                     {{ f.alerta(errores) }}
-                    <form action="{{ url_for('update_branch', branch_id=branch.cod_empresa) if branch else url_for('create_branch') }}" method="POST">
+                    <form action="{{ url_for('update_branch', branch_id=branch.cod_empresa) if branch else url_for('create_branch') }}" method="POST" class="needs-validation" novalidate>
                         <div class="row g-3">
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Nombre de la Empresa *</label>
                                 <input type="text" name="nombre" class="form-control bg-light border-0{{ f.invalido(errores, 'nombre') }}\" required
                                        value="{{ v.nombre or '' }}"
-                                       placeholder="Ej: Mi Empresa S.A.S.">
+                                       placeholder="Ej: Mi Empresa S.A.S." minlength="2" maxlength="255">
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">NIT *</label>
                                 <input type="text" name="nit" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'nit') }}\" required
                                        value="{{ v.nit or '' }}"
-                                       placeholder="900123456">
+                                       placeholder="900123456" pattern="[0-9]{8,10}" inputmode="numeric">
                             </div>
 
                             <div class="col-md-1">
@@ -47,7 +47,7 @@
                                 <input type="text" name="dv" class="form-control bg-light border-0 font-monospace text-center{{ f.invalido(errores, 'dv') }}\"
                                        maxlength="1"
                                        value="{{ v.dv or '' }}"
-                                       placeholder="0">
+                                       placeholder="0" pattern="[0-9]" inputmode="numeric">
                             </div>
 
                             <div class="col-md-4">
@@ -64,7 +64,7 @@
                                 <label class="form-label small fw-bold text-secondary">Dirección</label>
                                 <input type="text" name="direccion" class="form-control bg-light border-0{{ f.invalido(errores, 'direccion') }}\"
                                        value="{{ v.direccion or '' }}"
-                                       placeholder="Cll 28 # 9-47">
+                                       placeholder="Cll 28 # 9-47" maxlength="255">
                             </div>
 
                             <!-- Departamento + Municipio Colombia -->
@@ -98,14 +98,14 @@
                                 <label class="form-label small fw-bold text-secondary">Teléfono</label>
                                 <input type="text" name="telefono" class="form-control bg-light border-0{{ f.invalido(errores, 'telefono') }}\"
                                        value="{{ v.telefono or '' }}"
-                                       placeholder="3001234567">
+                                       placeholder="3001234567" maxlength="40" pattern="[0-9 +()\-]{7,20}">
                             </div>
 
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Correo Electrónico</label>
                                 <input type="email" name="correo" class="form-control bg-light border-0{{ f.invalido(errores, 'correo') }}\"
                                        value="{{ v.correo or '' }}"
-                                       placeholder="empresa@dominio.com">
+                                       placeholder="empresa@dominio.com" maxlength="150">
                             </div>
 
                             <div class="col-md-6">
@@ -123,21 +123,21 @@
                                 <label class="form-label small fw-bold text-secondary">Actividad Económica (CIIU)</label>
                                 <input type="text" name="actividad_economica" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'actividad_economica') }}\"
                                        value="{{ v.actividad_economica or '' }}"
-                                       placeholder="Ej: 4711" maxlength="10">
+                                       placeholder="Ej: 4711" maxlength="10" pattern="[0-9]{4}" inputmode="numeric">
                             </div>
 
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Sitio Web</label>
                                 <input type="text" name="website" class="form-control bg-light border-0{{ f.invalido(errores, 'website') }}\"
                                        value="{{ v.website or '' }}"
-                                       placeholder="www.miempresa.com">
+                                       placeholder="www.miempresa.com" maxlength="255">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-secondary">Tarifa ICA (%)</label>
                                 <input type="text" name="tarifa_ica" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'tarifa_ica') }}\"
                                        value="{{ v.tarifa_ica or '' }}"
-                                       placeholder="Ej: 0.414">
+                                       placeholder="Ej: 0.414" pattern="[0-9]+([.,][0-9]+)?" inputmode="decimal">
                             </div>
 
                             <div class="col-md-6">
@@ -165,31 +165,31 @@
                                     <label class="form-label small fw-bold text-secondary">Prefijo Factura</label>
                                     <input type="text" name="prefijo_factura" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'prefijo_factura') }}\"
                                            value="{{ v.prefijo_factura or 'FV' }}"
-                                           placeholder="FV" maxlength="10">
+                                           placeholder="FV" maxlength="10" pattern="[A-Za-z0-9]+">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-secondary">Consecutivo Actual</label>
                                     <input type="number" name="consecutivo_actual" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'consecutivo_actual') }}\"
                                            value="{{ v.consecutivo_actual or 1 }}"
-                                           min="1">
+                                           min="1" step="1">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-secondary">N° Resolución DIAN</label>
                                     <input type="text" name="resolucion_dian" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'resolucion_dian') }}\"
                                            value="{{ v.resolucion_dian or '' }}"
-                                           placeholder="18760000001">
+                                           placeholder="18760000001" maxlength="50">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Desde (rango #)</label>
                                     <input type="number" name="resolucion_desde" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'resolucion_desde') }}\"
                                            value="{{ v.resolucion_desde or '' }}"
-                                           placeholder="1">
+                                           placeholder="1" min="1" step="1">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Hasta (rango #)</label>
                                     <input type="number" name="resolucion_hasta" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'resolucion_hasta') }}\"
                                            value="{{ v.resolucion_hasta or '' }}"
-                                           placeholder="5000">
+                                           placeholder="5000" min="1" step="1">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Fecha Desde</label>
