@@ -385,6 +385,17 @@ def fechas_ordenadas(desde, hasta, campo_desde: str = "desde", campo_hasta: str 
 
 # ── Catálogos ───────────────────────────────────────────────────────────────
 
+# Que el formulario ofrezca un `<select>` no impide que llegue otra cosa, así que
+# las listas blancas viven aquí y no solo en el HTML.
+TIPOS_PERSONA = ("NATURAL", "JURIDICA")
+
+REGIMENES_TRIBUTARIOS = (
+    "NO_RESPONSABLE_IVA", "RESPONSABLE_IVA", "GRAN_CONTRIBUYENTE",
+    "AUTORETENEDOR", "REGIMEN_SIMPLE",
+)
+
+TIPOS_DOCUMENTO_FISCAL = ("FV", "NC", "ND")
+
 def opcion(valor, permitidas, campo: str = "campo", requerido: bool = True) -> str:
     """Un valor de un catálogo cerrado.
 
