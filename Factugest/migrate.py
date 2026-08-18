@@ -435,6 +435,25 @@ def migracion_005_lineas_de_concepto(cursor):
     return pasos
 
 
+# ── 008 · Guardar el QR del documento ───────────────────────────────────────
+
+def migracion_008_qr_del_documento(cursor):
+    """El enlace de verificación se guarda, no solo se devuelve.
+
+    Venía en la respuesta de la emisión pero no se persistía, así que
+    `GET /documentos/{id}` y el reintento idempotente lo devolvían vacío: el
+    cliente que perdía la primera respuesta se quedaba sin el QR para siempre.
+    """
+    pasos = []
+    if not _column_exists(cursor, "documentos", "qr"):
+        cursor.execute(
+            "ALTER TABLE documentos ADD COLUMN qr VARCHAR(255) DEFAULT NULL "
+            "COMMENT 'Enlace de verificacion que va en la representacion grafica' "
+            "AFTER cufe")
+        pasos.append("columna documentos.qr creada")
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -446,6 +465,8 @@ MIGRACIONES = [
      migracion_004_tipos_documento_dian),
     ("005", "Líneas de concepto en detalle_factura y reconstrucción de las notas débito",
      migracion_005_lineas_de_concepto),
+    ("008", "Guardar el QR de verificación del documento",
+     migracion_008_qr_del_documento),
 ]
 
 

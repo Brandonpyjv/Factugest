@@ -170,7 +170,7 @@ def registrar_transmision(cod_documento: int, respuesta) -> str:
     valores = [estado, respuesta.proveedor]
 
     for columna, valor in (("numero", respuesta.numero), ("cufe", respuesta.cufe),
-                           ("xml", respuesta.xml)):
+                           ("xml", respuesta.xml), ("qr", respuesta.qr)):
         if valor:
             campos.append(f"{columna} = %s")
             valores.append(valor)
