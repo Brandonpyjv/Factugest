@@ -30,6 +30,7 @@ from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
 from routes.perfil import router as perfil_router
 from routes.api.v1.sistema import router as api_sistema_router
+from routes.api.v1.facturas import router as api_facturas_router
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
@@ -40,27 +41,31 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "fa
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(login_router)
-app.include_router(users_router)
-app.include_router(customer_router)
-app.include_router(invoice_router)
-app.include_router(payment_methods_router)
-app.include_router(discount_router)
-app.include_router(invoice_taxes_router)
-app.include_router(branches_router)
-app.include_router(invoice_payments_router)
-app.include_router(products_router)
-app.include_router(inventory_router)
-app.include_router(logs_router)
-app.include_router(product_discount_router)
-app.include_router(ubicacion_router)
-app.include_router(reports_router)
-app.include_router(perfil_router)
-app.include_router(dashboard_router)
+# Las rutas de la web quedan fuera del esquema OpenAPI: son formularios HTML, no
+# una API, y mezcladas con /api/v1 dejan la documentación de integración
+# inservible para quien la va a leer.
+app.include_router(login_router, include_in_schema=False)
+app.include_router(users_router, include_in_schema=False)
+app.include_router(customer_router, include_in_schema=False)
+app.include_router(invoice_router, include_in_schema=False)
+app.include_router(payment_methods_router, include_in_schema=False)
+app.include_router(discount_router, include_in_schema=False)
+app.include_router(invoice_taxes_router, include_in_schema=False)
+app.include_router(branches_router, include_in_schema=False)
+app.include_router(invoice_payments_router, include_in_schema=False)
+app.include_router(products_router, include_in_schema=False)
+app.include_router(inventory_router, include_in_schema=False)
+app.include_router(logs_router, include_in_schema=False)
+app.include_router(product_discount_router, include_in_schema=False)
+app.include_router(ubicacion_router, include_in_schema=False)
+app.include_router(reports_router, include_in_schema=False)
+app.include_router(perfil_router, include_in_schema=False)
+app.include_router(dashboard_router, include_in_schema=False)
 
 # API de integración: misma aplicación, otra puerta. Se autentica con la llave
 # del cliente, no con la sesión de la web.
 app.include_router(api_sistema_router)
+app.include_router(api_facturas_router)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for
@@ -121,12 +126,12 @@ def favicon():
     return FileResponse("static/img/favicon.ico", media_type="image/x-icon")
 
 
-@app.get("/settings", name="setting")
+@app.get("/settings", name="setting", include_in_schema=False)
 def setting(request: Request):
     return templates.TemplateResponse(request, "settings/index.html")
 
 
-@app.get("/settings/new", name="settings_new")
+@app.get("/settings/new", name="settings_new", include_in_schema=False)
 def setting_new(request: Request):
     return templates.TemplateResponse(request, "settings/form.html")
 
