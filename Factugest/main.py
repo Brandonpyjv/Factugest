@@ -29,6 +29,7 @@ from services.validaciones import (abreviatura_documento, nombre_documento,
 from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
 from routes.perfil import router as perfil_router
+from routes.api.v1.sistema import router as api_sistema_router
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
@@ -56,6 +57,10 @@ app.include_router(ubicacion_router)
 app.include_router(reports_router)
 app.include_router(perfil_router)
 app.include_router(dashboard_router)
+
+# API de integración: misma aplicación, otra puerta. Se autentica con la llave
+# del cliente, no con la sesión de la web.
+app.include_router(api_sistema_router)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for

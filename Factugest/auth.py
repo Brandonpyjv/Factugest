@@ -3,7 +3,12 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-_PUBLIC_PREFIXES = ("/login", "/static", "/favicon.ico")
+# `/api/v1` no lleva sesión: la API de integración se autentica con la llave del
+# cliente, y este middleware la mandaría al formulario de login. La documentación
+# de Swagger queda abierta a propósito, porque es lo que lee quien se va a
+# integrar; no expone datos, solo la forma de los endpoints.
+_PUBLIC_PREFIXES = ("/login", "/static", "/favicon.ico",
+                    "/api/v1", "/docs", "/redoc", "/openapi.json")
 
 # Roles con permisos completos de administración
 ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}

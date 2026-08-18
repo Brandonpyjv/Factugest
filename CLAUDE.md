@@ -58,7 +58,10 @@ Factugest/
 │   ├── logs.py
 │   ├── ubicacion.py
 │   ├── login.py
-│   └── api/v1/              # ← NUEVO: endpoints JSON para mobile (en construcción)
+│   ├── formularios.py       # respuesta única de un formulario rechazado
+│   └── api/v1/              # API de integración (middleware DIAN)
+│       ├── dependencias.py  # ClienteAPI: resuelve la llave X-API-Key
+│       └── sistema.py       # GET /api/v1/ping
 ├── services/                # lógica de negocio reutilizable por web y API
 │   ├── calculo_documento.py # aritmética tributaria (pura): bases, descuentos, prorrateo
 │   ├── numeracion_service.py# reserva atómica de consecutivos por emisor
@@ -110,11 +113,24 @@ get_many(q, params)        # SELECT múltiples → list[dict]
 - `AuthMiddleware` en `auth.py` protege todas las rutas excepto `/login` y `/static`.
 - Bloqueos por rol vía `_ADMIN_ONLY_PREFIXES` y `_CAJERO_BLOCKED_PREFIXES`.
 
-### API (`/api/v1/`) — JWT
-- `POST /api/v1/auth/login` → `{access_token, token_type, user}`.
-- Dependency `get_current_user()` valida el `Authorization: Bearer <token>`.
-- El payload del JWT debe incluir `cod_usuario`, `rol`, `cod_empresa` para los gates por rol.
-- CORS habilitado para el cliente Flutter.
+### API (`/api/v1/`) — llave por cliente
+La API de integración **no usa sesión ni JWT de usuario**: la consume un sistema,
+no una persona. Cada cliente integrado tiene una llave propia.
+
+- Encabezado `X-API-Key: fg_live_xxxxxxxx.<secreto>`.
+- Dependency `ClienteAPI` (`routes/api/v1/dependencias.py`) resuelve la fila de
+  `clientes_api`, que trae el `cod_empresa` con el que ese cliente numera.
+- Sin llave o con una que no sirve → **401**; llave válida de un cliente
+  suspendido o revocado → **403**. Son cosas distintas: en la primera el
+  integrador revisa su configuración, en la segunda tiene que hablar con nosotros.
+- `services/api_key_service.py` genera, verifica, rota y cambia el estado.
+  Del secreto solo se guarda el hash; el prefijo se guarda en claro para poder
+  encontrar la fila sin comparar el hash contra todas.
+- Alta provisional por consola: `python crear_cliente_api.py --listar`. Se
+  reemplaza por el módulo del panel.
+
+> `/api/v1`, `/docs`, `/redoc` y `/openapi.json` están en `_PUBLIC_PREFIXES` de
+> `auth.py`: si no, el `AuthMiddleware` los mandaría al formulario de login.
 
 ### Roles (compartidos entre web y API)
 ```python
