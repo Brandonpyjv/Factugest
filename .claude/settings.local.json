@@ -26,7 +26,30 @@
       "Bash(curl -sv http://127.0.0.1:8000/login)",
       "Bash(jobs -l)",
       "Bash(kill 8576)",
-      "Bash(tee /tmp/factugest.log)"
+      "Bash(tee /tmp/factugest.log)",
+      "Bash(./.venv/Scripts/python.exe -c ' *)",
+      "Bash(./.venv/Scripts/python.exe migrate.py)",
+      "Bash(./.venv/Scripts/python.exe \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/bf221056-c236-4baf-a37f-26a1c50faaab/scratchpad/test_inventory.py\")",
+      "Bash(./.venv/Scripts/python.exe -c \"import compileall,sys; sys.exit\\(0 if compileall.compile_file\\('routes/invoice.py', quiet=1\\) and compileall.compile_file\\('services/inventory_service.py', quiet=1\\) else 1\\)\")",
+      "Bash(./.venv/Scripts/python.exe -m pip list)",
+      "Bash(./.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8011 --log-level warning)",
+      "Bash(./.venv/Scripts/python.exe \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/bf221056-c236-4baf-a37f-26a1c50faaab/scratchpad/test_e2e_facturacion.py\")",
+      "Bash(./.venv/Scripts/python.exe \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/bf221056-c236-4baf-a37f-26a1c50faaab/scratchpad/test_reports.py\")",
+      "Bash(node scripts/validate_palette.js \"#c3d0f5,#9ab0ee,#7189e6,#4e73df,#2e59d9\" --mode light --surface \"#ffffff\" --ordinal)",
+      "Bash(node scripts/validate_palette.js \"#b6c6f2,#8ba3ea,#6480e2,#4159c9,#2a3f96\" --mode light --surface \"#ffffff\" --ordinal)",
+      "Bash(node scripts/validate_palette.js \"#9cb1ec,#7a94e5,#5877de,#3a58c0,#243c92\" --mode light --surface \"#ffffff\" --ordinal)",
+      "Bash(node scripts/validate_palette.js \"#9cb1ec,#7a94e5,#5877de,#3a58c0,#243c92\" --mode light --surface \"#f8fafc\" --ordinal)",
+      "Bash(node scripts/validate_palette.js \"#4e73df,#17a673\" --mode light --surface \"#f8fafc\")",
+      "Bash(rm -f templates/index.html)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(./.venv/Scripts/python.exe \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/bf221056-c236-4baf-a37f-26a1c50faaab/scratchpad/test_e2e_dashboard.py\")",
+      "Bash(python -)",
+      "Bash(./.venv/Scripts/python.exe \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/bf221056-c236-4baf-a37f-26a1c50faaab/scratchpad/test_e2e_reportes.py\")",
+      "Bash(\"/d/XAMPP NEW/mysql/bin/mysqldump.exe\" -h localhost -u root --default-character-set=utf8mb4 --add-drop-table --routines --events --single-transaction factugest)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
