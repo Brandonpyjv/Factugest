@@ -1,6 +1,15 @@
 # Factugest — Sistema de Facturación Electrónica 🇨🇴
 
-Sistema de facturación electrónica para Colombia. Este documento explica los cambios realizados en la migración de **Flask → FastAPI**, cómo levantar el proyecto y las diferencias clave que el equipo debe conocer para adaptarse.
+Sistema de facturación electrónica para Colombia. Este documento explica cómo levantar el proyecto y los cambios de la migración de **Flask → FastAPI**.
+
+> **¿Buscas cómo funciona el sistema?** Está en la **Guía técnica «Anatomía de FactuGest»**:
+> arquitectura, el recorrido de una factura paso a paso, el modelo de datos, por qué se
+> eligió cada herramienta y las preguntas de sustentación con su respuesta.
+> Reemplaza al antiguo `DOCUMENTACION.md`, que describía el sistema antes del inventario,
+> los reportes, las validaciones y la API, y a estas alturas engañaba más de lo que ayudaba.
+>
+> Para el estado del trabajo y lo que falta, el **Cuaderno de Ruta**.
+> Para las reglas que hay que respetar al programar, `CLAUDE.md`.
 
 ---
 
