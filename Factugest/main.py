@@ -24,6 +24,8 @@ from routes.logs import router as logs_router
 from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
 from services.report_service import etiqueta_estado
+from services.validaciones import (abreviatura_documento, nombre_documento,
+                                   tipos_documento_ordenados)
 from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
 from routes.perfil import router as perfil_router
@@ -70,6 +72,12 @@ templates.env.globals["avatar_url"] = avatar_url
 templates.env.globals["role_label"] = role_label
 templates.env.globals["puede_cambiar_foto"] = puede_cambiar_foto
 templates.env.globals["etiqueta_estado"] = etiqueta_estado
+
+# Los tipos de documento se guardan con el código de la DIAN; las vistas muestran
+# la abreviatura, porque nadie lee «13» y entiende «cédula».
+templates.env.globals["abreviatura_documento"] = abreviatura_documento
+templates.env.globals["nombre_documento"] = nombre_documento
+templates.env.globals["tipos_documento"] = tipos_documento_ordenados
 
 
 @app.on_event("startup")

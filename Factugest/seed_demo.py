@@ -65,17 +65,17 @@ PRODUCTOS_NUEVOS = [
 ]
 
 CLIENTES_NUEVOS = [
-    # nombre, tipo_doc, documento, tel, correo, direccion, ciudad, depto, tipo_persona
-    ("Distribuciones El Progreso S.A.S.", "N", "9012345671", "6076541234",
+    # nombre, tipo_doc (codigo DIAN), documento, tel, correo, direccion, ciudad, depto, tipo_persona
+    ("Distribuciones El Progreso S.A.S.", "31", "9012345671", "6076541234",
      "compras@elprogreso.com.co", "Calle 10 # 12-34", "Cúcuta",
      "Norte de Santander", "JURIDICA"),
-    ("Papelería La Esquina Ltda.", "N", "9008765432", "6072223344",
+    ("Papelería La Esquina Ltda.", "31", "9008765432", "6072223344",
      "ventas@laesquina.com.co", "Av. 5 # 8-90", "Cúcuta",
      "Norte de Santander", "JURIDICA"),
-    ("Carlos Andrés Peña", "C", "1090556677", "3155667788",
+    ("Carlos Andrés Peña", "13", "1090556677", "3155667788",
      "capena@correo.com", "Barrio Caobos, Casa 14", "Cúcuta",
      "Norte de Santander", "NATURAL"),
-    ("Laura Ximena Duarte", "C", "1094778899", "3009988776",
+    ("Laura Ximena Duarte", "13", "1094778899", "3009988776",
      "lxduarte@correo.com", "Urb. Los Pinos Mz D", "Cúcuta",
      "Norte de Santander", "NATURAL"),
 ]

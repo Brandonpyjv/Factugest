@@ -10,6 +10,7 @@ El proyecto no usa ORM ni una herramienta de migraciones; este script existe par
 los cambios de esquema queden versionados en el repositorio y todo el equipo pueda
 aplicarlos con un solo comando en lugar de pasarse ALTERs por chat.
 """
+import sys
 from datetime import datetime
 
 from database import create_connection
@@ -313,6 +314,65 @@ def migracion_003_api_middleware(cursor):
     return pasos
 
 
+# ── 004 · Tipos de documento con los códigos de la DIAN ─────────────────────
+
+# El catálogo anterior era propio (C, E, J, G) y no correspondía al del anexo
+# técnico, así que `xml_service` traducía a mano y se equivocaba: mandaba un
+# cliente jurídico con esquema 13 (cédula) en lugar de 31 (NIT). Las entidades
+# públicas —la «G» de gobierno— también se identifican con NIT; la DIAN no tiene
+# un código aparte para ellas.
+_MAPEO_TIPOS = {
+    "C": "13",   # Cédula de ciudadanía
+    "E": "22",   # Cédula de extranjería
+    "J": "31",   # NIT
+    "N": "31",   # NIT (lo que xml_service ya trataba como NIT)
+    "G": "31",   # Gobierno → NIT
+}
+
+
+def migracion_004_tipos_documento_dian(cursor):
+    """Convierte customers.document_type al código DIAN."""
+    pasos = []
+
+    cursor.execute(
+        "SELECT COLUMN_TYPE FROM information_schema.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers' "
+        "AND COLUMN_NAME = 'document_type'"
+    )
+    fila = cursor.fetchone()
+    tipo_actual = (fila[0] if fila else "").lower()
+
+    # Un char(1) no alcanza para un código de dos dígitos: hay que ensanchar antes
+    # de convertir, o el UPDATE truncaría los valores.
+    if tipo_actual != "varchar(4)":
+        cursor.execute(
+            "ALTER TABLE customers MODIFY document_type VARCHAR(4) NOT NULL DEFAULT '13' "
+            "COMMENT 'Código DIAN: 13 CC, 22 CE, 31 NIT, 41 Pasaporte'"
+        )
+        pasos.append("columna customers.document_type ensanchada a VARCHAR(4)")
+
+    for viejo, nuevo in _MAPEO_TIPOS.items():
+        cursor.execute(
+            "UPDATE customers SET document_type = %s WHERE document_type = %s",
+            (nuevo, viejo),
+        )
+        if cursor.rowcount:
+            pasos.append(f"{cursor.rowcount} cliente(s) con '{viejo}' pasan a '{nuevo}'")
+
+    # Lo que no estaba en el catálogo viejo ni es un código válido se deja como
+    # cédula, que es el caso mayoritario, pero se reporta para poder revisarlo.
+    codigos = ", ".join(f"'{c}'" for c in
+                        ("11", "12", "13", "21", "22", "31", "41", "42", "50", "91"))
+    cursor.execute(f"SELECT COUNT(*) FROM customers WHERE document_type NOT IN ({codigos})")
+    sueltos = cursor.fetchone()[0]
+    if sueltos:
+        cursor.execute(f"UPDATE customers SET document_type = '13' "
+                       f"WHERE document_type NOT IN ({codigos})")
+        pasos.append(f"ATENCION: {sueltos} cliente(s) con un tipo desconocido quedaron en '13'")
+
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -320,10 +380,21 @@ MIGRACIONES = [
      migracion_002_foto_perfil),
     ("003", "API middleware DIAN: clientes API, receptores, documentos, líneas y eventos",
      migracion_003_api_middleware),
+    ("004", "Tipos de documento de cliente con los códigos de la DIAN",
+     migracion_004_tipos_documento_dian),
 ]
 
 
 def run():
+    # La consola de Windows usa cp1252 y un acento o una flecha en el mensaje de una
+    # migración bastaba para tumbarla a mitad de camino. El texto que se imprime no
+    # debería poder abortar un cambio de esquema.
+    for flujo in (sys.stdout, sys.stderr):
+        try:
+            flujo.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError):
+            pass
+
     db = create_connection()
     cursor = db.cursor()
     try:

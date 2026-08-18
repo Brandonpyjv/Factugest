@@ -335,7 +335,7 @@ async function fetchClientes(q) {
                 btn.type      = 'button';
                 btn.className = 'list-group-item list-group-item-action py-2 small';
                 btn.innerHTML = `<strong>${c.full_name}</strong>
-                    <span class="text-muted ms-2 small">${c.document_type || ''}${c.document_number || ''}</span>`;
+                    <span class="text-muted ms-2 small">${c.document_type_label || ''} ${c.document_number || ''}</span>`;
                 btn.addEventListener('mousedown', e => { e.preventDefault(); selectCliente(c); });
                 clienteDropdown.appendChild(btn);
             });
@@ -346,7 +346,7 @@ async function fetchClientes(q) {
 
 function selectCliente(c) {
     document.getElementById('codCliente').value = c.customer_id;
-    clienteSearch.value = c.full_name + ' — ' + (c.document_type || '') + (c.document_number || '');
+    clienteSearch.value = c.full_name + ' — ' + (c.document_type_label || '') + ' ' + (c.document_number || '');
     clienteDropdown.style.display = 'none';
     document.getElementById('clienteNombreDisplay').textContent = c.full_name;
     document.getElementById('clienteSeleccionado').classList.remove('d-none');

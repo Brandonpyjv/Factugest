@@ -12,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
 from num2words import num2words
 
+from services.validaciones import nombre_documento
+
 
 # ── Constantes de color (mismos del sidebar/navbar) ──────────────────────────
 PRIMARY   = colors.HexColor('#4e73df')
@@ -209,15 +211,9 @@ def generate_invoice_pdf(invoice: dict, details: list) -> bytes:
     # ══════════════════════════════════════════════════════════════════
     # 2. DATOS CLIENTE | INFO PAGO
     # ══════════════════════════════════════════════════════════════════
-    doc_type_map = {
-        'C': 'Cédula de ciudadanía',
-        'CC': 'Cédula de ciudadanía',
-        'N': 'NIT',
-        'NIT': 'NIT',
-        'E': 'Cédula de extranjería',
-        'P': 'Pasaporte',
-    }
-    cli_doc_tipo = doc_type_map.get(invoice.get('document_type', 'C'), invoice.get('document_type', ''))
+    # El mapa que había aquí no tenía entrada para los clientes jurídicos, así que la
+    # factura de una empresa se imprimía con «J: 900123456» en lugar de «NIT».
+    cli_doc_tipo = nombre_documento(invoice.get('document_type'))
     cli_doc_num  = invoice.get('document_number', '')
     cli_nombre   = invoice.get('cliente_nombre', '')
     cli_dir_val  = invoice.get('cliente_address', '') or ''

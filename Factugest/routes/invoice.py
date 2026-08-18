@@ -22,6 +22,7 @@ from services.inventory_service import (verificar_disponibilidad,
                                          StockInsuficienteError)
 from services.numeracion_service import reservar_numero, RangoResolucionAgotadoError
 from services.documento_canonico import emisor_desde_factura
+from services.validaciones import abreviatura_documento
 from templates_config import templates
 from database import get_one, get_many, execute_update, transaction
 
@@ -503,6 +504,9 @@ def api_customers_search(q: str = ""):
         "WHERE full_name LIKE %s OR document_number LIKE %s ORDER BY full_name LIMIT 10",
         (f"%{q}%", f"%{q}%"),
     )
+    # El buscador muestra «CC 1090…», no el código DIAN que guarda la columna.
+    for r in results:
+        r["document_type_label"] = abreviatura_documento(r["document_type"])
     return JSONResponse(content=results)
 
 

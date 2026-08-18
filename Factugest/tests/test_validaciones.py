@@ -152,6 +152,26 @@ def test_la_identificacion_respeta_el_largo_de_su_tipo():
     assert "entre 8 y 10" in error(numero_documento, "123", "31")
 
 
+def test_las_etiquetas_traducen_el_codigo_para_las_personas():
+    from services.validaciones import (abreviatura_documento, nombre_documento,
+                                       tipos_documento_ordenados)
+    assert abreviatura_documento("13") == "CC"
+    assert abreviatura_documento("31") == "NIT"
+    assert abreviatura_documento("41") == "PA"
+    assert nombre_documento("31") == "NIT"
+    assert nombre_documento("13") == "Cédula de ciudadanía"
+    # Un valor desconocido se muestra tal cual en lugar de desaparecer.
+    assert abreviatura_documento("ZZ") == "ZZ"
+    assert abreviatura_documento(None) == ""
+
+    tipos = tipos_documento_ordenados()
+    assert tipos[0] == ("13", "CC - Cédula de ciudadanía")
+    assert ("41", "PA - Pasaporte") in tipos
+    # Cuando la abreviatura y el nombre coinciden no se repite el texto.
+    assert ("31", "NIT") in tipos
+    assert len(tipos) == 10
+
+
 def test_el_tipo_de_documento_debe_ser_del_catalogo_dian():
     assert tipo_documento("13") == "13"
     assert tipo_documento("31") == "31"

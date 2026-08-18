@@ -5,6 +5,8 @@ integre el servicio de tercero con habilitación DIAN.
 """
 from datetime import datetime
 
+from services.validaciones import TIPOS_DOCUMENTO
+
 
 def _fmt(val, decimals=2) -> str:
     return f"{float(val or 0):.{decimals}f}"
@@ -50,8 +52,11 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     # Cliente
     cli_nombre = _esc(invoice.get('cliente_nombre', ''))
     cli_doc    = _esc(invoice.get('document_number', ''))
-    cli_tipo   = invoice.get('document_type', 'CC')
-    doc_scheme = '13' if cli_tipo in ('CC', 'C') else '31' if cli_tipo == 'N' else '13'
+    # `document_type` ya guarda el código del anexo técnico, así que no hay nada que
+    # traducir. La traducción a mano que había antes mandaba a un cliente jurídico
+    # con esquema 13 (cédula) en lugar de 31 (NIT).
+    cli_tipo   = str(invoice.get('document_type') or '13').strip()
+    doc_scheme = cli_tipo if cli_tipo in TIPOS_DOCUMENTO else '13'
     cli_dir    = _esc(invoice.get('cliente_address', ''))
     cli_ciudad = _esc(invoice.get('cliente_ciudad', ''))
     cli_correo = _esc(invoice.get('cliente_email', ''))

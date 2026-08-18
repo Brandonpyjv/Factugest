@@ -210,21 +210,36 @@ def telefono(valor, campo: str = "telefono", requerido: bool = False) -> str:
 
 # ── Identificación ──────────────────────────────────────────────────────────
 
-# Códigos del anexo técnico de la DIAN. `solo_digitos` distingue los documentos
-# colombianos numéricos de los que pueden traer letras, como el pasaporte.
+# Códigos del anexo técnico de la DIAN, que es también lo que se guarda en
+# `customers.document_type` y viaja al XML sin traducción. `solo_digitos` distingue
+# los documentos colombianos numéricos de los que pueden traer letras, como el
+# pasaporte; `abreviatura` es lo que se le muestra a una persona, porque nadie lee
+# «13» y entiende «cédula».
 TIPOS_DOCUMENTO = {
-    "11": {"nombre": "Registro civil",                  "solo_digitos": True,  "largo": (6, 15)},
-    "12": {"nombre": "Tarjeta de identidad",            "solo_digitos": True,  "largo": (6, 15)},
-    "13": {"nombre": "Cédula de ciudadanía",            "solo_digitos": True,  "largo": (4, 10)},
-    "21": {"nombre": "Tarjeta de extranjería",          "solo_digitos": False, "largo": (4, 20)},
-    "22": {"nombre": "Cédula de extranjería",           "solo_digitos": False, "largo": (4, 20)},
-    "31": {"nombre": "NIT",                             "solo_digitos": True,  "largo": (8, 10)},
-    "41": {"nombre": "Pasaporte",                       "solo_digitos": False, "largo": (5, 20)},
-    "42": {"nombre": "Documento de identificación extranjero",
-                                                        "solo_digitos": False, "largo": (3, 30)},
-    "50": {"nombre": "NIT de otro país",                "solo_digitos": False, "largo": (3, 30)},
-    "91": {"nombre": "NUIP",                            "solo_digitos": True,  "largo": (6, 15)},
+    "11": {"abreviatura": "RC",     "nombre": "Registro civil",
+           "solo_digitos": True,  "largo": (6, 15)},
+    "12": {"abreviatura": "TI",     "nombre": "Tarjeta de identidad",
+           "solo_digitos": True,  "largo": (6, 15)},
+    "13": {"abreviatura": "CC",     "nombre": "Cédula de ciudadanía",
+           "solo_digitos": True,  "largo": (4, 10)},
+    "21": {"abreviatura": "TE",     "nombre": "Tarjeta de extranjería",
+           "solo_digitos": False, "largo": (4, 20)},
+    "22": {"abreviatura": "CE",     "nombre": "Cédula de extranjería",
+           "solo_digitos": False, "largo": (4, 20)},
+    "31": {"abreviatura": "NIT",    "nombre": "NIT",
+           "solo_digitos": True,  "largo": (8, 10)},
+    "41": {"abreviatura": "PA",     "nombre": "Pasaporte",
+           "solo_digitos": False, "largo": (5, 20)},
+    "42": {"abreviatura": "DIE",    "nombre": "Documento de identificación extranjero",
+           "solo_digitos": False, "largo": (3, 30)},
+    "50": {"abreviatura": "NIT-EX", "nombre": "NIT de otro país",
+           "solo_digitos": False, "largo": (3, 30)},
+    "91": {"abreviatura": "NUIP",   "nombre": "NUIP",
+           "solo_digitos": True,  "largo": (6, 15)},
 }
+
+# El orden en que se ofrecen en los formularios: primero lo que más se factura.
+ORDEN_TIPOS_DOCUMENTO = ("13", "31", "22", "41", "12", "11", "21", "42", "50", "91")
 
 
 def tipo_documento(valor, campo: str = "tipo_documento") -> str:
@@ -232,6 +247,32 @@ def tipo_documento(valor, campo: str = "tipo_documento") -> str:
     if valor not in TIPOS_DOCUMENTO:
         raise ErrorValidacion(campo, "No es un tipo de documento válido")
     return valor
+
+
+def abreviatura_documento(codigo) -> str:
+    """«13» → «CC». Para badges, listados y la representación gráfica."""
+    tipo = TIPOS_DOCUMENTO.get(str(codigo or "").strip())
+    return tipo["abreviatura"] if tipo else (str(codigo or "").strip() or "")
+
+
+def nombre_documento(codigo) -> str:
+    """«13» → «Cédula de ciudadanía». Para el PDF y los formularios."""
+    tipo = TIPOS_DOCUMENTO.get(str(codigo or "").strip())
+    return tipo["nombre"] if tipo else (str(codigo or "").strip() or "")
+
+
+def tipos_documento_ordenados():
+    """Pares (código, etiqueta) para poblar un `<select>`.
+
+    La etiqueta lleva la abreviatura al frente porque es como la gente los nombra,
+    salvo cuando la abreviatura y el nombre son el mismo texto: «NIT - NIT» sobra.
+    """
+    pares = []
+    for codigo in ORDEN_TIPOS_DOCUMENTO:
+        tipo = TIPOS_DOCUMENTO[codigo]
+        abreviatura, nombre = tipo["abreviatura"], tipo["nombre"]
+        pares.append((codigo, nombre if abreviatura == nombre else f"{abreviatura} - {nombre}"))
+    return pares
 
 
 def numero_documento(valor, tipo: str, campo: str = "numero_documento") -> str:

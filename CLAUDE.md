@@ -144,6 +144,11 @@ ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}  # acceso completo
 > export completo de tu base local**: le meterías los cientos de documentos que generó
 > `seed_demo.py` y borrarías filas de catálogo que tú no tengas. Cuando agregues tablas,
 > empalma solo los bloques nuevos de estructura.
+>
+> Los cambios de columna y las conversiones de datos **se dejan a la migración**, no se
+> reflejan en el dump: el dump se queda en el estado de la última migración que declara
+> en `schema_migrations`, y `python migrate.py` lo lleva al día. Por eso el orden de
+> instalación es siempre *importar el SQL y después migrar*.
 
 ### Dos zonas de datos
 

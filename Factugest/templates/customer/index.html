@@ -44,7 +44,7 @@
                             <td class="ps-4 fw-bold text-dark">{{ customer.customer_id }}</td>
                             <td>{{ customer.full_name }}</td>
                             <td>
-                                <span class="badge border text-secondary fw-normal">{{ customer.document_type }}</span>
+                                <span class="badge border text-secondary fw-normal" title="{{ nombre_documento(customer.document_type) }}">{{ abreviatura_documento(customer.document_type) }}</span>
                             </td>
                             <td>{{ customer.document_number }}</td>
                             <td>{{ customer.phone }}</td>

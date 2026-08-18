@@ -41,6 +41,20 @@ def test_sin_regimen_se_asume_responsable_de_iva():
     assert etiqueta(generar(regimen_tributario=None), "cbc:TaxLevelCode") == "O-23"
 
 
+@pytest.mark.parametrize("tipo,esperado", [
+    ("13", "13"),   # cédula
+    ("31", "31"),   # NIT: antes se mandaba como 13 y la DIAN lo veía como persona
+    ("41", "41"),   # pasaporte
+    ("ZZ", "13"),   # desconocido: cae al caso mayoritario en lugar de romper el XML
+])
+def test_el_tipo_de_documento_del_cliente_viaja_como_codigo_dian(tipo, esperado):
+    factura = {"numero_factura": "SETP1", "document_number": "9008765432",
+               "document_type": tipo, "subtotal": 100000, "total": 119000}
+    xml = generate_invoice_xml(factura, [], emisor())
+    encontrados = set(re.findall(r'schemeName="([^"]+)">9008765432', xml))
+    assert encontrados == {esperado}
+
+
 def test_el_prefijo_del_emisor_llega_al_xml():
     assert etiqueta(generar(prefijo_factura="SETP"), "sts:Prefix") == "SETP"
     assert etiqueta(generar(prefijo_factura="FE"), "sts:Prefix") == "FE"
