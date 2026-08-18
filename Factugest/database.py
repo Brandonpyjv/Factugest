@@ -1,4 +1,6 @@
 import os
+from contextlib import contextmanager
+
 import mysql.connector
 from dotenv import load_dotenv
 
@@ -14,6 +16,36 @@ _DB_CONFIG = {
 
 def create_connection():
     return mysql.connector.connect(**_DB_CONFIG)
+
+
+@contextmanager
+def transaction(dictionary=True):
+    """Ejecuta varias sentencias sobre una misma conexión, todo o nada.
+
+    Los helpers de abajo abren y cierran conexión por llamada, así que un
+    documento se arma con varios commits independientes: si algo falla a mitad
+    quedan cabeceras sin líneas o consecutivos gastados sin factura. Emitir es
+    una sola operación y tiene que confirmarse o revertirse completa.
+
+        with transaction() as cur:
+            cur.execute("INSERT INTO facturas ...", params)
+            cod_factura = cur.lastrowid
+            cur.execute("INSERT INTO detalle_factura ...", params)
+
+    Reservar el consecutivo y usarlo también exige la misma conexión: el valor
+    reservado se recupera con LAST_INSERT_ID(), que es por sesión.
+    """
+    db = create_connection()
+    cursor = db.cursor(dictionary=dictionary)
+    try:
+        yield cursor
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        cursor.close()
+        db.close()
 
 
 def get_all_from_table(table_name):

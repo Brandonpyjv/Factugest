@@ -64,8 +64,11 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     emp_tel    = _esc(empresa.get('telefono', ''))
     emp_correo = _esc(empresa.get('correo', ''))
     emp_cod_mun = str(empresa.get('cod_municipio') or '76001')
-    emp_regimen = empresa.get('regimen_tributario', 'RESPONSABLE_IVA')
-    tax_level   = 'O-23' if 'RESPONSABLE' in (emp_regimen or '') else 'O-47'
+    emp_regimen = empresa.get('regimen_tributario') or 'RESPONSABLE_IVA'
+    # «NO_RESPONSABLE_IVA» contiene «RESPONSABLE», así que hay que descartar la
+    # negación primero; buscar solo la subcadena clasificaba a los no responsables
+    # como responsables.
+    tax_level   = 'O-47' if emp_regimen.startswith('NO_RESPONSABLE') else 'O-23'
 
     # Descuento global de factura (AllowanceCharge a nivel factura)
     desc_factura_val   = float(invoice.get('total_descuentos', 0) or 0)

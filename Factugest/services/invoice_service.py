@@ -157,7 +157,7 @@ def create_invoice(cod_cliente: int, cod_usuario: int, cod_empresa: int,
                    cufe: str = None, numero_factura: str = None,
                    forma_pago: str = 'CONTADO', orden_compra: str = None,
                    nombre_vendedor: str = None, cod_descuento_factura: int = None,
-                   descripcion_descuento_factura: str = None):
+                   descripcion_descuento_factura: str = None, cursor=None):
     query = """
         INSERT INTO facturas
             (fecha, fecha_vencimiento, cod_cliente, cod_usuario, cod_empresa,
@@ -167,20 +167,25 @@ def create_invoice(cod_cliente: int, cod_usuario: int, cod_empresa: int,
              cod_descuento_factura, descripcion_descuento_factura)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    return execute_query(query, (
+    params = (
         fecha, fecha_vencimiento or None, cod_cliente, cod_usuario, cod_empresa,
         cod_metodo_pago, cod_pago, total, subtotal, total_descuentos,
         total_impuestos, tipo_factura, observaciones or None,
         cufe, numero_factura, forma_pago, orden_compra or None, nombre_vendedor or None,
         cod_descuento_factura or None, descripcion_descuento_factura or None
-    ))
+    )
+    if cursor is not None:
+        cursor.execute(query, params)
+        return cursor.lastrowid
+    return execute_query(query, params)
 
 
 def create_invoice_detail(cod_factura: int, cod_producto: int, cantidad: int,
                            precio_unitario: float, subtotal: float,
                            descuento_porcentaje: float = 0, descuento_valor: float = 0,
                            descuento_descripcion: str = None,
-                           impuesto_porcentaje: float = 0, impuesto_valor: float = 0):
+                           impuesto_porcentaje: float = 0, impuesto_valor: float = 0,
+                           cursor=None):
     query = """
         INSERT INTO detalle_factura
             (cod_factura, cod_producto, cantidad, precio_unitario, subtotal,
@@ -188,11 +193,15 @@ def create_invoice_detail(cod_factura: int, cod_producto: int, cantidad: int,
              impuesto_porcentaje, impuesto_valor)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    return execute_query(query, (
+    params = (
         cod_factura, cod_producto, cantidad, precio_unitario, subtotal,
         descuento_porcentaje, descuento_valor, descuento_descripcion or None,
         impuesto_porcentaje, impuesto_valor
-    ))
+    )
+    if cursor is not None:
+        cursor.execute(query, params)
+        return cursor.lastrowid
+    return execute_query(query, params)
 
 
 def get_notas_by_referencia(cod_factura_referencia: int):
