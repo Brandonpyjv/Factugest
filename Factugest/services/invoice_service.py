@@ -1,4 +1,124 @@
 from database import create_connection, execute_query, execute_update, get_one, get_many
+from services.validaciones import (TIPOS_DOCUMENTO_FISCAL, Validador, cantidad as validar_cantidad,
+                                   dinero, entero, opcion, porcentaje, texto)
+
+MAX_LINEAS = 200
+
+
+def validar_factura(datos: dict) -> Validador:
+    """Valida una factura antes de emitirla.
+
+    Las líneas se devuelven en `datos["lineas"]` ya listas para
+    `calcular_documento`, con el precio y la tarifa leídos de la base: el
+    formulario los muestra pero no los decide.
+    """
+    v = Validador()
+
+    v.campo("tipo_factura", opcion, datos.get("tipo_factura") or "FV",
+            TIPOS_DOCUMENTO_FISCAL)
+    v.campo("plazo_pago", entero,
+            datos.get("plazo_pago") if datos.get("plazo_pago") not in (None, "") else 0,
+            minimo=0, maximo=365)
+    v.campo("observaciones", texto, datos.get("observaciones"), maximo=1000,
+            requerido=False)
+
+    for campo, tabla, llave, etiqueta in (
+        ("cod_cliente", "customers", "customer_id", "El cliente"),
+        ("cod_metodo_pago", "metodos_pago", "cod_pago", "El método de pago"),
+        ("cod_pago", "pagos_factura", "cod_pago_factura", "El estado de pago"),
+    ):
+        v.campo(campo, entero, datos.get(campo), minimo=1)
+        if campo in v.datos and not get_one(
+                f"SELECT {llave} FROM {tabla} WHERE {llave} = %s", (v.datos[campo],)):
+            v.errores[campo] = f"{etiqueta} seleccionado no existe"
+
+    lineas = datos.get("lineas") or []
+    if not lineas:
+        v.errores["lineas"] = "La factura debe tener al menos un producto"
+    elif len(lineas) > MAX_LINEAS:
+        v.errores["lineas"] = f"Una factura no puede tener más de {MAX_LINEAS} líneas"
+
+    calculadas = []
+    for i, linea in enumerate(lineas[:MAX_LINEAS], start=1):
+        prefijo = f"linea_{i}"
+        producto = get_one(
+            "SELECT p.cod_producto, p.nombre, p.precio_unitario, p.activo, "
+            "       i.porcentaje AS tax_pct "
+            "FROM productos p LEFT JOIN impuestos i ON p.cod_impuesto = i.cod_impuesto "
+            "WHERE p.cod_producto = %s",
+            (linea.get("cod_producto"),))
+        if not producto:
+            v.errores[f"{prefijo}_producto"] = f"Línea {i}: el producto no existe"
+            continue
+        if not producto["activo"]:
+            v.errores[f"{prefijo}_producto"] = (
+                f"Línea {i}: «{producto['nombre']}» está inactivo y no se puede facturar")
+            continue
+
+        etiqueta = f"Línea {i} «{producto['nombre']}»"
+        try:
+            cant = validar_cantidad(linea.get("cantidad"), campo=f"{prefijo}_cantidad")
+        except Exception as e:
+            v.errores[f"{prefijo}_cantidad"] = f"{etiqueta}: {getattr(e, 'mensaje', e)}"
+            continue
+
+        try:
+            desc_pct = porcentaje(linea.get("descuento_porcentaje") or 0,
+                                  campo=f"{prefijo}_descuento")
+        except Exception as e:
+            v.errores[f"{prefijo}_descuento"] = f"{etiqueta}: {getattr(e, 'mensaje', e)}"
+            continue
+
+        # El desplegable solo ofrece los descuentos asociados a ese producto. Un
+        # porcentaje que no esté entre ellos llegó por fuera del formulario.
+        if desc_pct and not get_one(
+                "SELECT d.cod_descuento FROM descuentos d "
+                "JOIN producto_descuento pd ON d.cod_descuento = pd.cod_descuento "
+                "WHERE pd.cod_producto = %s AND d.porcentaje = %s",
+                (producto["cod_producto"], desc_pct)):
+            v.errores[f"{prefijo}_descuento"] = (
+                f"{etiqueta}: el descuento del {desc_pct}% no aplica a ese producto")
+            continue
+
+        calculadas.append({
+            "cod_producto": producto["cod_producto"],
+            "cantidad": cant,
+            # El precio sale de la base, no del formulario. El campo llega como
+            # `readonly`, pero eso solo lo respeta el navegador: sin esto, una
+            # petición armada a mano factura un portátil a mil pesos.
+            "precio_unitario": float(producto["precio_unitario"] or 0),
+            "descuento_porcentaje": desc_pct,
+            "descuento_descripcion": (linea.get("descuento_descripcion") or "")[:200],
+            "impuesto_porcentaje": float(producto["tax_pct"] or 0),
+        })
+
+    v.datos["lineas"] = calculadas
+
+    # El descuento de factura no puede pasarse de la base sobre la que se aplica:
+    # más allá, el total se vuelve negativo.
+    v.campo("valor_descuento_factura", dinero,
+            datos.get("valor_descuento_factura") if datos.get("valor_descuento_factura") not in (None, "") else 0)
+    descuento_global = v.datos.get("valor_descuento_factura") or 0
+    if descuento_global and calculadas:
+        base = sum(l["precio_unitario"] * l["cantidad"] *
+                   (1 - l["descuento_porcentaje"] / 100) for l in calculadas)
+        if descuento_global > base:
+            v.errores["valor_descuento_factura"] = (
+                f"El descuento de factura no puede pasar de la base gravable "
+                f"(${base:,.2f})")
+
+    cod_descuento = datos.get("cod_descuento_factura")
+    if cod_descuento not in (None, "", "None"):
+        v.campo("cod_descuento_factura", entero, cod_descuento, minimo=1)
+        if "cod_descuento_factura" in v.datos and not get_one(
+                "SELECT cod_descuento FROM descuentos "
+                "WHERE cod_descuento = %s AND aplica_a_factura = 1",
+                (v.datos["cod_descuento_factura"],)):
+            v.errores["cod_descuento_factura"] = "Ese descuento no aplica a facturas"
+    else:
+        v.datos["cod_descuento_factura"] = None
+
+    return v
 
 
 def get_all_invoices_detailed():

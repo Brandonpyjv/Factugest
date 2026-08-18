@@ -6,7 +6,7 @@ from services.invoice_service import (get_all_invoices_detailed, get_invoice_by_
                                        get_invoice_by_numero_factura, get_invoice_details,
                                        create_invoice, create_invoice_detail,
                                        update_invoice_status, delete_invoice,
-                                       get_notas_by_referencia)
+                                       get_notas_by_referencia, validar_factura)
 from services.calculo_documento import calcular_documento
 from services.branches import get_all_branches, get_branch_by_id
 from services.payment_methods_service import get_all_payment_methods
@@ -35,7 +35,7 @@ def invoice(request: Request):
     return templates.TemplateResponse(request, "invoice/index.html", {"all_invoices": data})
 
 
-def _render_invoice_form(request: Request, error: str = None):
+def _render_invoice_form(request: Request, error: str = None, status_code: int = 200):
     session_user = request.session.get("user", {})
     cod_empresa = session_user.get("cod_empresa")
 
@@ -64,7 +64,7 @@ def _render_invoice_form(request: Request, error: str = None):
         "invoice_discounts": invoice_discounts,
         "invoice": None,
         "error": error,
-    })
+    }, status_code=status_code)
 
 
 @router.get("/new", name="new_invoice")
@@ -75,53 +75,70 @@ def new_invoice(request: Request):
 @router.post("/new", name="create_invoice")
 async def create_invoice_post(
     request: Request,
-    cod_cliente: int = Form(...),
-    cod_metodo_pago: int = Form(...),
-    cod_pago: int = Form(...),
+    cod_cliente: str = Form(...),
+    cod_metodo_pago: str = Form(...),
+    cod_pago: str = Form(...),
     tipo_factura: str = Form("FV"),
     observaciones: str = Form(""),
-    cod_producto: List[int] = Form(...),
-    precio_unitario: List[float] = Form(...),
-    cantidad: List[int] = Form(...),
-    descuento_porcentaje: List[float] = Form(None),
+    cod_producto: List[str] = Form(...),
+    # El formulario también envía `precio_unitario`, pero no se declara a
+    # propósito: el precio sale de la base. Ver validar_factura.
+    cantidad: List[str] = Form(...),
+    descuento_porcentaje: Optional[List[str]] = Form(None),
     descuento_descripcion: Optional[List[str]] = Form(None),
-    cod_descuento_factura: Optional[int] = Form(None),
-    valor_descuento_factura: float = Form(0.0),
-    plazo_pago: int = Form(0),
+    cod_descuento_factura: Optional[str] = Form(None),
+    valor_descuento_factura: str = Form("0"),
+    plazo_pago: str = Form("0"),
 ):
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    if tipo_factura not in ("FV", "NC", "ND"):
-        tipo_factura = "FV"
+    # Los arreglos de la tabla de productos vienen en paralelo y tienen que
+    # cuadrar entre sí: un largo distinto significa que la petición no la armó el
+    # formulario, y leer por índice reventaría con un IndexError.
+    cantidades = cantidad or []
+    descuentos = descuento_porcentaje or []
+    descripciones = descuento_descripcion or []
+    if len(cantidades) != len(cod_producto):
+        return _render_invoice_form(
+            request, error="Los datos de los productos llegaron incompletos.",
+            status_code=422)
+
+    lineas_enviadas = [
+        {
+            "cod_producto": cod_producto[i],
+            "cantidad": cantidades[i],
+            "descuento_porcentaje": descuentos[i] if i < len(descuentos) else 0,
+            "descuento_descripcion": descripciones[i] if i < len(descripciones) else "",
+        }
+        for i in range(len(cod_producto))
+    ]
+
+    v = validar_factura({
+        "cod_cliente": cod_cliente, "cod_metodo_pago": cod_metodo_pago,
+        "cod_pago": cod_pago, "tipo_factura": tipo_factura,
+        "observaciones": observaciones, "plazo_pago": plazo_pago,
+        "cod_descuento_factura": cod_descuento_factura,
+        "valor_descuento_factura": valor_descuento_factura,
+        "lineas": lineas_enviadas,
+    })
+    if not v.valido:
+        return _render_invoice_form(request, error=v.resumen(), status_code=422)
+
+    d = v.datos
+    cod_cliente = d["cod_cliente"]
+    cod_metodo_pago = d["cod_metodo_pago"]
+    cod_pago = d["cod_pago"]
+    tipo_factura = d["tipo_factura"]
+    observaciones = d["observaciones"]
+    cod_descuento_factura = d["cod_descuento_factura"]
 
     # El vencimiento se deriva del plazo pactado, no se escribe a mano: así el
     # PDF, el XML y la cartera cuentan siempre la misma historia. 0 días = contado.
-    plazo_pago = max(0, min(int(plazo_pago), 365))
+    plazo_pago = d["plazo_pago"]
     forma_pago = "CONTADO" if plazo_pago == 0 else "CREDITO"
     fecha_vencimiento = (date_type.today() + timedelta(days=plazo_pago)).strftime("%Y-%m-%d")
 
-    desc_list = descuento_porcentaje if descuento_porcentaje else [0.0] * len(cod_producto)
-    desc_desc_list = descuento_descripcion if descuento_descripcion else [''] * len(cod_producto)
-
-    lineas_enviadas = []
-    for i in range(len(cod_producto)):
-        prod = get_one(
-            "SELECT p.precio_unitario, i.porcentaje AS tax_pct FROM productos p "
-            "LEFT JOIN impuestos i ON p.cod_impuesto = i.cod_impuesto WHERE p.cod_producto = %s",
-            (cod_producto[i],)
-        )
-        lineas_enviadas.append({
-            "cod_producto":          cod_producto[i],
-            "cantidad":              int(cantidad[i]),
-            "precio_unitario":       float(precio_unitario[i]),
-            "descuento_porcentaje":  float(desc_list[i] if i < len(desc_list) else 0) or 0.0,
-            "descuento_descripcion": str(desc_desc_list[i] if i < len(desc_desc_list) else '') or '',
-            # La tarifa se lee de la BD, nunca del formulario: el navegador solo la
-            # muestra, y confiar en lo que llega permitiría facturar con otro IVA.
-            "impuesto_porcentaje":   float(prod["tax_pct"] or 0) if prod else 0.0,
-        })
-
-    calculo = calcular_documento(lineas_enviadas, valor_descuento_factura)
+    calculo = calcular_documento(d["lineas"], d["valor_descuento_factura"])
     lineas           = calculo["lineas"]
     total_descuentos = calculo["total_descuentos"]
     subtotal_neto    = calculo["subtotal"]
@@ -144,7 +161,8 @@ async def create_invoice_post(
             f"«{f['producto']}»: disponible {f['disponible']}, solicitado {f['solicitado']}"
             for f in faltantes
         )
-        return _render_invoice_form(request, error=f"Stock insuficiente — {detalle}")
+        return _render_invoice_form(request, error=f"Stock insuficiente — {detalle}",
+                                    status_code=422)
 
     session_user = request.session.get("user", {})
     cod_usuario = session_user.get("cod_usuario", 1)
@@ -209,9 +227,10 @@ async def create_invoice_post(
                 cursor=cur,
             )
     except StockInsuficienteError as e:
-        return _render_invoice_form(request, error=f"Stock insuficiente — {e}")
+        return _render_invoice_form(request, error=f"Stock insuficiente — {e}",
+                                    status_code=422)
     except RangoResolucionAgotadoError as e:
-        return _render_invoice_form(request, error=str(e))
+        return _render_invoice_form(request, error=str(e), status_code=422)
 
     return RedirectResponse(url=f"/invoice/{numero_factura}", status_code=303)
 
