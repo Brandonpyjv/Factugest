@@ -1,4 +1,9 @@
 {% extends "layout.html" %}
+{% import "_form.html" as f %}
+
+{# `valores` llega cuando la validacion rechazo el envio: se prefiere sobre el
+   registro guardado para no borrar lo que la persona acababa de escribir. #}
+{% set v = valores or payment or {} %}
 
 {% block title %}{{ 'Editar Estado de Pago' if payment else 'Nuevo Estado de Pago' }} | Factugest{% endblock %}
 
@@ -20,12 +25,13 @@
                     <h6 class="m-0 fw-bold text-primary">Estado de Pago</h6>
                 </div>
                 <div class="card-body p-4">
+                    {{ f.alerta(errores) }}
                     <form action="{{ url_for('update_invoice_payment', payment_id=payment.cod_pago_factura) if payment else url_for('create_invoice_payment') }}" method="POST">
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">Estado *</label>
-                            <input type="text" name="status" class="form-control bg-light border-0" required
-                                   value="{{ payment.status if payment else '' }}"
+                            <input type="text" name="status" class="form-control bg-light border-0{{ f.invalido(errores, 'status') }}" required
+                                   value="{{ v.status or '' }}"
                                    placeholder="Ej: paid, pending, overdue">
                             <div class="form-text">Valores sugeridos: paid, pending, partially paid, overdue, cancelled, disputed, refunded</div>
                         </div>

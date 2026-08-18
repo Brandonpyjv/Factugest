@@ -396,6 +396,25 @@ REGIMENES_TRIBUTARIOS = (
 
 TIPOS_DOCUMENTO_FISCAL = ("FV", "NC", "ND")
 
+# Códigos de impuesto de la DIAN, los mismos que documenta el proyecto y que usa
+# `cufe_service` al armar la cadena del CUFE.
+CODIGOS_IMPUESTO_DIAN = {
+    "01": "IVA",
+    "02": "Impuesto al consumo",
+    "03": "ICA",
+    "04": "INC",
+    "05": "Retención en la fuente",
+    "06": "ReteICA",
+    "07": "ReteIVA",
+    "08": "ReteCREE",
+    "ZY": "Exento",
+}
+
+
+def bandera(valor, campo: str = "campo") -> int:
+    """Una casilla de sí/no. Llega del formulario como «0» o «1»."""
+    return entero(valor, campo, minimo=0, maximo=1)
+
 def opcion(valor, permitidas, campo: str = "campo", requerido: bool = True) -> str:
     """Un valor de un catálogo cerrado.
 

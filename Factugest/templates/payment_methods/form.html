@@ -1,4 +1,9 @@
 {% extends "layout.html" %}
+{% import "_form.html" as f %}
+
+{# `valores` llega cuando la validacion rechazo el envio: se prefiere sobre el
+   registro guardado para no borrar lo que la persona acababa de escribir. #}
+{% set v = valores or pm or {} %}
 
 {% block title %}{{ 'Editar Método de Pago' if pm else 'Nuevo Método de Pago' }} | Factugest{% endblock %}
 
@@ -20,19 +25,20 @@
                     <h6 class="m-0 fw-bold text-primary">Datos del Método de Pago</h6>
                 </div>
                 <div class="card-body p-4">
+                    {{ f.alerta(errores) }}
                     <form action="{{ url_for('update_payment_method', pm_id=pm.cod_pago) if pm else url_for('create_payment_method') }}" method="POST">
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Descripción *</label>
-                            <input type="text" name="descripcion" class="form-control bg-light border-0" required
-                                   value="{{ pm.descripcion if pm else '' }}"
+                            <input type="text" name="descripcion" class="form-control bg-light border-0{{ f.invalido(errores, 'descripcion') }}" required
+                                   value="{{ v.descripcion or '' }}"
                                    placeholder="Ej: EFECTIVO, TARJETA CRÉDITO">
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">Nombre (opcional)</label>
-                            <input type="text" name="nombre" class="form-control bg-light border-0"
-                                   value="{{ pm.nombre if pm and pm.nombre else '' }}"
+                            <input type="text" name="nombre" class="form-control bg-light border-0{{ f.invalido(errores, 'nombre') }}"
+                                   value="{{ v.nombre or '' }}"
                                    placeholder="Nombre interno del método">
                         </div>
 

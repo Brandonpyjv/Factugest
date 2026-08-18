@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from services.invoice_payments_service import (get_all_invoice_payments, get_invoice_payment_by_id,
-                                                create_invoice_payment, update_invoice_payment, delete_invoice_payment)
+                                                create_invoice_payment, update_invoice_payment,
+                                                delete_invoice_payment, validar_estado_pago)
+from routes.formularios import formulario_invalido
 from templates_config import templates
 
 router = APIRouter(prefix="/invoice_payments")
+
+PLANTILLA = "invoice_payments/form.html"
 
 
 @router.get("", name="invoice_payments")
@@ -19,8 +23,13 @@ def new_invoice_payment(request: Request):
 
 
 @router.post("/new", name="create_invoice_payment")
-def create_invoice_payment_post(status: str = Form(...)):
-    create_invoice_payment(status)
+def create_invoice_payment_post(request: Request, status: str = Form(...)):
+    v = validar_estado_pago({"status": status})
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v, {"payment": None},
+                                   {"status": status})
+
+    create_invoice_payment(v.datos["status"])
     return RedirectResponse(url="/invoice_payments", status_code=303)
 
 
@@ -33,8 +42,14 @@ def edit_invoice_payment(request: Request, payment_id: int):
 
 
 @router.post("/edit/{payment_id}", name="update_invoice_payment")
-def update_invoice_payment_post(payment_id: int, status: str = Form(...)):
-    update_invoice_payment(payment_id, status)
+def update_invoice_payment_post(request: Request, payment_id: int, status: str = Form(...)):
+    v = validar_estado_pago({"status": status}, payment_id=payment_id)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v,
+                                   {"payment": get_invoice_payment_by_id(payment_id)},
+                                   {"status": status})
+
+    update_invoice_payment(payment_id, v.datos["status"])
     return RedirectResponse(url="/invoice_payments", status_code=303)
 
 

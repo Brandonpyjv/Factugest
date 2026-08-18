@@ -1,4 +1,19 @@
 from database import get_all_from_table, execute_query, execute_update, get_one
+from services.validaciones import Validador, texto
+
+
+def validar_estado_pago(datos: dict, payment_id: int = None) -> Validador:
+    v = Validador()
+    v.campo("status", texto, datos.get("status"), maximo=40, minimo=2)
+
+    if "status" in v.datos:
+        duplicado = get_one(
+            "SELECT cod_pago_factura FROM pagos_factura WHERE LOWER(status) = LOWER(%s)",
+            (v.datos["status"],))
+        if duplicado and duplicado["cod_pago_factura"] != payment_id:
+            v.errores["status"] = "Ya existe un estado de pago con ese nombre"
+
+    return v
 
 
 def get_all_invoice_payments():
