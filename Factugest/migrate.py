@@ -135,11 +135,191 @@ def migracion_002_foto_perfil(cursor):
     return pasos
 
 
+# ── 003 · API middleware DIAN ───────────────────────────────────────────────
+
+def migracion_003_api_middleware(cursor):
+    """Tablas de los documentos que emitimos por cuenta de terceros.
+
+    Están separadas de `facturas` a propósito: ahí van nuestras ventas de planes,
+    y meter las facturas de nuestros clientes las contaría como ingresos propios
+    en el tablero y en los reportes.
+    """
+    pasos = []
+
+    if not _table_exists(cursor, "clientes_api"):
+        cursor.execute("""
+            CREATE TABLE clientes_api (
+                cod_cliente_api INT(11)      NOT NULL AUTO_INCREMENT,
+                nombre          VARCHAR(150) NOT NULL COMMENT 'Nombre del negocio o sistema integrado',
+                cod_cliente     INT(11)               DEFAULT NULL COMMENT 'customers: a quien le facturamos el plan',
+                cod_empresa     INT(11)      NOT NULL COMMENT 'empresas: con que NIT y resolucion emite',
+                api_key_prefijo VARCHAR(20)  NOT NULL COMMENT 'Parte visible de la llave; permite ubicar la fila sin revelarla',
+                api_key_hash    VARCHAR(255) NOT NULL COMMENT 'Hash de la llave completa; la llave se muestra una sola vez',
+                plan            VARCHAR(20)  NOT NULL DEFAULT 'BASICO',
+                limite_mensual  INT(11)               DEFAULT NULL COMMENT 'Documentos por mes; NULL = sin limite',
+                estado          VARCHAR(20)  NOT NULL DEFAULT 'ACTIVO' COMMENT 'ACTIVO | SUSPENDIDO | REVOCADO',
+                creado_en       DATETIME     NOT NULL,
+                ultimo_uso      DATETIME              DEFAULT NULL,
+                PRIMARY KEY (cod_cliente_api),
+                UNIQUE KEY uq_api_key_prefijo (api_key_prefijo),
+                KEY idx_cliente_api_empresa (cod_empresa),
+                KEY idx_cliente_api_cliente (cod_cliente),
+                CONSTRAINT fk_cliente_api_empresa FOREIGN KEY (cod_empresa)
+                    REFERENCES empresas (cod_empresa),
+                CONSTRAINT fk_cliente_api_cliente FOREIGN KEY (cod_cliente)
+                    REFERENCES customers (customer_id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        pasos.append("tabla clientes_api creada")
+
+    if not _table_exists(cursor, "receptores"):
+        cursor.execute("""
+            CREATE TABLE receptores (
+                cod_receptor       INT(11)      NOT NULL AUTO_INCREMENT,
+                cod_cliente_api    INT(11)      NOT NULL,
+                tipo_documento     VARCHAR(4)   NOT NULL COMMENT 'Codigo DIAN: 13 CC, 22 CE, 31 NIT, 41 Pasaporte',
+                numero_documento   VARCHAR(30)  NOT NULL,
+                dv                 CHAR(1)               DEFAULT NULL,
+                nombre             VARCHAR(200) NOT NULL,
+                tipo_persona       VARCHAR(20)           DEFAULT 'NATURAL',
+                regimen_tributario VARCHAR(60)           DEFAULT 'NO_RESPONSABLE_IVA',
+                email              VARCHAR(150)          DEFAULT NULL,
+                telefono           VARCHAR(40)           DEFAULT NULL,
+                direccion          VARCHAR(200)          DEFAULT NULL,
+                cod_municipio      CHAR(5)               DEFAULT NULL,
+                creado_en          DATETIME     NOT NULL,
+                PRIMARY KEY (cod_receptor),
+                -- El mismo comprador enviado dos veces se reutiliza en lugar de duplicarse,
+                -- y cada cliente API ve solo su propio padron.
+                UNIQUE KEY uq_receptor_del_cliente (cod_cliente_api, tipo_documento, numero_documento),
+                CONSTRAINT fk_receptor_cliente_api FOREIGN KEY (cod_cliente_api)
+                    REFERENCES clientes_api (cod_cliente_api) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        pasos.append("tabla receptores creada")
+
+    if not _table_exists(cursor, "documentos"):
+        cursor.execute("""
+            CREATE TABLE documentos (
+                cod_documento      INT(11)       NOT NULL AUTO_INCREMENT,
+                id_publico         VARCHAR(40)   NOT NULL COMMENT 'Identificador que ve el cliente; no exponemos el autoincremental',
+                cod_cliente_api    INT(11)       NOT NULL,
+                cod_empresa        INT(11)       NOT NULL COMMENT 'Emisor con cuya resolucion se numero',
+                cod_receptor       INT(11)       NOT NULL,
+                tipo               VARCHAR(5)    NOT NULL DEFAULT 'FV' COMMENT 'FV | NC | ND',
+                prefijo            VARCHAR(10)            DEFAULT NULL,
+                consecutivo        BIGINT(20)             DEFAULT NULL,
+                numero             VARCHAR(50)            DEFAULT NULL,
+                cufe               VARCHAR(200)           DEFAULT NULL,
+                fecha_emision      DATETIME(6)   NOT NULL,
+                fecha_vencimiento  DATE                   DEFAULT NULL,
+                forma_pago         VARCHAR(20)   NOT NULL DEFAULT 'CONTADO',
+                subtotal_bruto     DECIMAL(14,2) NOT NULL DEFAULT 0,
+                total_descuentos   DECIMAL(14,2) NOT NULL DEFAULT 0,
+                subtotal           DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT 'Base gravable neta',
+                total_impuestos    DECIMAL(14,2) NOT NULL DEFAULT 0,
+                total              DECIMAL(14,2) NOT NULL DEFAULT 0,
+                estado             VARCHAR(20)   NOT NULL DEFAULT 'PENDIENTE' COMMENT 'PENDIENTE | ACEPTADO | RECHAZADO | ERROR',
+                referencia_externa VARCHAR(80)            DEFAULT NULL COMMENT 'Identificador de la venta en el sistema del cliente',
+                cod_documento_referencia INT(11)          DEFAULT NULL COMMENT 'La FV que origina una NC o ND',
+                motivo_nota        TEXT                   DEFAULT NULL,
+                observaciones      TEXT                   DEFAULT NULL,
+                orden_compra       VARCHAR(100)           DEFAULT NULL,
+                proveedor_dian     VARCHAR(20)            DEFAULT NULL COMMENT 'simulado | factus',
+                -- Se guarda el XML y no el PDF: el XML es lo que se firma y valida, y hay
+                -- deber de conservarlo. La representacion grafica se regenera de estos datos.
+                xml                MEDIUMTEXT             DEFAULT NULL,
+                creado_en          DATETIME      NOT NULL,
+                PRIMARY KEY (cod_documento),
+                UNIQUE KEY uq_documento_publico (id_publico),
+                -- Idempotencia: reintentar la misma venta no emite un segundo documento.
+                -- MySQL admite varios NULL en un indice unico, asi que quien no manda
+                -- referencia no queda bloqueado.
+                UNIQUE KEY uq_referencia_del_cliente (cod_cliente_api, referencia_externa),
+                -- Red de seguridad sobre la reserva atomica del consecutivo: aunque la
+                -- aplicacion se equivoque, la base no acepta dos veces el mismo numero.
+                UNIQUE KEY uq_numero_del_emisor (cod_empresa, tipo, numero),
+                KEY idx_documento_cliente (cod_cliente_api),
+                KEY idx_documento_fecha (fecha_emision),
+                KEY idx_documento_estado (estado),
+                KEY idx_documento_referencia (cod_documento_referencia),
+                CONSTRAINT fk_documento_cliente_api FOREIGN KEY (cod_cliente_api)
+                    REFERENCES clientes_api (cod_cliente_api),
+                CONSTRAINT fk_documento_empresa FOREIGN KEY (cod_empresa)
+                    REFERENCES empresas (cod_empresa),
+                CONSTRAINT fk_documento_receptor FOREIGN KEY (cod_receptor)
+                    REFERENCES receptores (cod_receptor),
+                CONSTRAINT fk_documento_referencia FOREIGN KEY (cod_documento_referencia)
+                    REFERENCES documentos (cod_documento) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        pasos.append("tabla documentos creada")
+
+    if not _table_exists(cursor, "documento_lineas"):
+        cursor.execute("""
+            CREATE TABLE documento_lineas (
+                cod_linea             INT(11)       NOT NULL AUTO_INCREMENT,
+                cod_documento         INT(11)       NOT NULL,
+                orden                 INT(11)       NOT NULL DEFAULT 1,
+                -- No es FK a productos: el catalogo es del sistema del cliente, no nuestro.
+                codigo                VARCHAR(60)            DEFAULT NULL COMMENT 'SKU en el sistema del cliente',
+                descripcion           VARCHAR(300)  NOT NULL,
+                unidad_medida         VARCHAR(10)            DEFAULT '94',
+                -- Con decimales porque la DIAN admite unidades fraccionarias (kilos, horas);
+                -- nuestro detalle_factura interno solo maneja enteros.
+                cantidad              DECIMAL(14,3) NOT NULL,
+                precio_unitario       DECIMAL(14,2) NOT NULL,
+                valor_bruto           DECIMAL(14,2) NOT NULL DEFAULT 0,
+                descuento_porcentaje  DECIMAL(6,3)  NOT NULL DEFAULT 0,
+                descuento_valor       DECIMAL(14,2) NOT NULL DEFAULT 0,
+                descripcion_descuento VARCHAR(200)           DEFAULT NULL,
+                subtotal              DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT 'Base gravable de la linea',
+                impuesto_codigo_dian  VARCHAR(5)             DEFAULT '01',
+                impuesto_porcentaje   DECIMAL(6,3)  NOT NULL DEFAULT 0,
+                impuesto_valor        DECIMAL(14,2) NOT NULL DEFAULT 0,
+                PRIMARY KEY (cod_linea),
+                KEY idx_linea_documento (cod_documento),
+                CONSTRAINT fk_linea_documento FOREIGN KEY (cod_documento)
+                    REFERENCES documentos (cod_documento) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        pasos.append("tabla documento_lineas creada")
+
+    if not _table_exists(cursor, "documento_eventos"):
+        cursor.execute("""
+            CREATE TABLE documento_eventos (
+                cod_evento    INT(11)     NOT NULL AUTO_INCREMENT,
+                cod_documento INT(11)     NOT NULL,
+                tipo          VARCHAR(30) NOT NULL COMMENT 'RECIBIDO | TRANSMITIDO | ACEPTADO | RECHAZADO | CORREO_ENVIADO | ERROR',
+                proveedor     VARCHAR(20)          DEFAULT NULL,
+                codigo        VARCHAR(20)          DEFAULT NULL COMMENT 'Codigo de respuesta del proveedor',
+                mensaje       TEXT                 DEFAULT NULL,
+                -- Respuesta cruda del proveedor: si la DIAN rechaza, hay que poder mostrar
+                -- exactamente que contesto y no una interpretacion nuestra.
+                payload       MEDIUMTEXT           DEFAULT NULL,
+                fecha         DATETIME(6) NOT NULL,
+                PRIMARY KEY (cod_evento),
+                KEY idx_evento_documento (cod_documento),
+                KEY idx_evento_fecha (fecha),
+                CONSTRAINT fk_evento_documento FOREIGN KEY (cod_documento)
+                    REFERENCES documentos (cod_documento) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        pasos.append("tabla documento_eventos creada")
+
+    # No hay tabla de consumo: los documentos por cliente y por mes se cuentan de
+    # `documentos`, de modo que el contador nunca puede desviarse de la realidad.
+
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
     ("002", "Foto de perfil de usuario",
      migracion_002_foto_perfil),
+    ("003", "API middleware DIAN: clientes API, receptores, documentos, líneas y eventos",
+     migracion_003_api_middleware),
 ]
 
 

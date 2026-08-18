@@ -46,6 +46,43 @@ INSERT INTO `clientes` VALUES (2,'juan perez','V','12345678','0412-1234567','jua
 UNLOCK TABLES;
 
 --
+-- Table structure for table `clientes_api`
+--
+
+DROP TABLE IF EXISTS `clientes_api`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `clientes_api` (
+  `cod_cliente_api` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(150) NOT NULL COMMENT 'Nombre del negocio o sistema integrado',
+  `cod_cliente` int(11) DEFAULT NULL COMMENT 'customers: a quien le facturamos el plan',
+  `cod_empresa` int(11) NOT NULL COMMENT 'empresas: con que NIT y resolucion emite',
+  `api_key_prefijo` varchar(20) NOT NULL COMMENT 'Parte visible de la llave; permite ubicar la fila sin revelarla',
+  `api_key_hash` varchar(255) NOT NULL COMMENT 'Hash de la llave completa; la llave se muestra una sola vez',
+  `plan` varchar(20) NOT NULL DEFAULT 'BASICO',
+  `limite_mensual` int(11) DEFAULT NULL COMMENT 'Documentos por mes; NULL = sin limite',
+  `estado` varchar(20) NOT NULL DEFAULT 'ACTIVO' COMMENT 'ACTIVO | SUSPENDIDO | REVOCADO',
+  `creado_en` datetime NOT NULL,
+  `ultimo_uso` datetime DEFAULT NULL,
+  PRIMARY KEY (`cod_cliente_api`),
+  UNIQUE KEY `uq_api_key_prefijo` (`api_key_prefijo`),
+  KEY `idx_cliente_api_empresa` (`cod_empresa`),
+  KEY `idx_cliente_api_cliente` (`cod_cliente`),
+  CONSTRAINT `fk_cliente_api_cliente` FOREIGN KEY (`cod_cliente`) REFERENCES `customers` (`customer_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cliente_api_empresa` FOREIGN KEY (`cod_empresa`) REFERENCES `empresas` (`cod_empresa`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `clientes_api`
+--
+
+LOCK TABLES `clientes_api` WRITE;
+/*!40000 ALTER TABLE `clientes_api` DISABLE KEYS */;
+/*!40000 ALTER TABLE `clientes_api` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `configuracion`
 --
 
@@ -189,6 +226,137 @@ LOCK TABLES `detalle_factura` WRITE;
 /*!40000 ALTER TABLE `detalle_factura` DISABLE KEYS */;
 INSERT INTO `detalle_factura` VALUES (1,12,21,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,13,21,4,95000,95000,0,0,19,18050,NULL),(1,14,22,3,650000,650000,0,0,19,123500,NULL),(1,15,23,3,650000,650000,0,0,19,123500,NULL),(1,16,24,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,17,24,4,95000,95000,0,0,19,18050,NULL),(1,18,25,8,55000,55000,0,0,19,10450,NULL),(1,19,26,4,95000,95000,0,0,19,18050,NULL),(1,20,27,3,650000,650000,0,0,19,123500,NULL),(1,21,28,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,22,29,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,23,30,4,95000,95000,0,0,19,18050,NULL);
 /*!40000 ALTER TABLE `detalle_factura` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `documento_eventos`
+--
+
+DROP TABLE IF EXISTS `documento_eventos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `documento_eventos` (
+  `cod_evento` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_documento` int(11) NOT NULL,
+  `tipo` varchar(30) NOT NULL COMMENT 'RECIBIDO | TRANSMITIDO | ACEPTADO | RECHAZADO | CORREO_ENVIADO | ERROR',
+  `proveedor` varchar(20) DEFAULT NULL,
+  `codigo` varchar(20) DEFAULT NULL COMMENT 'Codigo de respuesta del proveedor',
+  `mensaje` text DEFAULT NULL,
+  `payload` mediumtext DEFAULT NULL,
+  `fecha` datetime(6) NOT NULL,
+  PRIMARY KEY (`cod_evento`),
+  KEY `idx_evento_documento` (`cod_documento`),
+  KEY `idx_evento_fecha` (`fecha`),
+  CONSTRAINT `fk_evento_documento` FOREIGN KEY (`cod_documento`) REFERENCES `documentos` (`cod_documento`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documento_eventos`
+--
+
+LOCK TABLES `documento_eventos` WRITE;
+/*!40000 ALTER TABLE `documento_eventos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documento_eventos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `documento_lineas`
+--
+
+DROP TABLE IF EXISTS `documento_lineas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `documento_lineas` (
+  `cod_linea` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_documento` int(11) NOT NULL,
+  `orden` int(11) NOT NULL DEFAULT 1,
+  `codigo` varchar(60) DEFAULT NULL COMMENT 'SKU en el sistema del cliente',
+  `descripcion` varchar(300) NOT NULL,
+  `unidad_medida` varchar(10) DEFAULT '94',
+  `cantidad` decimal(14,3) NOT NULL,
+  `precio_unitario` decimal(14,2) NOT NULL,
+  `valor_bruto` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `descuento_porcentaje` decimal(6,3) NOT NULL DEFAULT 0.000,
+  `descuento_valor` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `descripcion_descuento` varchar(200) DEFAULT NULL,
+  `subtotal` decimal(14,2) NOT NULL DEFAULT 0.00 COMMENT 'Base gravable de la linea',
+  `impuesto_codigo_dian` varchar(5) DEFAULT '01',
+  `impuesto_porcentaje` decimal(6,3) NOT NULL DEFAULT 0.000,
+  `impuesto_valor` decimal(14,2) NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (`cod_linea`),
+  KEY `idx_linea_documento` (`cod_documento`),
+  CONSTRAINT `fk_linea_documento` FOREIGN KEY (`cod_documento`) REFERENCES `documentos` (`cod_documento`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documento_lineas`
+--
+
+LOCK TABLES `documento_lineas` WRITE;
+/*!40000 ALTER TABLE `documento_lineas` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documento_lineas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `documentos`
+--
+
+DROP TABLE IF EXISTS `documentos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `documentos` (
+  `cod_documento` int(11) NOT NULL AUTO_INCREMENT,
+  `id_publico` varchar(40) NOT NULL COMMENT 'Identificador que ve el cliente; no exponemos el autoincremental',
+  `cod_cliente_api` int(11) NOT NULL,
+  `cod_empresa` int(11) NOT NULL COMMENT 'Emisor con cuya resolucion se numero',
+  `cod_receptor` int(11) NOT NULL,
+  `tipo` varchar(5) NOT NULL DEFAULT 'FV' COMMENT 'FV | NC | ND',
+  `prefijo` varchar(10) DEFAULT NULL,
+  `consecutivo` bigint(20) DEFAULT NULL,
+  `numero` varchar(50) DEFAULT NULL,
+  `cufe` varchar(200) DEFAULT NULL,
+  `fecha_emision` datetime(6) NOT NULL,
+  `fecha_vencimiento` date DEFAULT NULL,
+  `forma_pago` varchar(20) NOT NULL DEFAULT 'CONTADO',
+  `subtotal_bruto` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `total_descuentos` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `subtotal` decimal(14,2) NOT NULL DEFAULT 0.00 COMMENT 'Base gravable neta',
+  `total_impuestos` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `total` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `estado` varchar(20) NOT NULL DEFAULT 'PENDIENTE' COMMENT 'PENDIENTE | ACEPTADO | RECHAZADO | ERROR',
+  `referencia_externa` varchar(80) DEFAULT NULL COMMENT 'Identificador de la venta en el sistema del cliente',
+  `cod_documento_referencia` int(11) DEFAULT NULL COMMENT 'La FV que origina una NC o ND',
+  `motivo_nota` text DEFAULT NULL,
+  `observaciones` text DEFAULT NULL,
+  `orden_compra` varchar(100) DEFAULT NULL,
+  `proveedor_dian` varchar(20) DEFAULT NULL COMMENT 'simulado | factus',
+  `xml` mediumtext DEFAULT NULL,
+  `creado_en` datetime NOT NULL,
+  PRIMARY KEY (`cod_documento`),
+  UNIQUE KEY `uq_documento_publico` (`id_publico`),
+  UNIQUE KEY `uq_referencia_del_cliente` (`cod_cliente_api`,`referencia_externa`),
+  UNIQUE KEY `uq_numero_del_emisor` (`cod_empresa`,`tipo`,`numero`),
+  KEY `idx_documento_cliente` (`cod_cliente_api`),
+  KEY `idx_documento_fecha` (`fecha_emision`),
+  KEY `idx_documento_estado` (`estado`),
+  KEY `idx_documento_referencia` (`cod_documento_referencia`),
+  KEY `fk_documento_receptor` (`cod_receptor`),
+  CONSTRAINT `fk_documento_cliente_api` FOREIGN KEY (`cod_cliente_api`) REFERENCES `clientes_api` (`cod_cliente_api`),
+  CONSTRAINT `fk_documento_empresa` FOREIGN KEY (`cod_empresa`) REFERENCES `empresas` (`cod_empresa`),
+  CONSTRAINT `fk_documento_receptor` FOREIGN KEY (`cod_receptor`) REFERENCES `receptores` (`cod_receptor`),
+  CONSTRAINT `fk_documento_referencia` FOREIGN KEY (`cod_documento_referencia`) REFERENCES `documentos` (`cod_documento`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documentos`
+--
+
+LOCK TABLES `documentos` WRITE;
+/*!40000 ALTER TABLE `documentos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documentos` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -612,6 +780,42 @@ INSERT INTO `productos_descuentos` VALUES (15,3),(20,1);
 UNLOCK TABLES;
 
 --
+-- Table structure for table `receptores`
+--
+
+DROP TABLE IF EXISTS `receptores`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `receptores` (
+  `cod_receptor` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_cliente_api` int(11) NOT NULL,
+  `tipo_documento` varchar(4) NOT NULL COMMENT 'Codigo DIAN: 13 CC, 22 CE, 31 NIT, 41 Pasaporte',
+  `numero_documento` varchar(30) NOT NULL,
+  `dv` char(1) DEFAULT NULL,
+  `nombre` varchar(200) NOT NULL,
+  `tipo_persona` varchar(20) DEFAULT 'NATURAL',
+  `regimen_tributario` varchar(60) DEFAULT 'NO_RESPONSABLE_IVA',
+  `email` varchar(150) DEFAULT NULL,
+  `telefono` varchar(40) DEFAULT NULL,
+  `direccion` varchar(200) DEFAULT NULL,
+  `cod_municipio` char(5) DEFAULT NULL,
+  `creado_en` datetime NOT NULL,
+  PRIMARY KEY (`cod_receptor`),
+  UNIQUE KEY `uq_receptor_del_cliente` (`cod_cliente_api`,`tipo_documento`,`numero_documento`),
+  CONSTRAINT `fk_receptor_cliente_api` FOREIGN KEY (`cod_cliente_api`) REFERENCES `clientes_api` (`cod_cliente_api`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `receptores`
+--
+
+LOCK TABLES `receptores` WRITE;
+/*!40000 ALTER TABLE `receptores` DISABLE KEYS */;
+/*!40000 ALTER TABLE `receptores` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `schema_migrations`
 --
 
@@ -632,7 +836,7 @@ CREATE TABLE `schema_migrations` (
 
 LOCK TABLES `schema_migrations` WRITE;
 /*!40000 ALTER TABLE `schema_migrations` DISABLE KEYS */;
-INSERT INTO `schema_migrations` VALUES ('001','Módulo de inventario: kardex de movimientos y flag controla_stock','2026-08-09 18:29:28'),('002','Foto de perfil de usuario','2026-08-09 19:55:12');
+INSERT INTO `schema_migrations` VALUES ('001','Módulo de inventario: kardex de movimientos y flag controla_stock','2026-08-09 18:29:28'),('002','Foto de perfil de usuario','2026-08-09 19:55:12'),('003','API middleware DIAN: clientes API, receptores, documentos, líneas y eventos','2026-08-18 09:12:00');
 /*!40000 ALTER TABLE `schema_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 

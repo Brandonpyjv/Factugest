@@ -60,6 +60,9 @@ Factugest/
 │   ├── login.py
 │   └── api/v1/              # ← NUEVO: endpoints JSON para mobile (en construcción)
 ├── services/                # lógica de negocio reutilizable por web y API
+│   ├── calculo_documento.py # aritmética tributaria (pura): bases, descuentos, prorrateo
+│   ├── numeracion_service.py# reserva atómica de consecutivos por emisor
+│   ├── documento_canonico.py# contrato de entrada de pdf_service y xml_service
 │   ├── invoice_service.py   # CRUD facturas + get_dashboard_stats
 │   ├── inventory_service.py # kardex, alertas, valorización (único punto de escritura de stock)
 │   ├── report_service.py    # métricas del tablero: ventas, cartera, rankings, impuestos
@@ -135,6 +138,55 @@ ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}  # acceso completo
   registra lo aplicado en `schema_migrations`. Cada migración es idempotente.
   Al agregar columnas o tablas, añade una migración ahí y regenera `base/factugest.sql`.
 
+> ⚠️ **`base/factugest.sql` es un baseline liviano**, no un respaldo: trae los catálogos
+> completos (municipios, departamentos, impuestos, estados y métodos de pago) pero solo
+> un puñado de facturas, clientes y productos de ejemplo. **No lo reemplaces con un
+> export completo de tu base local**: le meterías los cientos de documentos que generó
+> `seed_demo.py` y borrarías filas de catálogo que tú no tengas. Cuando agregues tablas,
+> empalma solo los bloques nuevos de estructura.
+
+### Dos zonas de datos
+
+La base tiene dos zonas que no se mezclan:
+
+| Zona | Tablas | Qué guarda |
+|---|---|---|
+| **Comercial** | `facturas`, `detalle_factura`, `customers`, `productos` | Nuestras propias ventas: los planes de facturación que vendemos. |
+| **Middleware** | `clientes_api`, `receptores`, `documentos`, `documento_lineas`, `documento_eventos` | Lo que emitimos por cuenta de terceros a través de `/api/v1/`. |
+| **Compartida** | `empresas`, `municipios`, `impuestos` | Emisores y catálogos. Una fila de `empresas` es un emisor, sea nuestro o de un cliente. |
+
+**Nunca guardes en `facturas` un documento emitido para un tercero**: el tablero y los
+ocho reportes leen esa tabla, así que aparecería como ingreso nuestro. `documentos` es su
+lugar, y `clientes_api` es el puente entre una fila de `customers` (a quién le facturamos
+el plan) y una de `empresas` (con qué NIT y resolución emite).
+
+El consumo por cliente y por mes **se cuenta de `documentos`**; no hay tabla de
+contadores, justamente para que no pueda desviarse de la realidad.
+
+### Invariante de numeración
+
+Los consecutivos se reservan con `services/numeracion_service.reservar_numero()`, que lo
+hace en una sola sentencia `UPDATE`. Nunca leas `consecutivo_actual` y lo actualices por
+separado: con dos peticiones simultáneas ambas leen el mismo valor, y dos documentos con
+el mismo número de la resolución son dos rechazos de la DIAN. La tabla `documentos` tiene
+además un índice único por `(cod_empresa, tipo, numero)` como red de seguridad.
+
+### Invariante de emisión atómica
+
+Emitir es una sola operación: reservar el número, guardar la cabecera, guardar el detalle
+y mover el inventario van dentro de un `database.transaction()`, de modo que un fallo a
+mitad no deja rastro y el consecutivo queda libre. Los servicios de escritura
+(`invoice_service`, `inventory_service`, `numeracion_service`) aceptan `cursor=` para
+participar de la transacción de quien emite.
+
+### Invariante de cálculo
+
+La aritmética tributaria vive en `services/calculo_documento.py` y en ningún otro lugar.
+No recalcules bases, descuentos ni prorrateo de IVA dentro de una ruta: es la única
+implementación que alimenta tanto el formulario web como la API, y está cubierta por
+pruebas. El contrato de entrada de `pdf_service` y `xml_service` está en
+`services/documento_canonico.py`.
+
 ### Invariante de inventario
 
 Toda modificación de `productos.stock` pasa por `services/inventory_service.py`.
@@ -154,6 +206,16 @@ uvicorn main:app --reload
 ```
 
 Servidor en `http://127.0.0.1:8000`. Swagger en `/docs`.
+
+### Pruebas
+
+```bash
+pip install -r requirements-dev.txt   # pytest no está en requirements.txt
+python -m pytest                      # desde Factugest/Factugest/
+```
+
+Las pruebas cubren lo que no necesita base de datos: la aritmética tributaria, el
+contrato del documento canónico y los puntos del XML donde el emisor cambia la salida.
 
 ---
 
