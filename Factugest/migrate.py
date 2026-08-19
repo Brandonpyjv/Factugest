@@ -592,6 +592,29 @@ def migracion_011_logo_por_empresa(cursor):
     return pasos
 
 
+# ── 012 · Color de marca de cada emisor ─────────────────────────────────────
+
+def migracion_012_color_de_marca(cursor):
+    """El PDF se pinta con el color del emisor, no con el nuestro.
+
+    Los encabezados de tabla, las líneas y los totales salían en el azul de
+    FactuGest en todas las facturas. Junto con el logo, hacía que el documento de
+    un cliente pareciera nuestro: una comercializadora con marca roja recibía sus
+    facturas en azul corporativo ajeno.
+
+    Se guarda como hexadecimal porque es lo que entiende tanto el PDF como el
+    selector de color del navegador, y porque una paleta con nombre obligaría a
+    mantener una tabla de paletas para no ganar nada.
+    """
+    pasos = []
+    if not _column_exists(cursor, "empresas", "color_marca"):
+        cursor.execute(
+            "ALTER TABLE empresas ADD COLUMN color_marca CHAR(7) DEFAULT NULL "
+            "COMMENT 'Color del membrete y las tablas del PDF, en #rrggbb' AFTER logo")
+        pasos.append("columna empresas.color_marca creada")
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -611,6 +634,8 @@ MIGRACIONES = [
      migracion_010_auditoria),
     ("011", "Logo propio de cada empresa emisora",
      migracion_011_logo_por_empresa),
+    ("012", "Color de marca de cada empresa emisora",
+     migracion_012_color_de_marca),
 ]
 
 

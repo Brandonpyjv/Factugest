@@ -11,6 +11,8 @@ lo estampaba en todos los documentos, también en los que emitimos por cuenta de
 terceros: la factura de una clínica salía con nuestra marca. Un documento fiscal
 dice quién lo expidió, y el membrete es parte de esa afirmación.
 """
+import re
+
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
@@ -55,6 +57,26 @@ async def logo_save(request: Request, branch_id: int, logo: UploadFile = File(..
     _guardar(branch_id, nombre)
     auditoria.registrar(request, "ACTUALIZO", "empresa", branch_id,
                         f"Cambió el logo de {empresa['nombre']}")
+    return RedirectResponse(url=f"/branches/{branch_id}/logo", status_code=303)
+
+
+@router.post("/{branch_id}/color", name="branch_color_save")
+def color_save(request: Request, branch_id: int, color_marca: str = Form("")):
+    """El color con el que se pintan las tablas y los remates del PDF."""
+    empresa = get_branch_by_id(branch_id)
+    if not empresa:
+        return RedirectResponse(url="/branches", status_code=303)
+
+    color = (color_marca or "").strip().lower()
+    if not re.fullmatch(r"#[0-9a-f]{6}", color):
+        return RedirectResponse(
+            url=f"/branches/{branch_id}/logo?error=El color debe venir como %23rrggbb.",
+            status_code=303)
+
+    execute_update("UPDATE empresas SET color_marca = %s WHERE cod_empresa = %s",
+                   (color, branch_id))
+    auditoria.registrar(request, "ACTUALIZO", "empresa", branch_id,
+                        f"Cambió el color de marca de {empresa['nombre']} a {color}")
     return RedirectResponse(url=f"/branches/{branch_id}/logo", status_code=303)
 
 

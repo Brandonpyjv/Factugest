@@ -15,13 +15,39 @@ from num2words import num2words
 from services.validaciones import nombre_documento
 
 
-# ── Constantes de color (mismos del sidebar/navbar) ──────────────────────────
-PRIMARY   = colors.HexColor('#4e73df')
-PRIMARY2  = colors.HexColor('#224abe')
+# ── Colores ──────────────────────────────────────────────────────────────────
+#
+# El color de marca lo pone cada emisor; los neutros son iguales para todos porque
+# son papel y tinta, no identidad. Antes el azul de FactuGest estaba fijo aquí y
+# se pintaba en todas las facturas: la de una comercializadora de marca roja salía
+# en azul corporativo ajeno.
+COLOR_POR_DEFECTO = '#334155'     # gris azulado sobrio: no es la marca de nadie
 LIGHT_BG  = colors.HexColor('#f8f9fc')
 MID_GRAY  = colors.HexColor('#e3e6f0')
 DARK      = colors.HexColor('#2d3748')
 ORANGE    = colors.HexColor('#e74a3b')
+
+
+def _color(valor):
+    """El color de marca del emisor, o el neutro si no tiene o viene mal escrito.
+
+    Un hexadecimal inválido no puede tumbar una factura: se ignora y sale el
+    neutro. La alternativa —reventar al generar el PDF— dejaría al cliente sin
+    documento por un campo de configuración.
+    """
+    texto = str(valor or '').strip()
+    if len(texto) == 7 and texto.startswith('#'):
+        try:
+            return colors.HexColor(texto)
+        except ValueError:
+            pass
+    return colors.HexColor(COLOR_POR_DEFECTO)
+
+
+def _oscurecer(color, factor=0.75):
+    """Una variante más oscura del mismo color, para los degradados y remates."""
+    return colors.Color(color.red * factor, color.green * factor,
+                        color.blue * factor)
 
 # Cada emisor pone su propio logo; aquí solo se sabe dónde viven los archivos.
 # Antes había una ruta fija al logo de FactuGest y se estampaba en todas las
@@ -139,6 +165,8 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     emp_gran_c   = dato('gran_contribuyente', 'empresa_gran_contribuyente', 0)
     emp_prefijo  = dato('prefijo_factura', 'empresa_prefijo')
     emp_logo     = dato('logo', 'empresa_logo', None)
+    PRIMARY      = _color(dato('color_marca', 'empresa_color_marca', None))
+    PRIMARY2     = _oscurecer(PRIMARY)
     res_num      = dato('resolucion_dian', 'empresa_resolucion_dian')
     res_f_desde  = dato('resolucion_fecha_desde', 'empresa_resolucion_fecha_desde')
     res_f_hasta  = dato('resolucion_fecha_hasta', 'empresa_resolucion_fecha_hasta')

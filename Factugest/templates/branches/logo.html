@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}Logo de {{ empresa.nombre }} | Factugest{% endblock %}
+{% block title %}Marca de {{ empresa.nombre }} | Factugest{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -10,10 +10,10 @@
             <i class="bi bi-arrow-left"></i> Empresas emisoras
         </a>
         <h1 class="h3 mb-1 mt-1 text-gray-800 fw-bold">
-            <i class="bi bi-image text-primary me-2"></i>Logo de {{ empresa.nombre }}
+            <i class="bi bi-palette text-primary me-2"></i>Marca de {{ empresa.nombre }}
         </h1>
         <p class="text-muted mb-0 small">
-            Es el que sale en el membrete de sus facturas y notas.
+            El logo y el color con los que salen sus facturas y notas.
         </p>
     </div>
 
@@ -77,6 +77,23 @@
                                 style="border-radius:8px;">
                             <i class="bi bi-upload me-1"></i> Guardar logo
                         </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <h6 class="fw-bold small text-uppercase text-muted mb-2">Color del documento</h6>
+                    <p class="text-muted small">
+                        Pinta el encabezado de la tabla, las líneas y el total. Sin color
+                        elegido se usa un gris azulado sobrio, que no es la marca de nadie.
+                    </p>
+                    <form method="POST" action="{{ url_for('branch_color_save', branch_id=empresa.cod_empresa) }}"
+                          class="d-flex align-items-center gap-2">
+                        <input type="color" name="color_marca" class="form-control form-control-color"
+                               value="{{ empresa.color_marca or '#334155' }}" title="Color de marca">
+                        <span class="font-monospace small text-muted">
+                            {{ empresa.color_marca or 'sin definir' }}
+                        </span>
+                        <button class="btn btn-sm btn-outline-primary ms-auto">Guardar color</button>
                     </form>
 
                     <hr class="my-4">

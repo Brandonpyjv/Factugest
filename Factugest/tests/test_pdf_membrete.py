@@ -105,3 +105,33 @@ def test_un_logo_con_ruta_de_escape_se_ignora():
     emisor = dict(CLINICA, logo="../../../main.py")
     texto = texto_del_pdf(generate_invoice_pdf(DOCUMENTO, LINEAS, emisor=emisor))
     assert "Clinica Odontologica Sonrisas" in texto
+
+
+# ── Color de marca ──────────────────────────────────────────────────────────
+
+def test_cada_emisor_pinta_con_su_color():
+    """Dos emisores con colores distintos no pueden producir el mismo PDF.
+
+    Los encabezados de tabla y los remates salían siempre en el azul de FactuGest,
+    así que la factura de una comercializadora de marca roja llegaba pintada con
+    la identidad de otro.
+    """
+    rojo = generate_invoice_pdf(DOCUMENTO, LINEAS,
+                                emisor=dict(CLINICA, color_marca="#7a0000"))
+    azul = generate_invoice_pdf(DOCUMENTO, LINEAS,
+                                emisor=dict(CLINICA, color_marca="#4e73df"))
+    assert rojo != azul
+
+
+def test_un_color_mal_escrito_no_tumba_la_factura():
+    """Un campo de configuración con basura no puede dejar a nadie sin documento."""
+    for basura in ("azul", "#zzz", "", None, "#7a00001"):
+        pdf = generate_invoice_pdf(DOCUMENTO, LINEAS,
+                                   emisor=dict(CLINICA, color_marca=basura))
+        assert "Clinica Odontologica Sonrisas" in texto_del_pdf(pdf)
+
+
+def test_sin_color_sale_el_neutro_y_no_el_de_nadie():
+    from services.pdf_service import COLOR_POR_DEFECTO, _color
+    assert _color(None) == _color(COLOR_POR_DEFECTO)
+    assert _color("#4e73df") != _color(None)

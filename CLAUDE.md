@@ -292,9 +292,18 @@ Faltaba, y era grave: los documentos emitidos por la API traen su emisor aparte,
 aquí, y el membrete caía en los valores por defecto. La factura de una clínica salía con el
 nombre y el logo de FactuGest, como si la hubiéramos expedido nosotros.
 
-El logo también es de cada empresa (`empresas.logo`, migración 011, se carga en
-**Empresas emisoras › Logo**). Sin logo, el membrete imprime el nombre: la DIAN no exige
-logo, y lo que una factura no puede llevar es el de otro.
+El logo y el color también son de cada empresa (`empresas.logo` y `empresas.color_marca`,
+migraciones 011 y 012; se cargan en **Empresas emisoras › Marca**). Sin logo, el membrete
+imprime el nombre; sin color, se usa un gris azulado que no es la marca de nadie. La DIAN
+no exige logo — lo que una factura no puede llevar es el de otro.
+
+### Duración de la sesión
+
+La sesión se cierra por **inactividad** (`SESION_MINUTOS`, 30 por defecto), no a los
+catorce días que trae Starlette. Cada petición renueva el reloj en `AuthMiddleware`, así
+que trabajar nunca la corta; lo que la corta es dejar de trabajar. El aviso previo lo pinta
+`layout.html` contando en el navegador: preguntarle al servidor cada minuto sería actividad
+y la sesión no se cerraría jamás.
 
 ### Invariante de cálculo
 

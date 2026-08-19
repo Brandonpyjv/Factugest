@@ -379,8 +379,9 @@ def _poner_logo(cod_empresa: int):
     try:
         with open(origen, "rb") as f:
             nombre = guardar_logo(f.read(), cod_empresa)
-        execute_update("UPDATE empresas SET logo = %s WHERE cod_empresa = %s",
-                       (nombre, cod_empresa))
+        execute_update(
+            "UPDATE empresas SET logo = %s, color_marca = %s WHERE cod_empresa = %s",
+            (nombre, "#4e73df", cod_empresa))
     except (FotoInvalidaError, OSError):
         pass
 
