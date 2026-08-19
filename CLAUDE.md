@@ -322,7 +322,7 @@ El menú lateral se agrupa **por trabajo, no por tabla**. Los grupos son:
 |---|---|---|
 | *(sin grupo)* | Inicio | todos |
 | **Plataforma** | Clientes API · Documentos emitidos · Consumo y planes | solo roles admin |
-| **Facturación** | Facturas · Nueva factura · Clientes · Planes y servicios | todos |
+| **Facturación** | Facturas · Nueva factura · Nueva factura (anterior) · Clientes · Planes y servicios | todos |
 | **Análisis** | Reportes | solo roles admin |
 | *(pie)* | Configuración | solo roles admin |
 
@@ -339,6 +339,22 @@ Dos reglas que conviene no romper al agregar una pantalla:
 El enlace activo se marca comparando `request.url.path` en `layout.html`; la clase la pone
 la macro `item()`. Si una pantalla nueva no aparece resaltada, es que su ruta no cuelga del
 prefijo del enlace.
+
+### Las dos vistas de creación de factura
+
+Ahora mismo conviven dos, a propósito, mientras se comparan:
+
+| Ruta | Plantilla | Qué es |
+|---|---|---|
+| `/invoice/nueva` | `invoice/form_nueva.html` | La nueva: tres pasos —a quién, qué, cómo paga— y el resumen fijo a la derecha |
+| `/invoice/new` | `invoice/form.html` | La anterior, tal cual estaba |
+
+**Las dos envían al mismo `POST /invoice/new`**, con la misma validación y el mismo
+guardado: lo único distinto es la pantalla, así que probar la nueva no puede cambiar cómo
+se emite una factura. Un campo oculto `vista` dice a cuál devolver los errores.
+
+Cuando la nueva quede aprobada se van: la plantilla vieja, la ruta `/invoice/new` como GET,
+la entrada del menú y la constante `VISTAS`.
 
 ---
 
