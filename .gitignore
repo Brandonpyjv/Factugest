@@ -38,5 +38,4 @@ Factugest/static/img/perfiles/*
 !Factugest/static/img/perfiles/.gitkeep
 
 # Registro de lo que generaron los sembradores en la BD local de cada quien
-Factugest/seed_demo_manifest.json
-Factugest/seed_proveedor_manifest.json
+Factugest/seed_proveedor_manifest.*.json

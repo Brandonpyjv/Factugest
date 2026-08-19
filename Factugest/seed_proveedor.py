@@ -3,23 +3,23 @@
     python seed_proveedor.py            # genera los datos
     python seed_proveedor.py --limpiar  # deshace exactamente lo generado
 
-`seed_demo.py` siembra la operación de una tienda: sirve para mostrar el módulo de
-inventario y los reportes de venta al detal, que es de donde viene este código.
-Pero FactuGest ya no se vende como punto de venta —eso es Siste Soluciones—, así
-que el tablero no puede seguir mostrando ventas de mouses. Este sembrador crea lo
-que de verdad es nuestro negocio:
+Este es **el único sembrador de FactuGest**, y siembra el negocio que FactuGest
+tiene hoy: vender el servicio de facturar, no vender mercancía. Crea:
 
 * La empresa emisora **FactuGest S.A.S.**, con su resolución de la DIAN.
-* Los **planes** cargados como productos de servicio (`controla_stock = 0`): lo
-  que vendemos es un cupo de documentos al mes, no una caja.
-* Cinco **empresas suscritas**, cada una con su fila en `customers` (a quién le
+* El **catálogo de servicios** (`controla_stock = 0` en todos): los tres planes,
+  el documento adicional fuera del cupo, y lo que se cobra una vez al enganchar a
+  un cliente —implementación, habilitación ante la DIAN, capacitación—. Aquí no
+  hay teclados ni monitores: un proveedor tecnológico no tiene bodega.
+* Catorce **empresas suscritas**, cada una con su fila en `customers` (a quién le
   facturamos), su fila en `empresas` (con qué NIT y resolución emite) y su fila
-  en `clientes_api` (con qué llave nos llama). Siste Soluciones es una de ellas y
-  se reutiliza la que ya existe, no se duplica.
+  en `clientes_api` (con qué llave nos llama). Entraron en meses distintos, que es
+  como crece un negocio de este tipo. Siste Soluciones es una de ellas y se
+  reutiliza la que ya existe, no se duplica.
 * El **tráfico** de tres meses en `documentos`: lo que hemos emitido por cuenta de
   ellos. De ahí sale el consumo contra el cupo, sin tabla de contadores.
-* Las **mensualidades** de los últimos seis meses en `facturas`, que son nuestras
-  ventas de verdad y las que cuenta el tablero.
+* Las **ventas** de los últimos seis meses en `facturas`: la factura de enganche de
+  cada cliente y su mensualidad, que es lo que cuenta el tablero.
 
 Dos cosas que este sembrador **no** hace, a propósito:
 
@@ -50,8 +50,13 @@ from services.api_key_service import crear_cliente_api
 from services.calculo_documento import calcular_documento
 from services.cufe_service import generate_cufe
 
+# El manifiesto lleva el nombre de la base en el archivo: sembrar contra una base
+# de prueba y contra la de siempre son dos operaciones distintas, y con un único
+# archivo la segunda siembra creía que ya estaba hecha —o peor, `--limpiar`
+# borraba en una base lo que se había creado en la otra.
+_BASE = os.getenv("DB_NAME", "factugest")
 MANIFIESTO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                          "seed_proveedor_manifest.json")
+                          f"seed_proveedor_manifest.{_BASE}.json")
 
 HOY = date(2026, 8, 19)
 MESES_DE_TRAFICO = 3         # documentos emitidos por cuenta de terceros
@@ -94,6 +99,9 @@ PLANES = {
 
 SKU_EXCEDENTE = "DOC-EXTRA"
 
+# El catálogo de FactuGest son servicios, y no por elegancia: un proveedor
+# tecnológico no tiene bodega. Todos van con `controla_stock = 0`, así que la
+# emisión no les toca existencias y el módulo de inventario los ignora.
 PRODUCTOS = [
     # sku, nombre, descripcion, precio, unidad
     ("PLAN-BASICO", "Plan Básico — 150 documentos/mes",
@@ -109,33 +117,115 @@ PRODUCTOS = [
      "Documento electrónico emitido por encima del cupo incluido en el plan.",
      250, "WSD"),
     ("IMPL-API", "Implementación e integración",
-     "Acompañamiento técnico para conectar el sistema del cliente con la API.",
+     "Conexión del sistema del cliente con la API: acompañamiento técnico, pruebas "
+     "en ambiente de habilitación y puesta en producción. Se cobra una vez.",
      450000, "WSD"),
+    ("HABILITACION", "Acompañamiento en la habilitación ante la DIAN",
+     "Trámite de la resolución de numeración y del proceso de habilitación como "
+     "facturador electrónico. Se cobra una vez.",
+     250000, "WSD"),
+    ("CAPACITACION", "Capacitación al equipo del cliente",
+     "Sesión de formación para el personal que va a operar la facturación. "
+     "Por sesión.",
+     180000, "WSD"),
+    ("SOPORTE-PRIORITARIO", "Soporte prioritario",
+     "Canal directo con tiempo de respuesta garantizado de 4 horas hábiles. "
+     "Se cobra mensual, aparte del plan.",
+     120000, "MON"),
 ]
 
-# nombre, nit, dv, actividad, direccion, telefono, correo, plan, prefijo,
-# resolucion, volumen mensual de documentos, estado del cliente API
+# Los que se cobran una sola vez, al enganchar al cliente. Sin ellos el tablero
+# solo vería mensualidades idénticas mes a mes, que no es como se ve un negocio
+# de este tipo: el mes que entra un cliente nuevo se factura bastante más.
+SERVICIOS_DE_ENGANCHE = ["IMPL-API", "HABILITACION", "CAPACITACION"]
+
+# Las empresas suscritas. `antiguedad` es hace cuántos meses entraron: no todas
+# llevan lo mismo, porque un negocio que va sumando clientes se ve distinto de uno
+# que arrancó con catorce el mismo día, y el tablero tiene que poder mostrar eso.
 SUSCRIPTORES = [
-    ("Siste Soluciones S.A.S.", "901555444", "7", "4741",
-     "C.C. Gran Bulevar, local 103", "6075551234",
-     "facturacion@sistesoluciones.com", "BASICO", "SETP", "18764003812345",
-     (55, 95), "ACTIVO"),
-    ("Droguería La Salud S.A.S.", "900874512", "3", "4772",
-     "Calle 11 # 6-32, barrio La Playa", "6075742210",
-     "administracion@drogueriaslasalud.co", "PRO", "DLS", "18764003812501",
-     (395, 430), "ACTIVO"),
-    ("Ferretería Los Andes S.A.S.", "901102337", "9", "4752",
-     "Av. 4 # 14-88, centro", "6075719044",
-     "cartera@ferreterialosandes.com", "PRO", "FLA", "18764003812644",
-     (200, 260), "ACTIVO"),
-    ("Transportes del Norte S.A.S.", "890502114", "5", "4921",
-     "Terminal de Transportes, módulo 7", "6075836677",
-     "facturacion@transportesdelnorte.co", "ILIMITADO", "TDN", "18764003812770",
-     (280, 340), "ACTIVO"),
-    ("Papelería Escolar Cúcuta", "1090345678", "0", "4761",
-     "Calle 6 # 3-21, barrio Latino", "3156644821",
-     "papeleriaescolar54@gmail.com", "BASICO", "PEC", "18764003812899",
-     (30, 55), "SUSPENDIDO"),
+    {"nombre": "Siste Soluciones S.A.S.", "nit": "901555444", "dv": "7",
+     "actividad": "4741", "direccion": "C.C. Gran Bulevar, local 103",
+     "telefono": "6075551234", "correo": "facturacion@sistesoluciones.com",
+     "plan": "BASICO", "prefijo": "SETP", "resolucion": "18764003812345",
+     "volumen": (55, 95), "estado": "ACTIVO", "antiguedad": 6},
+
+    {"nombre": "Droguería La Salud S.A.S.", "nit": "900874512", "dv": "3",
+     "actividad": "4772", "direccion": "Calle 11 # 6-32, barrio La Playa",
+     "telefono": "6075742210", "correo": "administracion@drogueriaslasalud.co",
+     "plan": "PRO", "prefijo": "DLS", "resolucion": "18764003812501",
+     "volumen": (395, 430), "estado": "ACTIVO", "antiguedad": 6},
+
+    {"nombre": "Ferretería Los Andes S.A.S.", "nit": "901102337", "dv": "9",
+     "actividad": "4752", "direccion": "Av. 4 # 14-88, centro",
+     "telefono": "6075719044", "correo": "cartera@ferreterialosandes.com",
+     "plan": "PRO", "prefijo": "FLA", "resolucion": "18764003812644",
+     "volumen": (200, 260), "estado": "ACTIVO", "antiguedad": 6},
+
+    {"nombre": "Transportes del Norte S.A.S.", "nit": "890502114", "dv": "5",
+     "actividad": "4921", "direccion": "Terminal de Transportes, módulo 7",
+     "telefono": "6075836677", "correo": "facturacion@transportesdelnorte.co",
+     "plan": "ILIMITADO", "prefijo": "TDN", "resolucion": "18764003812770",
+     "volumen": (280, 340), "estado": "ACTIVO", "antiguedad": 6},
+
+    {"nombre": "Papelería Escolar Cúcuta", "nit": "1090345678", "dv": "0",
+     "actividad": "4761", "direccion": "Calle 6 # 3-21, barrio Latino",
+     "telefono": "3156644821", "correo": "papeleriaescolar54@gmail.com",
+     "plan": "BASICO", "prefijo": "PEC", "resolucion": "18764003812899",
+     "volumen": (30, 55), "estado": "SUSPENDIDO", "antiguedad": 6},
+
+    {"nombre": "Restaurante La Mazorca", "nit": "1090778234", "dv": "4",
+     "actividad": "5611", "direccion": "Av. Libertadores # 10-56",
+     "telefono": "3204471188", "correo": "lamazorcacucuta@gmail.com",
+     "plan": "BASICO", "prefijo": "RLM", "resolucion": "18764003813012",
+     "volumen": (60, 110), "estado": "ACTIVO", "antiguedad": 5},
+
+    {"nombre": "Distribuidora El Establo S.A.S.", "nit": "900661209", "dv": "1",
+     "actividad": "4631", "direccion": "Zona Industrial, bodega 14",
+     "telefono": "6075884420", "correo": "facturacion@elestablo.com.co",
+     "plan": "PRO", "prefijo": "DEE", "resolucion": "18764003813155",
+     "volumen": (180, 240), "estado": "ACTIVO", "antiguedad": 5},
+
+    {"nombre": "Taller Motor Norte", "nit": "1093822014", "dv": "6",
+     "actividad": "4520", "direccion": "Av. 7 # 22-31, barrio Blanco",
+     "telefono": "3115523097", "correo": "tallermotornorte@hotmail.com",
+     "plan": "BASICO", "prefijo": "TMN", "resolucion": "18764003813288",
+     "volumen": (25, 60), "estado": "ACTIVO", "antiguedad": 4},
+
+    {"nombre": "Confecciones Doña Rosa", "nit": "1090114523", "dv": "8",
+     "actividad": "1410", "direccion": "Calle 15 # 2-40, La Playa",
+     "telefono": "3178840012", "correo": "confeccionesrosa@gmail.com",
+     "plan": "BASICO", "prefijo": "CDR", "resolucion": "18764003813401",
+     "volumen": (20, 45), "estado": "ACTIVO", "antiguedad": 4},
+
+    {"nombre": "Supermercado La Economía S.A.S.", "nit": "900338177", "dv": "2",
+     "actividad": "4711", "direccion": "Calle 8 # 5-12, centro",
+     "telefono": "6075512233", "correo": "sistemas@laeconomia.com.co",
+     "plan": "ILIMITADO", "prefijo": "SLE", "resolucion": "18764003813566",
+     "volumen": (300, 380), "estado": "ACTIVO", "antiguedad": 3},
+
+    {"nombre": "Clínica Odontológica Sonrisas", "nit": "901447903", "dv": "0",
+     "actividad": "8622", "direccion": "Av. 0 # 14-22, consultorio 301",
+     "telefono": "6075747711", "correo": "citas@sonrisascucuta.co",
+     "plan": "BASICO", "prefijo": "COS", "resolucion": "18764003813699",
+     "volumen": (35, 70), "estado": "ACTIVO", "antiguedad": 3},
+
+    {"nombre": "Hotel Casa Blanca", "nit": "900902551", "dv": "7",
+     "actividad": "5511", "direccion": "Av. 1 # 12-18, barrio Latino",
+     "telefono": "6075719900", "correo": "recepcion@hotelcasablanca.co",
+     "plan": "PRO", "prefijo": "HCB", "resolucion": "18764003813744",
+     "volumen": (120, 180), "estado": "ACTIVO", "antiguedad": 2},
+
+    {"nombre": "Panadería Trigo de Oro", "nit": "1090556781", "dv": "3",
+     "actividad": "1081", "direccion": "Calle 3 # 8-15, barrio Aeropuerto",
+     "telefono": "3143329871", "correo": "trigodeoro.cuc@gmail.com",
+     "plan": "BASICO", "prefijo": "PTO", "resolucion": "18764003813877",
+     "volumen": (40, 90), "estado": "ACTIVO", "antiguedad": 2},
+
+    {"nombre": "Constructora Cúcuta Norte S.A.S.", "nit": "901208664", "dv": "5",
+     "actividad": "4111", "direccion": "Av. Demetrio Mendoza # 4-90",
+     "telefono": "6075830044", "correo": "contabilidad@ccnorte.com.co",
+     "plan": "PRO", "prefijo": "CCN", "resolucion": "18764003813990",
+     "volumen": (15, 40), "estado": "ACTIVO", "antiguedad": 1},
 ]
 
 # Los compradores de nuestros clientes. No son clientes nuestros: son de ellos, y
@@ -166,6 +256,24 @@ CONCEPTOS = {
              ("Encomienda urbana", 28000), ("Servicio de mudanza", 950000)],
     "4761": [("Resma papel carta", 21500), ("Cuaderno cosido 100 hojas", 6800),
              ("Caja de lapiceros x12", 18400), ("Cartulina pliego", 1800)],
+    "5611": [("Almuerzo ejecutivo", 18000), ("Bandeja paisa", 32000),
+             ("Jugo natural", 6000), ("Servicio de catering", 850000)],
+    "4631": [("Leche entera caja x12", 48000), ("Queso doble crema kg", 22000),
+             ("Yogur garrafa 2 L", 14500), ("Mantequilla 250 g", 8900)],
+    "4520": [("Cambio de aceite y filtro", 145000), ("Alineación y balanceo", 90000),
+             ("Pastillas de freno", 210000), ("Revisión general", 75000)],
+    "1410": [("Uniforme escolar completo", 135000), ("Dotación empresarial x3", 420000),
+             ("Camisa a la medida", 68000), ("Arreglo de prenda", 15000)],
+    "4711": [("Mercado familiar", 185000), ("Arroz 5 kg", 24500),
+             ("Aceite girasol 3 L", 38000), ("Carne de res kg", 32000)],
+    "8622": [("Consulta y valoración", 60000), ("Limpieza dental", 130000),
+             ("Resina en diente", 180000), ("Ortodoncia, cuota mensual", 250000)],
+    "5511": [("Habitación sencilla, noche", 180000), ("Habitación doble, noche", 260000),
+             ("Salón de eventos, día", 950000), ("Desayuno adicional", 22000)],
+    "1081": [("Pan de queso x12", 12000), ("Torta de cumpleaños", 85000),
+             ("Ponqué porción", 4500), ("Pedido para evento", 320000)],
+    "4111": [("Anticipo de obra", 12500000), ("Acta parcial de obra", 8400000),
+             ("Estudio de suelos", 2800000), ("Diseño arquitectónico", 4500000)],
 }
 
 
@@ -297,8 +405,12 @@ def sembrar_suscriptores(manifiesto) -> list:
     """Cada suscriptor son tres filas: a quién le cobramos, con qué emite y con qué llave."""
     suscriptores = []
 
-    for (nombre, nit, dv, actividad, direccion, telefono, correo, plan, prefijo,
-         resolucion, volumen, estado) in SUSCRIPTORES:
+    for datos in SUSCRIPTORES:
+        nombre, nit, dv = datos["nombre"], datos["nit"], datos["dv"]
+        actividad, direccion = datos["actividad"], datos["direccion"]
+        telefono, correo = datos["telefono"], datos["correo"]
+        plan, prefijo = datos["plan"], datos["prefijo"]
+        resolucion, volumen, estado = datos["resolucion"], datos["volumen"], datos["estado"]
 
         empresa = get_one("SELECT cod_empresa FROM empresas WHERE nit = %s", (nit,))
         if empresa:
@@ -344,6 +456,7 @@ def sembrar_suscriptores(manifiesto) -> list:
             "cod_cliente": cod_cliente, "nombre": nombre, "plan": plan,
             "actividad": actividad, "volumen": volumen, "estado": estado,
             "llave": llave, "prefijo": prefijo,
+            "antiguedad": datos["antiguedad"],
         })
 
     return suscriptores
@@ -469,6 +582,11 @@ def sembrar_trafico(manifiesto, suscriptores, receptores) -> int:
 
         with transaction() as cur:
             for atras in range(MESES_DE_TRAFICO - 1, -1, -1):
+                # Nadie emite antes de contratarnos: el que lleva un mes con
+                # nosotros no puede tener tres meses de documentos emitidos.
+                if atras > s["antiguedad"]:
+                    continue
+
                 inicio = _primero_de_mes(HOY, atras)
                 fin = min(_fin_de_mes(inicio), HOY)
                 dias = (fin - inicio).days + 1
@@ -566,8 +684,52 @@ def _insertar_documento(cur, suscriptor, empresa, consecutivo, cuando, cod_recep
          mensajes[estado], cuando.strftime("%Y-%m-%d %H:%M:%S.%f")))
 
 
+def _facturar(cur, manifiesto, empresa, cod_usuario, cod_cliente, lineas, emision,
+              observaciones, estado_pago, plazo_dias, consecutivo) -> tuple:
+    """Guarda una venta nuestra y devuelve (cod_factura, siguiente consecutivo).
+
+    La usan las dos cosas que le vendemos a un cliente: la mensualidad del plan y
+    los servicios que se cobran una sola vez al engancharlo.
+    """
+    calculo = calcular_documento(lineas)
+    vencimiento = emision + timedelta(days=plazo_dias) if plazo_dias else None
+    numero = f"{empresa['prefijo_factura']}{consecutivo}"
+
+    cufe = generate_cufe({
+        "numero_factura": numero, "fecha": emision,
+        "subtotal": calculo["subtotal"], "total_impuestos": calculo["total_impuestos"],
+        "total": calculo["total"], "document_number": str(cod_cliente),
+    }, empresa)
+
+    cur.execute(
+        "INSERT INTO facturas (fecha, fecha_vencimiento, cod_cliente, cod_usuario, "
+        "  cod_empresa, cod_metodo_pago, cod_pago, total, subtotal, total_descuentos, "
+        "  total_impuestos, tipo_factura, observaciones, cufe, numero_factura, forma_pago) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'FV',%s,%s,%s,%s)",
+        (emision.strftime("%Y-%m-%d 09:00:00"),
+         vencimiento.strftime("%Y-%m-%d") if vencimiento else None,
+         cod_cliente, cod_usuario, empresa["cod_empresa"], TRANSFERENCIA, estado_pago,
+         calculo["total"], calculo["subtotal"], calculo["total_descuentos"],
+         calculo["total_impuestos"], observaciones, cufe, numero,
+         "CREDITO" if plazo_dias else "CONTADO"))
+    cod_factura = cur.lastrowid
+    manifiesto.datos["facturas"].append(cod_factura)
+
+    for linea in calculo["lineas"]:
+        cur.execute(
+            "INSERT INTO detalle_factura (cod_factura, cod_producto, descripcion, "
+            "  cantidad, precio_unitario, subtotal, descuento_porcentaje, "
+            "  descuento_valor, impuesto_porcentaje, impuesto_valor) "
+            "VALUES (%s,%s,%s,%s,%s,%s,0,0,%s,%s)",
+            (cod_factura, linea["cod_producto"], linea["descripcion"],
+             linea["cantidad"], linea["precio_unitario"], linea["subtotal"],
+             linea["impuesto_porcentaje"], linea["impuesto_valor"]))
+
+    return cod_factura, consecutivo + 1
+
+
 def sembrar_mensualidades(manifiesto, suscriptores, productos, cod_empresa) -> int:
-    """Las mensualidades que ya les cobramos: nuestras ventas de verdad.
+    """Lo que le vendemos a cada cliente: el enganche y la mensualidad.
 
     El mes en curso no se cobra: queda para el módulo de facturación de planes,
     que es el que emite llamando a nuestra propia API.
@@ -580,13 +742,39 @@ def sembrar_mensualidades(manifiesto, suscriptores, productos, cod_empresa) -> i
     empresa = get_one("SELECT * FROM empresas WHERE cod_empresa = %s", (cod_empresa,))
     emitidas = 0
 
-    # Se cobra hasta el antepenúltimo mes: el mes cerrado más reciente queda sin
-    # cobrar a propósito. Es el que tiene el consumo completo —con los clientes
-    # que se pasaron del cupo— y es el que se factura en vivo en la demostración.
     with transaction() as cur:
+        # El enganche: cuando un cliente entra se le cobra la implementación y, según
+        # el caso, la habilitación ante la DIAN y la capacitación. Es lo que hace que
+        # el mes en que entra un cliente nuevo se vea distinto en el tablero.
+        for s in suscriptores:
+            if s["antiguedad"] > MESES_DE_COBRO:
+                continue
+            servicios = ["IMPL-API"] + random.sample(
+                [sku for sku in SERVICIOS_DE_ENGANCHE if sku != "IMPL-API"],
+                random.randint(0, 2))
+            lineas = []
+            for sku in servicios:
+                producto = next(p for p in PRODUCTOS if p[0] == sku)
+                lineas.append({
+                    "cod_producto": productos[sku], "descripcion": producto[1],
+                    "cantidad": 1, "precio_unitario": producto[3],
+                    "descuento_porcentaje": 0, "impuesto_porcentaje": 19,
+                })
+
+            alta = _primero_de_mes(HOY, s["antiguedad"]) + timedelta(days=2)
+            cod_factura, consecutivo = _facturar(
+                cur, manifiesto, empresa, cod_usuario, s["cod_cliente"], lineas, alta,
+                f"Puesta en marcha de {s['nombre']}", PAGADA, 0, consecutivo)
+            emitidas += 1
+
+        # Se cobra hasta el antepenúltimo mes: el mes cerrado más reciente queda sin
+        # cobrar a propósito. Es el que tiene el consumo completo —con los clientes
+        # que se pasaron del cupo— y es el que se factura en vivo en la demostración.
         for atras in range(MESES_DE_COBRO, 1, -1):
             mes = _primero_de_mes(HOY, atras)
             for s in suscriptores:
+                if atras > s["antiguedad"]:
+                    continue          # todavía no era cliente
                 if s["estado"] == "SUSPENDIDO" and atras <= 2:
                     continue          # dejó de pagar: por eso está suspendido
 
@@ -597,50 +785,19 @@ def sembrar_mensualidades(manifiesto, suscriptores, productos, cod_empresa) -> i
                     "cantidad": 1, "precio_unitario": plan["precio"],
                     "descuento_porcentaje": 0, "impuesto_porcentaje": 19,
                 }]
-                calculo = calcular_documento(lineas)
 
                 # Se cobra el día 5 del mes siguiente al consumido: primero se sabe
                 # cuánto emitió, después se le pasa la cuenta.
                 emision = _primero_de_mes(HOY, atras - 1) + timedelta(days=4)
-                vencimiento = emision + timedelta(days=15)
-                vencida = vencimiento < HOY
-                estado = PAGADA if atras >= 2 else (VENCIDA if vencida else PENDIENTE)
+                vencida = emision + timedelta(days=15) < HOY
+                estado = PAGADA if atras >= 3 else (VENCIDA if vencida else PENDIENTE)
 
-                numero = f"{empresa['prefijo_factura']}{consecutivo}"
-                consecutivo += 1
-                cufe = generate_cufe({
-                    "numero_factura": numero, "fecha": emision,
-                    "subtotal": calculo["subtotal"],
-                    "total_impuestos": calculo["total_impuestos"],
-                    "total": calculo["total"], "document_number": str(s["cod_cliente"]),
-                }, empresa)
-
-                cur.execute(
-                    "INSERT INTO facturas (fecha, fecha_vencimiento, cod_cliente, "
-                    "  cod_usuario, cod_empresa, cod_metodo_pago, cod_pago, total, subtotal, "
-                    "  total_descuentos, total_impuestos, tipo_factura, observaciones, cufe, "
-                    "  numero_factura, forma_pago) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'FV',%s,%s,%s,'CREDITO')",
-                    (emision.strftime("%Y-%m-%d 09:00:00"),
-                     vencimiento.strftime("%Y-%m-%d"), s["cod_cliente"], cod_usuario,
-                     cod_empresa, TRANSFERENCIA, estado, calculo["total"],
-                     calculo["subtotal"], calculo["total_descuentos"],
-                     calculo["total_impuestos"],
-                     f"Suscripción {s['plan'].title()} del periodo {_periodo(mes)}",
-                     cufe, numero))
-                cod_factura = cur.lastrowid
-                manifiesto.datos["facturas"].append(cod_factura)
+                cod_factura, consecutivo = _facturar(
+                    cur, manifiesto, empresa, cod_usuario, s["cod_cliente"], lineas,
+                    emision,
+                    f"Suscripción {s['plan'].title()} del periodo {_periodo(mes)}",
+                    estado, 15, consecutivo)
                 emitidas += 1
-
-                for linea in calculo["lineas"]:
-                    cur.execute(
-                        "INSERT INTO detalle_factura (cod_factura, cod_producto, descripcion, "
-                        "  cantidad, precio_unitario, subtotal, descuento_porcentaje, "
-                        "  descuento_valor, impuesto_porcentaje, impuesto_valor) "
-                        "VALUES (%s,%s,%s,%s,%s,%s,0,0,%s,%s)",
-                        (cod_factura, linea["cod_producto"], linea["descripcion"],
-                         linea["cantidad"], linea["precio_unitario"], linea["subtotal"],
-                         linea["impuesto_porcentaje"], linea["impuesto_valor"]))
 
                 cur.execute(
                     "INSERT INTO facturas_plan (cod_cliente_api, periodo, cod_factura, "
@@ -788,6 +945,10 @@ def limpiar():
             (previo["cod_cliente"], previo["plan"], previo["limite_mensual"],
              previo["estado"], int(cod)))
     for cod in d["clientes_api"]:
+        # Lo que ese cliente emitió después de la siembra —una mensualidad probada
+        # a mano, por ejemplo— no está en el manifiesto, pero se va con él: son
+        # documentos de un cliente que deja de existir, no de uno ajeno.
+        execute_update("DELETE FROM documentos WHERE cod_cliente_api = %s", (cod,))
         execute_update("DELETE FROM clientes_api WHERE cod_cliente_api = %s", (cod,))
 
     for cod in d["productos"]:

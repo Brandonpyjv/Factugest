@@ -195,12 +195,18 @@ ADMIN_ROLES = {"ADMIN", "SUPERVISOR", "JEFE_TIENDA"}  # acceso completo
   registra lo aplicado en `schema_migrations`. Cada migración es idempotente.
   Al agregar columnas o tablas, añade una migración ahí y regenera `base/factugest.sql`.
 
-> ⚠️ **`base/factugest.sql` es un baseline liviano**, no un respaldo: trae los catálogos
-> completos (municipios, departamentos, impuestos, estados y métodos de pago) pero solo
-> un puñado de facturas, clientes y productos de ejemplo. **No lo reemplaces con un
-> export completo de tu base local**: le meterías los cientos de documentos que generó
-> `seed_demo.py` y borrarías filas de catálogo que tú no tengas. Cuando agregues tablas,
-> empalma solo los bloques nuevos de estructura.
+> ⚠️ **`base/factugest.sql` es un baseline liviano**, no un respaldo. Trae la estructura,
+> los catálogos completos (municipios, departamentos, impuestos, estados y métodos de
+> pago), los usuarios, la empresa emisora FactuGest S.A.S., el cliente «Consumidor Final»
+> y el catálogo de servicios. **No trae operación**: ni facturas, ni clientes, ni
+> documentos. Eso lo genera `seed_proveedor.py`.
+>
+> **No lo reemplaces con un export completo de tu base local**: le meterías los miles de
+> documentos que sembraste y borrarías filas de catálogo que tú no tengas. Cuando agregues
+> tablas, empalma solo los bloques nuevos de estructura.
+>
+> El orden de instalación completo es: importar el SQL → `python migrate.py` →
+> `python seed_proveedor.py`.
 >
 > Los cambios de columna y las conversiones de datos **se dejan a la migración**, no se
 > reflejan en el dump: el dump se queda en el estado de la última migración que declara
@@ -316,8 +322,7 @@ El menú lateral se agrupa **por trabajo, no por tabla**. Los grupos son:
 |---|---|---|
 | *(sin grupo)* | Inicio | todos |
 | **Plataforma** | Clientes API · Documentos emitidos · Consumo y planes | solo roles admin |
-| **Facturación** | Facturas · Nueva factura · Clientes | todos |
-| **Catálogo** | Planes y productos · Inventario · Movimientos | inventario solo admin |
+| **Facturación** | Facturas · Nueva factura · Clientes · Planes y servicios | todos |
 | **Análisis** | Reportes | solo roles admin |
 | *(pie)* | Configuración | solo roles admin |
 
@@ -355,19 +360,22 @@ CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursale
 
 ### Datos de demostración
 
-Hay dos sembradores y siembran negocios distintos:
+`python seed_proveedor.py` es **el único sembrador**. Crea la empresa emisora FactuGest
+S.A.S., el catálogo de servicios, catorce empresas suscritas (con su `empresas`, su
+`customers` y su `clientes_api`), tres meses de tráfico en `documentos` y seis meses de
+ventas en `facturas` —la factura de enganche de cada cliente y sus mensualidades—. Los
+clientes entraron en meses distintos, así que el tablero muestra un negocio que crece.
+Deja el último mes cerrado **sin cobrar**, que es el que se factura en vivo desde
+`/consumo`. Muestra las llaves generadas una sola vez: la del autoservicio va al `.env`.
 
-- `python seed_proveedor.py` — **el que corresponde al producto de hoy**. Crea la empresa
-  emisora FactuGest S.A.S., los planes como productos de servicio, cinco empresas
-  suscritas (con su `empresas`, su `customers` y su `clientes_api`), tres meses de tráfico
-  en `documentos` y seis meses de mensualidades en `facturas`. Deja el último mes cerrado
-  **sin cobrar**, que es el que se factura en vivo desde `/consumo`. Muestra las llaves
-  generadas una sola vez: la del autoservicio va al `.env`.
-- `python seed_demo.py` — la operación de una tienda al detal (ventas, notas, compras,
-  mermas, cartera). Sirve para mostrar inventario y reportes con volumen.
+Es determinista, se verifica a sí mismo y trae `--limpiar` para deshacer exactamente lo
+que creó. El manifiesto lleva el nombre de la base en el archivo, para que sembrar contra
+una base de prueba no interfiera con la de siempre. **No usar en producción.**
 
-Los dos son deterministas, se verifican a sí mismos y traen `--limpiar` para deshacer
-exactamente lo que crearon. **No usar en producción.**
+> Existía un segundo sembrador, `seed_demo.py`, que generaba la operación de una tienda al
+> detal. Se retiró: FactuGest no vende mercancía, y tener a mano un generador que llena su
+> catálogo de teclados era una invitación a volver a confundir los dos negocios. Su
+> equivalente vive en el POS, que es donde una tienda tiene sentido (`seed_historico.py`).
 
 > El sembrador respeta la convención de `numeracion_service`: `consecutivo_actual` es el
 > **siguiente número sin usar**, no el último usado. Dejarlo corrido en uno hace que la
@@ -430,7 +438,7 @@ El backend nació como monolito FastAPI con frontend Jinja. Cuando se necesitó 
 | Objetivo | Estado |
 |---|---|
 | 1 — Emisión de FV/NC/ND con PDF, XML UBL 2.1 y CUFE | ✅ (CUFE en pre-producción) |
-| 2 — Control de inventarios con alertas y kardex | ✅ |
+| 2 — Control de inventarios con alertas y kardex | ✅ se demuestra en Siste Soluciones |
 | 3 — Tablero de control con métricas y reportes exportables | ✅ |
 | 3.3 — API REST de integración (`/api/v1/`) | ✅ facturas, notas, consulta, listado, cupo y correo |
 

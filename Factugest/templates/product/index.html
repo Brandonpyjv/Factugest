@@ -8,9 +8,9 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h1 class="h3 mb-1 text-gray-800 fw-bold">
-                <i class="bi bi-box-seam text-primary me-2"></i>Gestión de Productos
+                <i class="bi bi-box-seam text-primary me-2"></i>Planes y servicios
             </h1>
-            <p class="text-muted mb-0 small">Administra el inventario, precios y stock de productos.</p>
+            <p class="text-muted mb-0 small">Los planes y servicios que vende FactuGest. Son servicios: no llevan existencias.</p>
         </div>
         {% if request.session.get('user', {}).get('rol') != 'CAJERO' %}
         <a href="{{ url_for('product_new') }}"

@@ -113,20 +113,16 @@
         </div>
         {% endif %}
 
+        {# Sin inventario: lo que FactuGest vende son servicios —planes, implementación,
+           capacitación— y un proveedor tecnológico no tiene bodega. El módulo de
+           existencias y kardex sigue en el código y se demuestra en Siste Soluciones,
+           que es donde un inventario significa algo. #}
         <div class="sidebar-grupo">
             <div class="sidebar-titulo">Facturación</div>
             {{ item(url_for('invoice'), 'bi-receipt', 'Facturas', exacto=true) }}
             {{ item(url_for('new_invoice'), 'bi-plus-circle', 'Nueva factura') }}
             {{ item(url_for('customer'), 'bi-people', 'Clientes') }}
-        </div>
-
-        <div class="sidebar-grupo">
-            <div class="sidebar-titulo">Catálogo</div>
-            {{ item(url_for('product'), 'bi-box-seam', 'Planes y productos') }}
-            {% if es_admin %}
-            {{ item(url_for('inventory'), 'bi-boxes', 'Inventario', exacto=true) }}
-            {{ item(url_for('inventory_movimientos'), 'bi-arrow-left-right', 'Movimientos') }}
-            {% endif %}
+            {{ item(url_for('product'), 'bi-box-seam', 'Planes y servicios') }}
         </div>
 
         {% if es_admin %}

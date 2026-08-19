@@ -9,8 +9,8 @@ from typing import Optional
 from fastapi import APIRouter, Request
 
 from auth import ADMIN_ROLES
-from services import report_service as rep
-from services.inventory_service import get_alertas_stock, get_resumen_inventario
+from services import consumo_service, report_service as rep
+from services.inventory_service import get_alertas_stock
 from services.invoice_service import get_dashboard_stats
 from templates_config import templates
 
@@ -79,8 +79,15 @@ def index(request: Request, desde: str = "", hasta: str = "",
     top_productos = rep.get_top_productos(desde, hasta, cod_empresa, limite=6)
     top_clientes = rep.get_top_clientes(desde, hasta, cod_empresa, limite=6)
     metodos_pago = rep.get_ventas_por_metodo_pago(desde, hasta, cod_empresa)
-    inventario = get_resumen_inventario()
-    alertas = get_alertas_stock(limite=6)
+
+    # El tablero medía existencias y alertas de stock, que es lo que le importa a
+    # una tienda. FactuGest vende un servicio: lo que hay que mirar todos los días
+    # es cuánto se está emitiendo por cuenta de los clientes y quién va a pasarse
+    # del cupo que paga, que es la conversación comercial que sigue.
+    plataforma = consumo_service.resumen_plataforma()
+    consumo = consumo_service.consumo_del_periodo(plataforma["periodo"])
+    cerca_del_cupo = [c for c in consumo
+                      if c["semaforo"] in ("EXCEDIDO", "ALERTA")][:6]
 
     graficas = {
         "serie": {
@@ -123,8 +130,8 @@ def index(request: Request, desde: str = "", hasta: str = "",
         "top_productos": top_productos,
         "top_clientes":  top_clientes,
         "metodos_pago":  metodos_pago,
-        "inventario":    inventario,
-        "alertas":       alertas,
+        "plataforma":    plataforma,
+        "cerca_del_cupo": cerca_del_cupo,
         "recientes":     get_dashboard_stats()["facturas_recientes"],
         "graficas":      graficas,
         "filtros":       {"desde": desde, "hasta": hasta, "preset": preset,
