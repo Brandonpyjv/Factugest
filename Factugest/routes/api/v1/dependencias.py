@@ -13,21 +13,11 @@ sesión precisamente porque aquí se verifica de otra forma.
 """
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, status
 
+from routes.api.v1.errores import error as _error
 from services.api_key_service import (ClienteInactivoError, LlaveInvalidaError,
                                       autenticar)
-
-
-def _error(codigo_http: int, codigo: str, mensaje: str) -> HTTPException:
-    """Un mismo cuerpo para todos los errores, para que el que se integra no
-    tenga que interpretar cada uno a su manera. La tarea 3.5 lo extiende al
-    resto de la API."""
-    return HTTPException(
-        status_code=codigo_http,
-        detail={"codigo": codigo, "mensaje": mensaje},
-        headers={"WWW-Authenticate": "ApiKey"} if codigo_http == 401 else None,
-    )
 
 
 def get_cliente_api(

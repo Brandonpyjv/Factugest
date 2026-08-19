@@ -31,6 +31,13 @@ CLAVES_CABECERA = frozenset({
     "document_type", "document_number",
 })
 
+# Solo las notas las llevan: enlazan el documento con el que corrige. En una
+# factura de venta no existen, y por eso no entran en `CLAVES_CABECERA` —
+# exigírselas a todo documento dejaría a la factura siempre incompleta.
+CLAVES_NOTA = frozenset({
+    "motivo_nota", "numero_referencia", "cufe_referencia", "fecha_referencia",
+})
+
 CLAVES_LINEA = frozenset({
     "producto_nombre", "sku", "unidad_medida", "cantidad", "precio_unitario",
     "subtotal", "descuento_porcentaje", "descuento_valor", "descripcion_descuento",

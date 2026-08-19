@@ -34,6 +34,8 @@ from routes.consumo import router as consumo_router
 from routes.configuracion import router as configuracion_router
 from routes.api.v1.sistema import router as api_sistema_router
 from routes.api.v1.facturas import router as api_facturas_router
+from routes.api.v1.notas import router as api_notas_router
+from routes.api.v1.errores import registrar_manejadores
 
 app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
 
@@ -75,6 +77,11 @@ app.include_router(configuracion_router, include_in_schema=False)
 # del cliente, no con la sesión de la web.
 app.include_router(api_sistema_router)
 app.include_router(api_facturas_router)
+app.include_router(api_notas_router)
+
+# Todos los errores de /api/ salen con la misma forma, incluidos los 422 de
+# Pydantic y lo que nadie previó. Las rutas web siguen devolviendo HTML.
+registrar_manejadores(app)
 
 # Registrar url_for como global en Jinja2
 templates.env.globals["url_for"] = app.url_path_for

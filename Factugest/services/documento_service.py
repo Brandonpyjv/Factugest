@@ -122,9 +122,10 @@ def reservar_y_guardar(cliente_api: dict, tipo: str, calculo: dict, receptor: di
             "  cod_receptor, tipo, prefijo, consecutivo, numero, cufe, fecha_emision, "
             "  fecha_vencimiento, forma_pago, subtotal_bruto, total_descuentos, subtotal, "
             "  total_impuestos, total, estado, referencia_externa, observaciones, "
-            "  orden_compra, proveedor_dian, xml, creado_en) "
+            "  orden_compra, proveedor_dian, xml, cod_documento_referencia, motivo_nota, "
+            "  creado_en) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
-            "        'PENDIENTE', %s, %s, %s, %s, %s, %s)",
+            "        'PENDIENTE', %s, %s, %s, %s, %s, %s, %s, %s)",
             (id_publico, cliente_api["cod_cliente_api"], cod_empresa, cod_receptor, tipo,
              numeracion["prefijo"], numeracion["consecutivo"], numeracion["numero"], cufe,
              fecha.strftime("%Y-%m-%d %H:%M:%S.%f"), vencimiento,
@@ -133,6 +134,7 @@ def reservar_y_guardar(cliente_api: dict, tipo: str, calculo: dict, receptor: di
              calculo["total_impuestos"], calculo["total"],
              datos.get("referencia_externa") or None, datos.get("observaciones") or None,
              datos.get("orden_compra") or None, datos.get("proveedor_dian"), xml,
+             datos.get("cod_documento_referencia"), datos.get("motivo_nota") or None,
              datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         cod_documento = cur.lastrowid
 
@@ -204,9 +206,24 @@ def registrar_evento(cod_documento: int, tipo: str, **kwargs):
 # ── Consulta ────────────────────────────────────────────────────────────────
 
 def get_documento(id_publico: str, cod_cliente_api: int = None):
-    """Un cliente solo puede ver sus propios documentos."""
-    consulta = ("SELECT d.*, e.nombre AS empresa_nombre FROM documentos d "
-                "LEFT JOIN empresas e ON d.cod_empresa = e.cod_empresa "
+    """Un cliente solo puede ver sus propios documentos.
+
+    `anulado` se deriva de que exista una nota crédito total que lo referencie, y
+    no de una columna que se marque al anular. `estado` guarda lo que contestó la
+    DIAN sobre *este* documento, y un documento aceptado sigue aceptado aunque
+    después se anule: pisarlo con «ANULADO» borraría el hecho de que fue validado.
+    """
+    consulta = ("SELECT d.*, e.nombre AS empresa_nombre, "
+                "       o.numero AS numero_referencia, o.cufe AS cufe_referencia, "
+                "       o.fecha_emision AS fecha_referencia, "
+                "       o.id_publico AS id_referencia, "
+                "       EXISTS(SELECT 1 FROM documentos nc "
+                "              WHERE nc.cod_documento_referencia = d.cod_documento "
+                "                AND nc.tipo = 'NC' "
+                "                AND nc.total >= d.total) AS anulado "
+                "FROM documentos d "
+                "LEFT JOIN empresas e   ON d.cod_empresa = e.cod_empresa "
+                "LEFT JOIN documentos o ON d.cod_documento_referencia = o.cod_documento "
                 "WHERE d.id_publico = %s")
     params = [id_publico]
     if cod_cliente_api is not None:
@@ -332,6 +349,11 @@ def a_documento_canonico(documento: dict, lineas: list, receptor: dict, emisor: 
         "orden_compra": documento.get("orden_compra"),
         "nombre_vendedor": None,
         "descripcion_descuento_factura": documento.get("descripcion_descuento_factura"),
+        # Solo viajan cuando el documento es una nota; el XML las ignora si no están.
+        "motivo_nota": documento.get("motivo_nota"),
+        "numero_referencia": documento.get("numero_referencia"),
+        "cufe_referencia": documento.get("cufe_referencia"),
+        "fecha_referencia": documento.get("fecha_referencia"),
         "metodo_pago_nombre": FORMAS_PAGO_LEGIBLES.get(forma_pago, forma_pago),
         "cliente_nombre": receptor.get("nombre"),
         "cliente_email": receptor.get("email"),

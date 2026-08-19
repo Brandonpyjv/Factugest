@@ -22,6 +22,42 @@ def _esc(s: str) -> str:
             .replace('"', '&quot;'))
 
 
+
+# Códigos del anexo técnico de la DIAN para el tipo de documento.
+TIPOS_DOCUMENTO_DIAN = {"FV": "01", "NC": "91", "ND": "92"}
+
+
+def _referencia_al_original(invoice: dict) -> str:
+    """El bloque que enlaza una nota con la factura que corrige.
+
+    `DiscrepancyResponse` lleva el motivo —por qué se emite la nota— y
+    `BillingReference` el número y el CUFE del documento original. Sin los dos, la
+    nota queda sin decir sobre qué aplica.
+    """
+    numero = invoice.get("numero_referencia")
+    if not numero:
+        return ""
+
+    cufe = invoice.get("cufe_referencia") or ""
+    fecha = invoice.get("fecha_referencia")
+    fecha = fecha.strftime("%Y-%m-%d") if hasattr(fecha, "strftime") else str(fecha or "")[:10]
+    motivo = _esc(invoice.get("motivo_nota") or invoice.get("observaciones") or "Ajuste")
+    # 2 es «anulación» en el catálogo de conceptos de corrección de la DIAN; se usa
+    # como concepto general mientras el contrato no lo pida por separado.
+    return f"""    <cac:DiscrepancyResponse>
+        <cbc:ReferenceID>{_esc(numero)}</cbc:ReferenceID>
+        <cbc:ResponseCode>2</cbc:ResponseCode>
+        <cbc:Description>{motivo}</cbc:Description>
+    </cac:DiscrepancyResponse>
+    <cac:BillingReference>
+        <cac:InvoiceDocumentReference>
+            <cbc:ID>{_esc(numero)}</cbc:ID>
+            <cbc:UUID schemeName="CUFE-SHA384">{_esc(cufe)}</cbc:UUID>
+            <cbc:IssueDate>{fecha}</cbc:IssueDate>
+        </cac:InvoiceDocumentReference>
+    </cac:BillingReference>"""
+
+
 def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     fecha = invoice.get('fecha') or datetime.now()
     if hasattr(fecha, 'strftime'):
@@ -33,6 +69,13 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
 
     cufe         = invoice.get('cufe', '')
     num_factura  = str(invoice.get('numero_factura') or invoice.get('cod_factura', ''))
+
+    # Una nota sin la referencia al documento que corrige es una nota huérfana: la
+    # DIAN no sabe sobre qué aplica y el comprador tampoco. Va aquí y no en la
+    # ruta porque el XML es el único sitio donde esa referencia significa algo.
+    tipo_doc     = (invoice.get('tipo_factura') or 'FV').upper()
+    tipo_dian    = TIPOS_DOCUMENTO_DIAN.get(tipo_doc, '01')
+    referencia_xml = _referencia_al_original(invoice) if tipo_doc in ('NC', 'ND') else ''
     prefijo      = empresa.get('prefijo_factura', 'FV')
     nit_empresa  = str(empresa.get('nit', ''))
     dv_empresa   = str(empresa.get('dv', ''))
@@ -204,9 +247,10 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     <cbc:UUID schemeID="2" schemeName="CUFE-SHA384">{cufe}</cbc:UUID>
     <cbc:IssueDate>{issue_date}</cbc:IssueDate>
     <cbc:IssueTime>{issue_time}</cbc:IssueTime>
-    <cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode>
+    <cbc:InvoiceTypeCode>{tipo_dian}</cbc:InvoiceTypeCode>
     <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
     <cbc:LineCountNumeric>{len(details)}</cbc:LineCountNumeric>
+{referencia_xml}
 
     <cac:AccountingSupplierParty>
         <cbc:AdditionalAccountID>1</cbc:AdditionalAccountID>

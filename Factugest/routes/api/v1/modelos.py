@@ -243,6 +243,121 @@ class FacturaRequest(BaseModel):
     }
 
 
+# ── Notas ───────────────────────────────────────────────────────────────────
+
+class LineaDevuelta(BaseModel):
+    """Qué se devuelve de una línea del documento original.
+
+    Se identifica por `linea` —el orden con el que se emitió, empezando en 1— y no
+    por el código del producto: un mismo código puede aparecer dos veces en una
+    factura, y por código no habría forma de saber de cuál de las dos se está
+    devolviendo.
+    """
+    linea: int = Field(ge=1, description="Número de línea del documento original",
+                       examples=[1])
+    cantidad: float = Field(description="Cuánto se devuelve de esa línea. No puede "
+                                        "pasar de lo que se facturó.",
+                            examples=[1])
+
+    @field_validator("cantidad")
+    @classmethod
+    def _cantidad(cls, v):
+        return regla(cantidad, v, campo="cantidad", minimo=0.001, fraccionaria=True)
+
+
+class NotaCreditoRequest(BaseModel):
+    documento: str = Field(
+        description="Identificador del documento que se corrige, el que devolvió "
+                    "la emisión",
+        examples=["doc_7f21c9a4"])
+    motivo: str = Field(description="Por qué se emite. Sale impresa en la nota.",
+                        examples=["Devolución de mercancía en mal estado"])
+    items: list[LineaDevuelta] | None = Field(
+        default=None,
+        description="Qué se devuelve. **Omitirlo anula el documento completo**, "
+                    "que es el caso más común.")
+    referencia_externa: str | None = Field(
+        default=None, max_length=80,
+        description="Identificador de la devolución en el sistema del cliente. "
+                    "Reenviar el mismo devuelve la nota ya emitida.",
+        examples=["DEV-1043"])
+    enviar_email: bool = Field(default=False)
+
+    @field_validator("motivo")
+    @classmethod
+    def _motivo(cls, v):
+        return regla(texto, v, campo="motivo", maximo=300, minimo=5)
+
+    @model_validator(mode="after")
+    def _sin_lineas_repetidas(self):
+        if self.items:
+            vistas = [i.linea for i in self.items]
+            if len(vistas) != len(set(vistas)):
+                raise ValueError("Hay una misma línea repetida en la devolución")
+        return self
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {"documento": "doc_7f21c9a4", "motivo": "Anulación por error de digitación"},
+                {"documento": "doc_7f21c9a4",
+                 "motivo": "Devolución de una unidad en mal estado",
+                 "items": [{"linea": 1, "cantidad": 1}],
+                 "referencia_externa": "DEV-1043"},
+            ]
+        }
+    }
+
+
+class NotaDebitoRequest(BaseModel):
+    documento: str = Field(description="Identificador del documento al que se le "
+                                       "agrega el cargo",
+                           examples=["doc_7f21c9a4"])
+    motivo: str = Field(description="Qué se está cobrando de más",
+                        examples=["Flete de entrega a domicilio"])
+    valor: float = Field(gt=0, description="Cuánto se agrega, en pesos",
+                         examples=[50000])
+    incluye_impuesto: bool = Field(
+        default=True,
+        description="`true`: el valor ya trae el IVA adentro y se descompone. "
+                    "`false`: es una base y el IVA se suma encima. Confundirlos "
+                    "cambia lo que paga el comprador.")
+    porcentaje_impuesto: float | None = Field(
+        default=None,
+        description="Tarifa del ajuste. Si se omite, se usa la tarifa promedio "
+                    "que llevó el documento original.",
+        examples=[19])
+    referencia_externa: str | None = Field(default=None, max_length=80)
+    enviar_email: bool = Field(default=False)
+
+    @field_validator("motivo")
+    @classmethod
+    def _motivo(cls, v):
+        return regla(texto, v, campo="motivo", maximo=300, minimo=5)
+
+    @field_validator("valor")
+    @classmethod
+    def _valor(cls, v):
+        return regla(precio, v, campo="valor")
+
+    @field_validator("porcentaje_impuesto")
+    @classmethod
+    def _tarifa(cls, v):
+        return None if v is None else regla(porcentaje, v, campo="porcentaje_impuesto")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "documento": "doc_7f21c9a4",
+                "motivo": "Flete de entrega a domicilio",
+                "valor": 50000,
+                "incluye_impuesto": True,
+                "referencia_externa": "ND-1043",
+            }]
+        }
+    }
+
+
 # ── Respuesta ───────────────────────────────────────────────────────────────
 
 class Totales(BaseModel):
@@ -276,6 +391,15 @@ class FacturaResponse(BaseModel):
                            description="Enlace de verificación que va en la representación gráfica")
     pdf_url: str | None = Field(default=None, description="Dónde descargar el PDF")
     xml_url: str | None = Field(default=None, description="Dónde descargar el XML UBL")
+    documento_referencia: str | None = Field(
+        default=None,
+        description="En una nota, el documento que corrige",
+        examples=["doc_7f21c9a4"])
+    anulado: bool = Field(
+        default=False,
+        description="Si una nota crédito por el total ya dejó sin efecto este "
+                    "documento. `estado` no cambia: sigue contando lo que "
+                    "respondió la DIAN cuando se emitió.")
     dian: ResultadoDian = Field(description="Qué respondió el proveedor")
 
     model_config = {
@@ -302,8 +426,37 @@ class FacturaResponse(BaseModel):
 
 
 class ErrorRespuesta(BaseModel):
-    """Forma única de los errores de la API. La tarea 3.5 la aplica en todas partes."""
-    codigo: str = Field(examples=["llave_invalida"])
-    mensaje: str
+    """El detalle de un error. Siempre viaja dentro de `RespuestaError`."""
+    codigo: str = Field(
+        description="Identificador estable del error. Es contra esto que se "
+                    "programa: el mensaje está escrito para leerlo y puede "
+                    "cambiar de redacción.",
+        examples=["llave_invalida"])
+    mensaje: str = Field(description="Explicación para una persona",
+                         examples=["La llave no es válida."])
     campo: str | None = Field(default=None,
-                              description="Cuando el error es de un campo concreto")
+                              description="Ruta del dato que falló dentro del "
+                                          "cuerpo enviado, cuando el problema es "
+                                          "de un campo concreto",
+                              examples=["items.0.cantidad"])
+
+
+class RespuestaError(BaseModel):
+    """Todos los errores de la API salen así, del 401 al 500.
+
+    Un solo bloque de manejo de errores sirve para toda la integración.
+    """
+    detail: ErrorRespuesta
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "detail": {
+                    "codigo": "rango_agotado",
+                    "mensaje": "El consecutivo 5001 está fuera del rango autorizado "
+                               "1–5000 de la resolución DIAN",
+                    "campo": None,
+                }
+            }]
+        }
+    }
