@@ -1,0 +1,157 @@
+{% extends "layout.html" %}
+{% import "_badges.html" as b %}
+
+{% block title %}Documentos emitidos | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-1 text-gray-800 fw-bold">
+            <i class="bi bi-send-check text-primary me-2"></i>Documentos emitidos
+        </h1>
+        <p class="text-muted mb-0 small">
+            Todo lo que ha salido por la API por cuenta de nuestros clientes. No son ventas
+            nuestras: por eso no aparecen en el tablero.
+        </p>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('documentos') }}" class="row g-2 align-items-end">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Cliente</label>
+                    <select name="cliente" class="form-select form-select-sm bg-light border-0">
+                        <option value="">Todos</option>
+                        {% for c in clientes %}
+                        <option value="{{ c.cod_cliente_api }}"
+                                {{ 'selected' if filtros.cliente == c.cod_cliente_api|string }}>{{ c.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tipo</label>
+                    <select name="tipo" class="form-select form-select-sm bg-light border-0">
+                        <option value="">Todos</option>
+                        {% for t in tipos %}
+                        <option value="{{ t }}" {{ 'selected' if filtros.tipo == t }}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Estado</label>
+                    <select name="estado" class="form-select form-select-sm bg-light border-0">
+                        <option value="">Todos</option>
+                        {% for e in estados %}
+                        <option value="{{ e }}" {{ 'selected' if filtros.estado == e }}>{{ e|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Desde</label>
+                    <input type="date" name="desde" value="{{ filtros.desde }}"
+                           class="form-control form-control-sm bg-light border-0">
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Hasta</label>
+                    <input type="date" name="hasta" value="{{ filtros.hasta }}"
+                           class="form-control form-control-sm bg-light border-0">
+                </div>
+                <div class="col-lg-1 col-md-12 d-grid">
+                    <button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i></button>
+                </div>
+                <div class="col-12 d-flex gap-2 mt-2">
+                    <input type="text" name="q" value="{{ filtros.q }}"
+                           class="form-control form-control-sm bg-light border-0"
+                           placeholder="Buscar por número, referencia del cliente, CUFE o comprador...">
+                    <button class="btn btn-sm btn-light border text-nowrap"><i class="bi bi-search"></i> Buscar</button>
+                    <a href="{{ url_for('documentos') }}" class="btn btn-sm btn-light border text-nowrap">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+        <span class="text-muted small">{{ "{:,}".format(total) }} documento(s)</span>
+        {% for estado, n in por_estado.items() %}
+        <span class="small">{{ b.estado_documento(estado) }} <span class="text-muted">{{ "{:,}".format(n) }}</span></span>
+        {% endfor %}
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="tabla-encabezado">
+                            <th class="ps-4">Número</th>
+                            <th>Tipo</th>
+                            <th>Cliente</th>
+                            <th>Comprador</th>
+                            <th>Referencia</th>
+                            <th>Fecha</th>
+                            <th class="text-end">Total</th>
+                            <th>Estado</th>
+                            <th class="pe-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for d in documentos %}
+                        <tr>
+                            <td class="ps-4">
+                                <a href="{{ url_for('ver_documento', id_publico=d.id_publico) }}"
+                                   class="fw-bold text-decoration-none">{{ d.numero }}</a>
+                                <div class="text-muted small font-monospace">{{ d.id_publico }}</div>
+                            </td>
+                            <td>{{ b.tipo_documento(d.tipo) }}</td>
+                            <td class="small">
+                                {{ d.cliente_nombre }}
+                                <div class="text-muted">{{ d.emisor_nombre }}</div>
+                            </td>
+                            <td class="small">
+                                {{ d.receptor_nombre }}
+                                <div class="text-muted font-monospace">{{ d.receptor_documento }}</div>
+                            </td>
+                            <td class="small text-muted font-monospace">{{ d.referencia_externa or '—' }}</td>
+                            <td class="small text-muted">{{ d.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-end fw-bold text-dark">${{ "{:,.0f}".format(d.total) }}</td>
+                            <td>{{ b.estado_documento(d.estado) }}</td>
+                            <td class="pe-4 text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('ver_documento', id_publico=d.id_publico) }}"
+                                       class="btn btn-sm btn-light border text-primary" title="Ver"><i class="bi bi-eye"></i></a>
+                                    <a href="{{ url_for('documento_pdf', id_publico=d.id_publico) }}" target="_blank"
+                                       class="btn btn-sm btn-light border text-danger" title="PDF"><i class="bi bi-file-earmark-pdf"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox display-4 d-block mb-3 opacity-25"></i>
+                                Ningún documento con esos filtros.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if paginas > 1 %}
+    {% set base = '?cliente=' ~ filtros.cliente ~ '&tipo=' ~ filtros.tipo ~ '&estado=' ~ filtros.estado
+                  ~ '&desde=' ~ filtros.desde ~ '&hasta=' ~ filtros.hasta ~ '&q=' ~ filtros.q ~ '&pagina=' %}
+    <nav class="mt-3 d-flex justify-content-between align-items-center">
+        <span class="text-muted small">Página {{ pagina }} de {{ paginas }}</span>
+        <div class="btn-group">
+            <a class="btn btn-sm btn-light border {{ 'disabled' if pagina <= 1 }}"
+               href="{{ url_for('documentos') }}{{ base }}{{ pagina - 1 }}">Anterior</a>
+            <a class="btn btn-sm btn-light border {{ 'disabled' if pagina >= paginas }}"
+               href="{{ url_for('documentos') }}{{ base }}{{ pagina + 1 }}">Siguiente</a>
+        </div>
+    </nav>
+    {% endif %}
+
+</div>
+{% endblock %}

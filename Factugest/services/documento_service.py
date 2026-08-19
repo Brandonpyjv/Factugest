@@ -223,6 +223,78 @@ def get_documento_por_referencia(cod_cliente_api: int, referencia: str):
         (cod_cliente_api, referencia))
 
 
+def buscar_documentos(filtros: dict, limite: int = 50, desplazamiento: int = 0):
+    """Documentos transmitidos, para el panel.
+
+    A diferencia de `get_documento`, esto no filtra por cliente: es la vista del
+    proveedor, que tiene que poder rastrear cualquier documento que salió por su
+    infraestructura cuando un integrador llama a preguntar por uno.
+    """
+    donde, params = _condiciones(filtros)
+    return get_many(
+        "SELECT d.cod_documento, d.id_publico, d.tipo, d.numero, d.cufe, d.estado, "
+        "       d.fecha_emision, d.total, d.referencia_externa, d.proveedor_dian, "
+        "       ca.nombre AS cliente_nombre, ca.cod_cliente_api, "
+        "       e.nombre AS emisor_nombre, e.nit AS emisor_nit, "
+        "       r.nombre AS receptor_nombre, r.numero_documento AS receptor_documento "
+        "FROM documentos d "
+        "JOIN clientes_api ca ON d.cod_cliente_api = ca.cod_cliente_api "
+        "JOIN empresas e      ON d.cod_empresa = e.cod_empresa "
+        "JOIN receptores r    ON d.cod_receptor = r.cod_receptor "
+        f"{donde} ORDER BY d.fecha_emision DESC, d.cod_documento DESC "
+        "LIMIT %s OFFSET %s", tuple(params) + (limite, desplazamiento))
+
+
+def contar_documentos(filtros: dict) -> int:
+    donde, params = _condiciones(filtros)
+    fila = get_one(
+        "SELECT COUNT(*) AS n FROM documentos d "
+        "JOIN clientes_api ca ON d.cod_cliente_api = ca.cod_cliente_api "
+        "JOIN receptores r    ON d.cod_receptor = r.cod_receptor " + donde,
+        tuple(params))
+    return int(fila["n"] if fila else 0)
+
+
+def totales_por_estado(filtros: dict) -> dict:
+    donde, params = _condiciones(filtros)
+    filas = get_many(
+        "SELECT d.estado, COUNT(*) AS n FROM documentos d "
+        "JOIN clientes_api ca ON d.cod_cliente_api = ca.cod_cliente_api "
+        "JOIN receptores r    ON d.cod_receptor = r.cod_receptor "
+        f"{donde} GROUP BY d.estado", tuple(params))
+    return {f["estado"]: int(f["n"]) for f in filas}
+
+
+def _condiciones(filtros: dict):
+    """Traduce los filtros del panel a un WHERE. Vacío = todo."""
+    condiciones, params = [], []
+
+    if filtros.get("cod_cliente_api"):
+        condiciones.append("d.cod_cliente_api = %s")
+        params.append(int(filtros["cod_cliente_api"]))
+    if filtros.get("tipo"):
+        condiciones.append("d.tipo = %s")
+        params.append(filtros["tipo"])
+    if filtros.get("estado"):
+        condiciones.append("d.estado = %s")
+        params.append(filtros["estado"])
+    if filtros.get("desde"):
+        condiciones.append("d.fecha_emision >= %s")
+        params.append(f"{filtros['desde']} 00:00:00")
+    if filtros.get("hasta"):
+        condiciones.append("d.fecha_emision <= %s")
+        params.append(f"{filtros['hasta']} 23:59:59")
+    if filtros.get("q"):
+        # El integrador que llama pregunta por su número de venta, por el nuestro
+        # o por el nombre del comprador: los tres tienen que servir para buscar.
+        condiciones.append("(d.numero LIKE %s OR d.referencia_externa LIKE %s "
+                           "OR d.cufe LIKE %s OR r.nombre LIKE %s)")
+        patron = f"%{filtros['q']}%"
+        params += [patron, patron, patron, patron]
+
+    return ("WHERE " + " AND ".join(condiciones)) if condiciones else "", params
+
+
 def get_lineas(cod_documento: int):
     return get_many("SELECT * FROM documento_lineas WHERE cod_documento = %s ORDER BY orden",
                     (cod_documento,))
