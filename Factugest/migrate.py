@@ -454,6 +454,52 @@ def migracion_008_qr_del_documento(cursor):
     return pasos
 
 
+# ── 009 · Facturación mensual del plan ──────────────────────────────────────
+
+def migracion_009_facturacion_de_planes(cursor):
+    """Puente entre la mensualidad que le cobramos a un cliente y lo que emitimos.
+
+    Una fila por cliente y periodo, y no dos columnas en `facturas`: la venta del
+    plan es una factura nuestra corriente —el tablero y los reportes la cuentan
+    como cualquier otra— y esto es solo el registro de que ese mes ya se cobró.
+    El índice único es lo que impide cobrar dos veces el mismo mes; sin él, dos
+    clics en el botón dejarían al cliente con dos mensualidades idénticas.
+
+    `cod_documento` guarda el documento electrónico con el que se emitió, que sale
+    de llamar a nuestra propia API: la mensualidad de un cliente de FactuGest la
+    emite FactuGest con el mismo servicio que le vende.
+    """
+    pasos = []
+
+    if not _table_exists(cursor, "facturas_plan"):
+        cursor.execute("""
+            CREATE TABLE facturas_plan (
+                cod_factura_plan     INT(11)  NOT NULL AUTO_INCREMENT,
+                cod_cliente_api      INT(11)  NOT NULL,
+                periodo              CHAR(7)  NOT NULL COMMENT 'Mes cobrado, AAAA-MM',
+                cod_factura          INT(11)  NOT NULL COMMENT 'La venta en facturas',
+                cod_documento        INT(11)           DEFAULT NULL COMMENT 'Documento electronico emitido por nuestra propia API',
+                documentos_emitidos  INT(11)  NOT NULL DEFAULT 0 COMMENT 'Consumo real del periodo, congelado al facturar',
+                documentos_excedente INT(11)  NOT NULL DEFAULT 0,
+                creado_en            DATETIME NOT NULL,
+                PRIMARY KEY (cod_factura_plan),
+                UNIQUE KEY uq_plan_periodo (cod_cliente_api, periodo),
+                KEY idx_plan_factura (cod_factura),
+                CONSTRAINT fk_plan_cliente_api FOREIGN KEY (cod_cliente_api)
+                    REFERENCES clientes_api (cod_cliente_api) ON DELETE CASCADE,
+                CONSTRAINT fk_plan_factura FOREIGN KEY (cod_factura)
+                    REFERENCES facturas (cod_factura) ON DELETE CASCADE,
+                CONSTRAINT fk_plan_documento FOREIGN KEY (cod_documento)
+                    REFERENCES documentos (cod_documento) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        pasos.append("tabla facturas_plan creada")
+
+    # El precio del plan no se guarda aquí: es el del producto de servicio con SKU
+    # PLAN-<plan>, para que subir la tarifa sea editar un producto y no migrar datos.
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -467,6 +513,8 @@ MIGRACIONES = [
      migracion_005_lineas_de_concepto),
     ("008", "Guardar el QR de verificación del documento",
      migracion_008_qr_del_documento),
+    ("009", "Facturación mensual del plan: puente entre la venta y el documento emitido",
+     migracion_009_facturacion_de_planes),
 ]
 
 
