@@ -5,6 +5,7 @@ from services.products_service import (get_all_products_detailed, get_product_by
                                         validar_producto)
 from services.inventory_service import ajustar_stock, registrar_saldo_inicial
 from services.taxes import get_all_invoice_taxes
+from services import listados
 from routes.formularios import formulario_invalido
 from templates_config import templates
 
@@ -24,9 +25,34 @@ def _enviado(**valores):
 
 
 @router.get("/product", name="product")
-def products(request: Request):
-    data = get_all_products_detailed()
-    return templates.TemplateResponse(request, "product/index.html", {"products": data})
+def products(request: Request, q: str = "", tipo: str = "", activo: str = "",
+             pagina: int = 1):
+    todos = get_all_products_detailed()
+
+    filas = listados.buscar(todos, q, ("sku", "nombre", "descripcion"))
+    # `unidad_medida` distingue lo que se cobra mes a mes (MON) de lo que se cobra
+    # una sola vez: es la separación que de verdad usa quien mira este listado.
+    if tipo == "recurrente":
+        filas = [f for f in filas if f.get("unidad_medida") == "MON"]
+    elif tipo == "unico":
+        filas = [f for f in filas if f.get("unidad_medida") != "MON"]
+    filas = listados.igual_a(filas, "activo", activo)
+
+    pagina_filas, meta = listados.paginar(filas, pagina)
+    filtros = {"q": q, "tipo": tipo, "activo": activo}
+
+    return templates.TemplateResponse(request, "product/index.html", {
+        "products": pagina_filas,
+        "meta": meta,
+        "filtros": filtros,
+        "consulta": listados.query(filtros),
+        "resumen": {
+            "total": len(todos),
+            "activos": sum(1 for p in todos if p["activo"]),
+            "recurrentes": sum(1 for p in todos if p.get("unidad_medida") == "MON"),
+            "unicos": sum(1 for p in todos if p.get("unidad_medida") != "MON"),
+        },
+    })
 
 
 @router.get("/product/new", name="product_new")

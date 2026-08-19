@@ -12,7 +12,6 @@ from fastapi.responses import RedirectResponse, Response
 
 from services import export_service as exp
 from services import report_service as rep
-from services.inventory_service import get_inventario_detallado, get_movimientos, MOTIVOS
 from templates_config import templates
 
 router = APIRouter(prefix="/reports")
@@ -56,24 +55,6 @@ def _por_estado(desde, hasta, empresa):
     filas = rep.get_ventas_por_estado(desde, hasta, empresa)
     for f in filas:
         f["estado"] = rep.etiqueta_estado(f.get("estado"))
-    return filas
-
-
-def _inventario(desde, hasta, empresa):
-    filas = get_inventario_detallado()
-    for f in filas:
-        f["estado_stock"] = {"OK": "Disponible", "BAJO": "Bajo mínimo",
-                             "AGOTADO": "Agotado"}.get(f["estado_stock"], f["estado_stock"])
-    return filas
-
-
-def _movimientos(desde, hasta, empresa):
-    filas = get_movimientos(desde=desde, hasta=hasta, limite=1000)
-    for f in filas:
-        f["motivo"] = MOTIVOS.get(f["motivo"], f["motivo"])
-        f["tipo"] = f["tipo"].capitalize()
-        f["usuario_nombre"] = f.get("usuario_nombre") or "Sistema"
-        f["documento"] = f.get("documento") or (f.get("observaciones") or "")
     return filas
 
 
@@ -136,39 +117,6 @@ REPORTES = {
                      ("facturas", "Facturas", "numero"),
                      ("facturado", "Facturado", "dinero")],
         "datos": lambda d, h, e: rep.get_top_clientes(d, h, e, limite=200),
-    },
-    "inventario": {
-        "titulo": "Existencias y valorización",
-        "descripcion": "Stock actual, mínimo configurado y valor del inventario. "
-                       "Es una foto del momento, no depende del rango de fechas.",
-        "icono": "bi-boxes",
-        "usa_periodo": False,
-        "columnas": [("sku", "SKU", "texto"),
-                     ("nombre", "Producto", "texto"),
-                     ("stock", "Stock", "numero"),
-                     ("stock_minimo", "Mínimo", "numero"),
-                     ("estado_stock", "Estado", "texto"),
-                     ("precio_unitario", "Costo unitario", "dinero"),
-                     ("valor_inventario", "Valor", "dinero")],
-        "datos": _inventario,
-        "no_totalizar": ["stock_minimo", "precio_unitario"],
-    },
-    "movimientos": {
-        "titulo": "Movimientos de inventario",
-        "descripcion": "Entradas, salidas y ajustes registrados en el periodo.",
-        "icono": "bi-arrow-left-right",
-        "usa_periodo": True,
-        "columnas": [("fecha", "Fecha", "fecha"),
-                     ("sku", "SKU", "texto"),
-                     ("producto_nombre", "Producto", "texto"),
-                     ("tipo", "Tipo", "texto"),
-                     ("motivo", "Motivo", "texto"),
-                     ("cantidad", "Cantidad", "numero"),
-                     ("stock_nuevo", "Saldo", "numero"),
-                     ("documento", "Documento", "texto"),
-                     ("usuario_nombre", "Usuario", "texto")],
-        "datos": _movimientos,
-        "no_totalizar": ["stock_nuevo"],
     },
     "impuestos": {
         "titulo": "Resumen tributario",

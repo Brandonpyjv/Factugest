@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% import "_tabla.html" as t %}
 
 {% block title %}Productos | Factugest{% endblock %}
 
@@ -10,7 +11,7 @@
             <h1 class="h3 mb-1 text-gray-800 fw-bold">
                 <i class="bi bi-box-seam text-primary me-2"></i>Planes y servicios
             </h1>
-            <p class="text-muted mb-0 small">Los planes y servicios que vende FactuGest. Son servicios: no llevan existencias.</p>
+            <p class="text-muted mb-0 small">Lo que vendemos: planes de facturación y servicios.</p>
         </div>
         {% if request.session.get('user', {}).get('rol') != 'CAJERO' %}
         <a href="{{ url_for('product_new') }}"
@@ -21,10 +22,33 @@
         {% endif %}
     </div>
 
-    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-        <div class="card-header bg-white py-3 border-bottom border-light">
-            <h6 class="m-0 font-weight-bold text-primary">Todos los Productos</h6>
+    {{ t.tarjetas([
+        ('En el catálogo', resumen.total, 'bi-box-seam', '#e8edff', 'text-primary'),
+        ('Activos', resumen.activos, 'bi-check-circle', '#e6f9f1', 'text-success'),
+        ('Planes mensuales', resumen.recurrentes, 'bi-arrow-repeat', '#fff3e0', 'text-warning'),
+        ('Servicios de una vez', resumen.unicos, 'bi-lightning-charge', '#fce4ec', 'text-danger')
+    ]) }}
+
+    {% call t.filtros(url_for('product'), filtros, 'Nombre, código o descripción…') %}
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tipo</label>
+            <select name="tipo" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                <option value="recurrente" {{ 'selected' if filtros.tipo == 'recurrente' }}>Planes mensuales</option>
+                <option value="unico" {{ 'selected' if filtros.tipo == 'unico' }}>Servicios de una vez</option>
+            </select>
         </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Estado</label>
+            <select name="activo" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                <option value="1" {{ 'selected' if filtros.activo == '1' }}>Activos</option>
+                <option value="0" {{ 'selected' if filtros.activo == '0' }}>Inactivos</option>
+            </select>
+        </div>
+    {% endcall %}
+
+    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -35,7 +59,6 @@
                             <th scope="col" style="background:transparent;color:#fff;">Nombre</th>
                             <th scope="col" style="background:transparent;color:#fff;">Descripción</th>
                             <th scope="col" style="background:transparent;color:#fff;">Precio</th>
-                            <th scope="col" style="background:transparent;color:#fff;">Stock</th>
                             <th scope="col" style="background:transparent;color:#fff;">Impuesto</th>
                             <th scope="col" style="background:transparent;color:#fff;">Unidad</th>
                             <th scope="col" style="background:transparent;color:#fff;">Estado</th>
@@ -54,17 +77,6 @@
                             <td><span class="fw-bold text-dark">{{ product.nombre }}</span></td>
                             <td><span class="text-muted small">{{ product.descripcion }}</span></td>
                             <td class="fw-bold text-dark">${{ "{:,.2f}".format(product.precio_unitario) }}</td>
-                            <td>
-                                {% if product.stock == 0 %}
-                                    <span class="text-muted fw-bold">0</span>
-                                    <span class="badge bg-secondary text-white border ms-1" style="font-size: 0.6rem;">Sin stock</span>
-                                {% elif product.stock <= product.stock_minimo %}
-                                    <span class="text-danger fw-bold">{{ product.stock }}</span>
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1" style="font-size: 0.6rem;">Bajo</span>
-                                {% else %}
-                                    <span class="text-dark">{{ product.stock }}</span>
-                                {% endif %}
-                            </td>
                             <td>
                                 <span class="small text-secondary">{{ product.tax_name }} ({{ product.tax_porcentaje }}%)</span>
                             </td>
@@ -110,9 +122,11 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="bi bi-box-seam display-4 d-block mb-3 text-secondary opacity-50"></i>
-                                No hay productos registrados.
+                                {% if filtros.q or filtros.tipo or filtros.activo %}
+                                Ningún servicio coincide con la búsqueda.
+                                {% else %}Todavía no hay servicios en el catálogo.{% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -122,9 +136,7 @@
         </div>
     </div>
 
-    <div class="mt-3 d-flex justify-content-between align-items-center">
-        <p class="text-muted small mb-0">Mostrando {{ products|length }} registros.</p>
-    </div>
+    {{ t.pie(meta, url_for('product'), consulta, 'servicios') }}
 
 </div>
 {% endblock %}
