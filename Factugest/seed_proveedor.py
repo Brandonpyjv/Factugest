@@ -360,7 +360,29 @@ def sembrar_emisor(manifiesto) -> int:
         cod = cur.lastrowid
 
     manifiesto.datos["empresa_factugest"] = cod
+    _poner_logo(cod)
     return cod
+
+
+def _poner_logo(cod_empresa: int):
+    """Deja cargado nuestro logo para el membrete de nuestras facturas.
+
+    Los suscriptores quedan sin logo a propósito: es el estado normal de un
+    cliente recién integrado, y sirve para ver que el membrete imprime bien su
+    nombre cuando no hay imagen. Se les carga desde Empresas emisoras › Logo.
+    """
+    from services.avatar_service import FotoInvalidaError, guardar_logo
+    origen = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "static", "img", "logodark2.png")
+    if not os.path.exists(origen):
+        return
+    try:
+        with open(origen, "rb") as f:
+            nombre = guardar_logo(f.read(), cod_empresa)
+        execute_update("UPDATE empresas SET logo = %s WHERE cod_empresa = %s",
+                       (nombre, cod_empresa))
+    except (FotoInvalidaError, OSError):
+        pass
 
 
 def mudar_usuarios(manifiesto, cod_empresa: int):

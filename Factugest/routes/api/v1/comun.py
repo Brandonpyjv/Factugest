@@ -123,7 +123,7 @@ def enviar_por_correo(id_publico: str):
             documento, get_lineas(cod), receptor, emisor_desde_empresa(emisor))
 
         destino = enviar_documento(documento, emisor, receptor.get("email"),
-                                   generate_invoice_pdf(cabecera, lineas),
+                                   generate_invoice_pdf(cabecera, lineas, emisor=emisor),
                                    documento.get("xml"))
         registrar_evento(cod, "CORREO_ENVIADO",
                          mensaje=f"Enviado a {destino} con el PDF y el XML adjuntos")

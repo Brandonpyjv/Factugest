@@ -51,6 +51,11 @@
                             <td class="text-muted">{{ branch.correo }}</td>
                             <td class="pe-4 text-center">
                                 <div class="btn-group" role="group">
+                                    <a href="{{ url_for('branch_logo_form', branch_id=branch.cod_empresa) }}"
+                                       class="btn btn-sm btn-light border text-primary"
+                                       title="Logo del membrete">
+                                        <i class="bi bi-image"></i>
+                                    </a>
                                     <a href="{{ url_for('edit_branch', branch_id=branch.cod_empresa) }}"
                                        class="btn btn-sm btn-light border text-warning" title="Editar">
                                         <i class="bi bi-pencil-square"></i>

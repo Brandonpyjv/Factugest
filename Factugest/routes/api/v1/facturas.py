@@ -244,12 +244,12 @@ def descargar_pdf(id_publico: str, cliente: ClienteAPI):
     que es lo que se firma y valida.
     """
     documento = _documento_del_cliente(id_publico, cliente)
+    empresa = get_branch_by_id(documento["cod_empresa"]) or {}
     cabecera, lineas, emisor = a_documento_canonico(
         documento, get_lineas(documento["cod_documento"]),
-        get_receptor(documento["cod_receptor"]),
-        emisor_desde_empresa(get_branch_by_id(documento["cod_empresa"]) or {}))
+        get_receptor(documento["cod_receptor"]), emisor_desde_empresa(empresa))
     return Response(
-        content=generate_invoice_pdf(cabecera, lineas),
+        content=generate_invoice_pdf(cabecera, lineas, emisor=empresa),
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{documento["numero"]}.pdf"'})
 

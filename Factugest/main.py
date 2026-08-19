@@ -17,6 +17,7 @@ from routes.payment_methods import router as payment_methods_router
 from routes.discounts import router as discount_router
 from routes.taxes import router as invoice_taxes_router
 from routes.branches import router as branches_router
+from routes.logo_empresa import router as logo_empresa_router
 from routes.invoice_payments import router as invoice_payments_router
 from routes.productos import router as products_router
 from routes.inventory import router as inventory_router
@@ -110,6 +111,7 @@ app.include_router(payment_methods_router, include_in_schema=False)
 app.include_router(discount_router, include_in_schema=False)
 app.include_router(invoice_taxes_router, include_in_schema=False)
 app.include_router(branches_router, include_in_schema=False)
+app.include_router(logo_empresa_router, include_in_schema=False)
 app.include_router(invoice_payments_router, include_in_schema=False)
 app.include_router(products_router, include_in_schema=False)
 app.include_router(inventory_router, include_in_schema=False)

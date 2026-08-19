@@ -84,7 +84,7 @@ Factugest/
 │   ├── report_service.py    # métricas del tablero: ventas, cartera, rankings, impuestos
 │   ├── export_service.py    # reportes → CSV y PDF
 │   ├── avatar_service.py    # valida y normaliza las fotos de perfil
-│   ├── pdf_service.py       # generate_invoice_pdf → bytes
+│   ├── pdf_service.py       # generate_invoice_pdf(cabecera, lineas, emisor) → bytes
 │   ├── xml_service.py       # generate_invoice_xml → str (DIAN)
 │   ├── cufe_service.py      # generate_cufe
 │   ├── customer_service.py
@@ -280,6 +280,21 @@ y mover el inventario van dentro de un `database.transaction()`, de modo que un 
 mitad no deja rastro y el consecutivo queda libre. Los servicios de escritura
 (`invoice_service`, `inventory_service`, `numeracion_service`) aceptan `cursor=` para
 participar de la transacción de quien emite.
+
+### Invariante del membrete
+
+**El PDF lleva siempre el emisor del documento, nunca el nuestro.** `generate_invoice_pdf`
+recibe el emisor como tercer argumento, igual que `generate_invoice_xml`; si no se le pasa,
+lo lee del propio documento con los alias `empresa_*` que produce `get_invoice_by_id`, que
+es como lo llama el formulario web.
+
+Faltaba, y era grave: los documentos emitidos por la API traen su emisor aparte, no llegaba
+aquí, y el membrete caía en los valores por defecto. La factura de una clínica salía con el
+nombre y el logo de FactuGest, como si la hubiéramos expedido nosotros.
+
+El logo también es de cada empresa (`empresas.logo`, migración 011, se carga en
+**Empresas emisoras › Logo**). Sin logo, el membrete imprime el nombre: la DIAN no exige
+logo, y lo que una factura no puede llevar es el de otro.
 
 ### Invariante de cálculo
 

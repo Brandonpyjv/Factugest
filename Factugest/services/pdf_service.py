@@ -23,7 +23,27 @@ MID_GRAY  = colors.HexColor('#e3e6f0')
 DARK      = colors.HexColor('#2d3748')
 ORANGE    = colors.HexColor('#e74a3b')
 
-LOGO_PATH = os.path.join(os.path.dirname(__file__), '..', 'static', 'img', 'logodark2.png')
+# Cada emisor pone su propio logo; aquí solo se sabe dónde viven los archivos.
+# Antes había una ruta fija al logo de FactuGest y se estampaba en todas las
+# facturas, incluidas las de los clientes: la factura de una clínica salía con
+# nuestra marca, como si la hubiéramos expedido nosotros.
+CARPETA_LOGOS = os.path.join(os.path.dirname(__file__), '..', 'static', 'img', 'logos')
+
+
+def _ruta_logo(nombre):
+    """La ruta del logo de un emisor, si tiene uno y el archivo sigue ahí.
+
+    El nombre viene de la base y lo generó el servidor al subirlo, pero se
+    comprueba igual que no se salga de su carpeta: un nombre con «../» dentro
+    convertiría esto en una forma de leer cualquier archivo del disco.
+    """
+    if not nombre:
+        return None
+    carpeta = os.path.abspath(CARPETA_LOGOS)
+    ruta = os.path.abspath(os.path.join(carpeta, str(nombre)))
+    if not ruta.startswith(carpeta + os.sep):
+        return None
+    return ruta if os.path.exists(ruta) else None
 
 
 def _fmt(val) -> str:
@@ -60,7 +80,19 @@ def _style(name, **kwargs):
     return base
 
 
-def generate_invoice_pdf(invoice: dict, details: list) -> bytes:
+def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> bytes:
+    """Arma la representación gráfica del documento.
+
+    `emisor` es una fila de `empresas` con sus nombres de columna, igual que la
+    recibe `generate_invoice_xml`. Si no se pasa, el emisor se lee del propio
+    `invoice` con los alias `empresa_*` que produce `get_invoice_by_id`, que es
+    como lo llama el formulario web.
+
+    **Este parámetro faltaba y era un defecto serio.** Los documentos que se
+    emiten por la API traen su emisor aparte —lo devuelve `a_documento_canonico`
+    como tercer valor—, y al no llegar aquí, el membrete caía en el valor por
+    defecto: la factura de una clínica salía con el nombre y el logo de FactuGest.
+    """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter,
                             rightMargin=1.5 * cm, leftMargin=1.5 * cm,
@@ -83,27 +115,35 @@ def generate_invoice_pdf(invoice: dict, details: list) -> bytes:
     # ══════════════════════════════════════════════════════════════════
     # 1. ENCABEZADO: LOGO | INFO EMPRESA | TIPO + NÚMERO FACTURA
     # ══════════════════════════════════════════════════════════════════
-    emp = invoice  # invoice ya trae los campos empresa_* del JOIN
+    # El emisor viene aparte, o con los alias `empresa_*` dentro del documento.
+    # Un solo lugar donde se decide de dónde sale cada dato del membrete.
+    def dato(columna, alias, defecto=''):
+        if emisor is not None:
+            valor = emisor.get(columna)
+            return defecto if valor in (None, '') else valor
+        valor = invoice.get(alias)
+        return defecto if valor in (None, '') else valor
 
-    emp_nombre   = emp.get('empresa_nombre', 'Factugest')
-    emp_nit      = emp.get('empresa_nit', '')
-    emp_dv       = emp.get('empresa_dv', '')
-    emp_dir      = emp.get('empresa_direccion', '')
-    emp_ciudad   = emp.get('empresa_ciudad', '')
-    emp_tel      = emp.get('empresa_telefono', '')
-    emp_correo   = emp.get('empresa_correo', '')
-    emp_web      = emp.get('empresa_website', '')
-    emp_regimen  = (emp.get('empresa_regimen') or '').replace('_', ' ')
-    emp_ciiu     = emp.get('actividad_economica', '')
-    emp_ica      = emp.get('empresa_tarifa_ica', 0)
-    emp_autore   = emp.get('empresa_autoretenedor', 0)
-    emp_gran_c   = emp.get('empresa_gran_contribuyente', 0)
-    emp_prefijo  = emp.get('empresa_prefijo', '')
-    res_num      = emp.get('empresa_resolucion_dian', '')
-    res_f_desde  = emp.get('empresa_resolucion_fecha_desde', '')
-    res_f_hasta  = emp.get('empresa_resolucion_fecha_hasta', '')
-    res_desde    = emp.get('empresa_resolucion_desde', '')
-    res_hasta    = emp.get('empresa_resolucion_hasta', '')
+    emp_nombre   = dato('nombre', 'empresa_nombre')
+    emp_nit      = dato('nit', 'empresa_nit')
+    emp_dv       = dato('dv', 'empresa_dv')
+    emp_dir      = dato('direccion', 'empresa_direccion')
+    emp_ciudad   = dato('ciudad', 'empresa_ciudad')
+    emp_tel      = dato('telefono', 'empresa_telefono')
+    emp_correo   = dato('correo', 'empresa_correo')
+    emp_web      = dato('website', 'empresa_website')
+    emp_regimen  = str(dato('regimen_tributario', 'empresa_regimen')).replace('_', ' ')
+    emp_ciiu     = dato('actividad_economica', 'actividad_economica')
+    emp_ica      = dato('tarifa_ica', 'empresa_tarifa_ica', 0)
+    emp_autore   = dato('autoretenedor', 'empresa_autoretenedor', 0)
+    emp_gran_c   = dato('gran_contribuyente', 'empresa_gran_contribuyente', 0)
+    emp_prefijo  = dato('prefijo_factura', 'empresa_prefijo')
+    emp_logo     = dato('logo', 'empresa_logo', None)
+    res_num      = dato('resolucion_dian', 'empresa_resolucion_dian')
+    res_f_desde  = dato('resolucion_fecha_desde', 'empresa_resolucion_fecha_desde')
+    res_f_hasta  = dato('resolucion_fecha_hasta', 'empresa_resolucion_fecha_hasta')
+    res_desde    = dato('resolucion_desde', 'empresa_resolucion_desde')
+    res_hasta    = dato('resolucion_hasta', 'empresa_resolucion_hasta')
 
     nit_str = f"NIT. {emp_nit}-{emp_dv}" if emp_dv else f"NIT. {emp_nit}"
 
@@ -188,14 +228,17 @@ def generate_invoice_pdf(invoice: dict, details: list) -> bytes:
     ]
 
     # Logo
+    # Sin logo cargado la casilla queda vacía y el membrete de al lado ya abre con
+    # el nombre del emisor: la DIAN no exige logo, y repetir el nombre dos veces
+    # para llenar el hueco se ve peor que el hueco. Lo que no puede llevar una
+    # factura es el logo de otro.
+    ruta_logo = _ruta_logo(emp_logo)
     logo_cell = ''
-    if os.path.exists(LOGO_PATH):
+    if ruta_logo:
         try:
-            logo_cell = Image(LOGO_PATH, width=3 * cm, height=2 * cm, kind='proportional')
+            logo_cell = Image(ruta_logo, width=3.4 * cm, height=2 * cm, kind='proportional')
         except Exception:
-            logo_cell = Paragraph(emp_nombre, s_bold)
-    else:
-        logo_cell = Paragraph(emp_nombre, s_bold)
+            logo_cell = ''
 
     header_data = [[logo_cell, emp_lines, right_lines]]
     header_table = Table(header_data, colWidths=[3.5 * cm, 9.5 * cm, 5.5 * cm])

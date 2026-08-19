@@ -568,6 +568,30 @@ def migracion_010_auditoria(cursor):
     return pasos
 
 
+# ── 011 · Logo por empresa emisora ──────────────────────────────────────────
+
+def migracion_011_logo_por_empresa(cursor):
+    """El membrete de cada emisor lleva su propio logo.
+
+    El PDF tenía la ruta del logo de FactuGest escrita en el código y lo
+    estampaba en todos los documentos, incluidos los que emitimos por cuenta de
+    terceros: la factura de una clínica salía con nuestra marca, como si la
+    hubiéramos expedido nosotros. Eso no es un detalle estético —es un documento
+    fiscal diciendo quién lo emitió—.
+
+    Sin logo cargado, el PDF pone el nombre del emisor en negrilla. La DIAN no
+    exige logo; lo que no puede llevar es uno ajeno.
+    """
+    pasos = []
+    if not _column_exists(cursor, "empresas", "logo"):
+        cursor.execute(
+            "ALTER TABLE empresas ADD COLUMN logo VARCHAR(255) DEFAULT NULL "
+            "COMMENT 'Archivo dentro de static/img/logos; NULL = se imprime el nombre' "
+            "AFTER website")
+        pasos.append("columna empresas.logo creada")
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -585,6 +609,8 @@ MIGRACIONES = [
      migracion_009_facturacion_de_planes),
     ("010", "Auditoría: quién hizo qué, cuándo y desde dónde",
      migracion_010_auditoria),
+    ("011", "Logo propio de cada empresa emisora",
+     migracion_011_logo_por_empresa),
 ]
 
 

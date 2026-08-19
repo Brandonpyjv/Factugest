@@ -74,3 +74,49 @@ def eliminar_foto(nombre: str) -> bool:
         return True
     except FileNotFoundError:
         return False
+
+# ── Logos de las empresas emisoras ──────────────────────────────────────────
+#
+# Mismo tratamiento que las fotos y por la misma razón: la imagen se vuelve a
+# codificar, así que lo que se guarda es una imagen y no lo que hubiera venido
+# dentro del archivo. Lo único distinto es que un logo **no se recorta**: casi
+# todos son más anchos que altos, y recortarlos al cuadrado los mutila.
+
+CARPETA_LOGOS = os.path.join(os.path.dirname(__file__), '..', 'static', 'img', 'logos')
+LOGO_CAJA = (600, 300)           # px máximos; se ajusta dentro sin deformar
+
+
+def guardar_logo(contenido: bytes, cod_empresa: int) -> str:
+    """Procesa y guarda el logo. Devuelve el nombre del archivo generado."""
+    import io
+
+    if not contenido:
+        raise FotoInvalidaError("No se recibió ningún archivo.")
+    if len(contenido) > MAX_BYTES:
+        raise FotoInvalidaError(
+            f"La imagen pesa {len(contenido) / 1024 / 1024:.1f} MB; el máximo es 5 MB.")
+
+    try:
+        img = Image.open(io.BytesIO(contenido))
+        img.verify()
+        img = Image.open(io.BytesIO(contenido))
+    except (UnidentifiedImageError, OSError):
+        raise FotoInvalidaError("El archivo no es una imagen válida (JPG, PNG, WEBP o GIF).")
+
+    img = img.convert("RGBA")
+    img.thumbnail(LOGO_CAJA, Image.LANCZOS)
+
+    os.makedirs(CARPETA_LOGOS, exist_ok=True)
+    nombre = f"e{cod_empresa}-{uuid.uuid4().hex[:12]}.png"
+    img.save(os.path.join(CARPETA_LOGOS, nombre), format="PNG", optimize=True)
+    return nombre
+
+
+def eliminar_logo(nombre: str) -> bool:
+    if not nombre:
+        return False
+    ruta = os.path.join(CARPETA_LOGOS, os.path.basename(nombre))
+    if os.path.exists(ruta):
+        os.remove(ruta)
+        return True
+    return False
