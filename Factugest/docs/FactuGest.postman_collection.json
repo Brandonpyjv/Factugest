@@ -1,0 +1,222 @@
+{
+  "info": {
+    "name": "FactuGest — API de facturación electrónica",
+    "description": "El recorrido completo de una integración, en el orden en que conviene hacerlo: comprobar la llave, emitir una factura, consultarla, descargar el PDF y el XML, listar, y corregir con notas.\n\nAntes de empezar, en la pestaña Variables: pon `base_url` (por defecto http://127.0.0.1:8000) y `api_key` con la llave que te entregamos.\n\nLas peticiones de emisión guardan solas el id del documento en `documento_id`, así que las siguientes funcionan sin copiar y pegar nada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" },
+    { "key": "api_key", "value": "fg_live_xxxxxxxx.pon-aqui-tu-llave", "type": "string" },
+    { "key": "documento_id", "value": "", "type": "string" },
+    { "key": "referencia", "value": "VENTA-1043", "type": "string" }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key", "type": "string" },
+      { "key": "value", "value": "{{api_key}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "1 · Comprobar la llave",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/api/v1/ping", "host": ["{{base_url}}"], "path": ["api", "v1", "ping"] },
+        "description": "Si esto responde 200, la llave sirve y te dice con qué emisor vas a numerar. Un 401 es problema de tu configuración; un 403 significa que el cliente está suspendido y hay que hablar con nosotros."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('La llave sirve', () => pm.response.to.have.status(200));",
+              "pm.test('Dice con qué emisor se numera', () => {",
+              "    pm.expect(pm.response.json().emisor.nit).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 · Emitir una factura",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/v1/facturas", "host": ["{{base_url}}"], "path": ["api", "v1", "facturas"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"referencia_externa\": \"{{referencia}}\",\n  \"receptor\": {\n    \"tipo_documento\": \"13\",\n    \"numero_documento\": \"1090234567\",\n    \"nombre\": \"María Fernanda Ospina\",\n    \"email\": \"mospina@correo.com\",\n    \"direccion\": \"Av. 0 # 12-45\",\n    \"cod_municipio\": \"54001\",\n    \"tipo_persona\": \"NATURAL\",\n    \"regimen_tributario\": \"NO_RESPONSABLE_IVA\"\n  },\n  \"forma_pago\": \"CONTADO\",\n  \"plazo_dias\": 0,\n  \"items\": [\n    {\n      \"codigo\": \"SKU-TEC-014\",\n      \"descripcion\": \"Teclado mecánico Redragon K552\",\n      \"cantidad\": 2,\n      \"precio_unitario\": 189000,\n      \"unidad_medida\": \"94\",\n      \"descuento_porcentaje\": 5,\n      \"impuesto\": { \"codigo\": \"01\", \"porcentaje\": 19 }\n    }\n  ],\n  \"enviar_email\": false\n}"
+        },
+        "description": "El corazón del servicio. Devuelve 201 con el número, el CUFE y los enlaces al PDF y al XML.\n\nGuarda el `id` que devuelve: es con el que después consultas o corriges el documento."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Se emitió', () => pm.expect([200, 201]).to.include(pm.response.code));",
+              "const doc = pm.response.json();",
+              "pm.collectionVariables.set('documento_id', doc.id);",
+              "pm.test('Trae número y CUFE', () => {",
+              "    pm.expect(doc.numero).to.be.a('string');",
+              "    pm.expect(doc.cufe).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 · Reintentar la misma venta (idempotencia)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/v1/facturas", "host": ["{{base_url}}"], "path": ["api", "v1", "facturas"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"referencia_externa\": \"{{referencia}}\",\n  \"receptor\": {\n    \"tipo_documento\": \"13\",\n    \"numero_documento\": \"1090234567\",\n    \"nombre\": \"María Fernanda Ospina\"\n  },\n  \"items\": [\n    {\n      \"descripcion\": \"Teclado mecánico Redragon K552\",\n      \"cantidad\": 2,\n      \"precio_unitario\": 189000,\n      \"impuesto\": { \"codigo\": \"01\", \"porcentaje\": 19 }\n    }\n  ]\n}"
+        },
+        "description": "La misma petición otra vez. Responde **200** en lugar de 201 y devuelve la factura que ya existía, sin gastar otro número de la resolución.\n\nEsto es lo que hace seguro reintentar cuando se cae la red: si no mandas `referencia_externa`, cada reintento emite una factura nueva."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('No se emitió otra vez', () => pm.response.to.have.status(200));",
+              "pm.test('Es la misma factura', () => {",
+              "    pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('documento_id'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 · Consultar un documento",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/documentos/{{documento_id}}",
+          "host": ["{{base_url}}"], "path": ["api", "v1", "documentos", "{{documento_id}}"]
+        },
+        "description": "Para reconciliar cuando tu sistema perdió la respuesta de la emisión. Trae el estado actual y, si una nota crédito lo anuló, `anulado: true`."
+      }
+    },
+    {
+      "name": "5 · Descargar el PDF",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/documentos/{{documento_id}}/pdf",
+          "host": ["{{base_url}}"], "path": ["api", "v1", "documentos", "{{documento_id}}", "pdf"]
+        },
+        "description": "La representación gráfica. Se genera al momento a partir de lo guardado: lo que hay deber de conservar es el XML."
+      }
+    },
+    {
+      "name": "6 · Descargar el XML",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/documentos/{{documento_id}}/xml",
+          "host": ["{{base_url}}"], "path": ["api", "v1", "documentos", "{{documento_id}}", "xml"]
+        },
+        "description": "El XML UBL 2.1 tal como se transmitió. Es el documento con validez legal."
+      }
+    },
+    {
+      "name": "7 · Listar los documentos del mes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/documentos?tipo=FV&desde=2026-08-01&hasta=2026-08-31&pagina=1&por_pagina=50",
+          "host": ["{{base_url}}"], "path": ["api", "v1", "documentos"],
+          "query": [
+            { "key": "tipo", "value": "FV", "description": "FV, NC o ND" },
+            { "key": "estado", "value": "ACEPTADO", "disabled": true },
+            { "key": "desde", "value": "2026-08-01" },
+            { "key": "hasta", "value": "2026-08-31" },
+            { "key": "buscar", "value": "VENTA-1043", "disabled": true, "description": "Número, referencia externa, CUFE o nombre del comprador" },
+            { "key": "pagina", "value": "1" },
+            { "key": "por_pagina", "value": "50" }
+          ]
+        },
+        "description": "Lo que alimenta tu conciliación: cada fila trae la `referencia_externa` con la que tú lo enviaste, para cruzarlo contra tus propias ventas.\n\nSolo se ven los documentos de tu llave."
+      }
+    },
+    {
+      "name": "8 · Nota crédito — anular la factura",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/v1/notas-credito", "host": ["{{base_url}}"], "path": ["api", "v1", "notas-credito"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documento\": \"{{documento_id}}\",\n  \"motivo\": \"Anulación por error de digitación\",\n  \"referencia_externa\": \"ANULA-1043\"\n}"
+        },
+        "description": "Sin `items` se anula la factura completa. La nota se queda con los precios de la factura original: no se pueden enviar otros."
+      }
+    },
+    {
+      "name": "9 · Nota crédito — devolución parcial",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/v1/notas-credito", "host": ["{{base_url}}"], "path": ["api", "v1", "notas-credito"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documento\": \"{{documento_id}}\",\n  \"motivo\": \"Devolución de una unidad en mal estado\",\n  \"items\": [\n    { \"linea\": 1, \"cantidad\": 1 }\n  ],\n  \"referencia_externa\": \"DEV-1043\"\n}"
+        },
+        "description": "`linea` es el orden con el que se emitió la línea en la factura original, empezando en 1. De cada línea vuelve la parte proporcional de su base, su descuento y su IVA.\n\nNo se puede devolver más de lo que queda por devolver: las devoluciones anteriores se descuentan."
+      }
+    },
+    {
+      "name": "10 · Nota débito — cobrar un adicional",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/v1/notas-debito", "host": ["{{base_url}}"], "path": ["api", "v1", "notas-debito"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documento\": \"{{documento_id}}\",\n  \"motivo\": \"Flete de entrega a domicilio\",\n  \"valor\": 50000,\n  \"incluye_impuesto\": true,\n  \"referencia_externa\": \"ND-1043\"\n}"
+        },
+        "description": "`incluye_impuesto: true` significa que los $50.000 ya traen el IVA adentro y se descompone. Con `false` son una base y el IVA se suma encima: son dos cosas distintas y cambian lo que paga el comprador."
+      }
+    },
+    {
+      "name": "11 · Un error, para ver su forma",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "fg_live_00000000.esta-llave-no-existe" }],
+        "url": { "raw": "{{base_url}}/api/v1/ping", "host": ["{{base_url}}"], "path": ["api", "v1", "ping"] },
+        "description": "Todos los errores salen igual, del 401 al 500:\n\n```json\n{\"detail\": {\"codigo\": \"llave_invalida\", \"mensaje\": \"...\", \"campo\": null}}\n```\n\nProgramá contra `codigo`: el `mensaje` está escrito para leerlo y puede cambiar."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Rechaza la llave', () => pm.response.to.have.status(401));",
+              "pm.test('El error tiene la forma de siempre', () => {",
+              "    pm.expect(pm.response.json().detail.codigo).to.eql('llave_invalida');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

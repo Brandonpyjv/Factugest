@@ -13,13 +13,20 @@ mandan cantidades y el resto sale del original.
 **Numeran en su propia serie.** NC y ND llevan consecutivos aparte del de la
 factura, y se reservan con `reservar_numero`, igual de atómico: dos devoluciones
 simultáneas del mismo emisor no pueden salir con el mismo número.
+
+**El cupo del plan no bloquea una nota.** Cuenta para el consumo del mes, pero no
+se rechaza por cupo agotado: negarle a un cliente la corrección de una factura mal
+emitida lo dejaría con un documento equivocado ante la DIAN y sin forma de
+arreglarlo hasta el mes siguiente. Cobrar el excedente es un asunto entre él y
+nosotros; el documento tiene que poder salir.
 """
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 
 from database import get_one
 
-from routes.api.v1.comun import (con_ultimo_evento, lineas_para_guardar,
-                                 proveedor_o_error, respuesta_documento)
+from routes.api.v1.comun import (con_ultimo_evento, enviar_por_correo,
+                                 lineas_para_guardar, proveedor_o_error,
+                                 respuesta_documento)
 from routes.api.v1.dependencias import ClienteAPI
 from routes.api.v1.errores import error as _error
 from routes.api.v1.modelos import (FacturaResponse, NotaCreditoRequest,
@@ -87,7 +94,7 @@ def _ya_emitida(cliente: dict, referencia: str, peticion: Request,
 
 
 def _emitir(cliente: dict, tipo: str, calculo: dict, original: dict, motivo: str,
-            datos, peticion: Request) -> FacturaResponse:
+            datos, peticion: Request, tareas=None) -> FacturaResponse:
     """El tramo que comparten las dos notas: numerar, guardar y transmitir."""
     empresa = get_branch_by_id(cliente["cod_empresa"])
     if not empresa:
@@ -154,6 +161,9 @@ def _emitir(cliente: dict, tipo: str, calculo: dict, original: dict, motivo: str
         registrar_evento(original["cod_documento"], "ANULADO",
                          mensaje=f"Nota crédito {emitido['numero']}: {motivo}")
 
+    if datos.enviar_email and tareas is not None:
+        tareas.add_task(enviar_por_correo, emitido["id_publico"])
+
     documento = get_documento(emitido["id_publico"], cliente["cod_cliente_api"])
     salida = respuesta_documento(documento, peticion)
     salida.qr = respuesta.qr
@@ -167,7 +177,8 @@ def _emitir(cliente: dict, tipo: str, calculo: dict, original: dict, motivo: str
              summary="Emitir una nota crédito",
              responses=RESPUESTAS)
 def emitir_nota_credito(datos: NotaCreditoRequest, cliente: ClienteAPI,
-                        peticion: Request, respuesta_http: Response) -> FacturaResponse:
+                        peticion: Request, respuesta_http: Response,
+                        tareas: BackgroundTasks) -> FacturaResponse:
     """Anula una factura completa o devuelve unas cantidades de ella.
 
     **Sin `items` se anula el documento entero**, que es el caso más común. Con
@@ -208,7 +219,8 @@ def emitir_nota_credito(datos: NotaCreditoRequest, cliente: ClienteAPI,
         raise _error(status.HTTP_422_UNPROCESSABLE_ENTITY, "nota_vacia",
                      "La nota no devuelve ninguna cantidad.", campo="items")
 
-    return _emitir(cliente, "NC", calculo, original, datos.motivo, datos, peticion)
+    return _emitir(cliente, "NC", calculo, original, datos.motivo, datos, peticion,
+                   tareas)
 
 
 def _ya_devuelto(original: dict, orden: int) -> float:
@@ -231,7 +243,8 @@ def _ya_devuelto(original: dict, orden: int) -> float:
              summary="Emitir una nota débito",
              responses=RESPUESTAS)
 def emitir_nota_debito(datos: NotaDebitoRequest, cliente: ClienteAPI,
-                       peticion: Request, respuesta_http: Response) -> FacturaResponse:
+                       peticion: Request, respuesta_http: Response,
+                       tareas: BackgroundTasks) -> FacturaResponse:
     """Agrega un cargo sobre una factura ya emitida: un flete, un interés, un ajuste.
 
     `incluye_impuesto` decide cómo se lee `valor`: con `true` el IVA va adentro y
@@ -268,4 +281,5 @@ def emitir_nota_debito(datos: NotaDebitoRequest, cliente: ClienteAPI,
         "impuesto_valor": calculo["total_impuestos"],
     }]
 
-    return _emitir(cliente, "ND", calculo, original, datos.motivo, datos, peticion)
+    return _emitir(cliente, "ND", calculo, original, datos.motivo, datos, peticion,
+                   tareas)

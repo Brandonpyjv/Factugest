@@ -425,6 +425,33 @@ class FacturaResponse(BaseModel):
     }
 
 
+class DocumentoResumen(BaseModel):
+    """Una fila del listado. Para el detalle completo está `GET /documentos/{id}`."""
+    id: str = Field(examples=["doc_7f21c9a4"])
+    numero: str | None = None
+    tipo: str = Field(examples=["FV"])
+    estado: str = Field(examples=["ACEPTADO"])
+    fecha_emision: datetime
+    total: float
+    cufe: str | None = None
+    referencia_externa: str | None = Field(
+        default=None, description="El identificador de la venta en el sistema del "
+                                  "cliente, para conciliar contra sus propios datos")
+
+
+class ListaDocumentos(BaseModel):
+    """Los documentos de un cliente, paginados.
+
+    `total` es cuántos hay con esos filtros, no cuántos vienen en esta página: es
+    lo que permite saber si falta traer más sin pedir una página de más.
+    """
+    total: int = Field(description="Documentos que cumplen el filtro", examples=[412])
+    pagina: int = Field(examples=[1])
+    por_pagina: int = Field(examples=[50])
+    paginas: int = Field(description="Cuántas páginas hay en total", examples=[9])
+    documentos: list[DocumentoResumen]
+
+
 class ErrorRespuesta(BaseModel):
     """El detalle de un error. Siempre viaja dentro de `RespuestaError`."""
     codigo: str = Field(

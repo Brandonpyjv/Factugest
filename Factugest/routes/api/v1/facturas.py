@@ -6,15 +6,19 @@ la reserva atómica del consecutivo, el CUFE, el XML, el adaptador de proveedor 
 el almacén de documentos. Este archivo no debería tener lógica propia — si algo
 se calcula aquí, es que le falta su sitio.
 """
-from fastapi import APIRouter, Request, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, BackgroundTasks, Query, Request, Response, status
 
 from services.api_key_service import get_cliente_api_by_id
 from services.branches import get_branch_by_id
 from services.calculo_documento import calcular_documento
+from services.consumo_service import cupo_disponible
 from services.cufe_service import generate_cufe
 from services.dian_proveedor import ErrorProveedorDian
 from services.documento_canonico import emisor_desde_empresa
-from services.documento_service import (a_documento_canonico, get_documento,
+from services.documento_service import (a_documento_canonico, buscar_documentos,
+                                        contar_documentos, get_documento,
                                         get_documento_por_referencia, get_lineas,
                                         get_receptor, registrar_transmision,
                                         reservar_y_guardar)
@@ -22,11 +26,12 @@ from services.numeracion_service import RangoResolucionAgotadoError
 from services.pdf_service import generate_invoice_pdf
 from services.xml_service import generate_invoice_xml
 from routes.api.v1.dependencias import ClienteAPI
-from routes.api.v1.comun import (con_ultimo_evento, lineas_para_guardar,
-                                 proveedor_o_error, respuesta_documento)
+from routes.api.v1.comun import (con_ultimo_evento, enviar_por_correo,
+                                 lineas_para_guardar, proveedor_o_error,
+                                 respuesta_documento)
 from routes.api.v1.errores import error as _error
-from routes.api.v1.modelos import (FacturaRequest, FacturaResponse, RespuestaError,
-                                   ResultadoDian)
+from routes.api.v1.modelos import (DocumentoResumen, FacturaRequest, FacturaResponse,
+                                   ListaDocumentos, RespuestaError, ResultadoDian)
 
 router = APIRouter(prefix="/api/v1", tags=["Documentos"])
 
@@ -39,7 +44,8 @@ router = APIRouter(prefix="/api/v1", tags=["Documentos"])
                        "description": "La referencia externa ya se había emitido: "
                                       "se devuelve el mismo documento"},
                  401: {"model": RespuestaError, "description": "Llave ausente o inválida"},
-                 403: {"model": RespuestaError, "description": "Cliente suspendido"},
+                 403: {"model": RespuestaError,
+                       "description": "Cliente suspendido, o cupo del plan agotado"},
                  409: {"model": RespuestaError,
                        "description": "El emisor no puede numerar: rango agotado"},
                  422: {"model": RespuestaError, "description": "Datos inválidos"},
@@ -47,7 +53,8 @@ router = APIRouter(prefix="/api/v1", tags=["Documentos"])
                        "description": "No se pudo contactar al proveedor DIAN"},
              })
 def emitir_factura(datos: FacturaRequest, cliente: ClienteAPI, peticion: Request,
-                   respuesta_http: Response) -> FacturaResponse:
+                   respuesta_http: Response,
+                   tareas: BackgroundTasks) -> FacturaResponse:
     """Emite una factura electrónica y devuelve el documento validado.
 
     Reenviar la misma `referencia_externa` **no emite otra factura**: devuelve la
@@ -61,6 +68,16 @@ def emitir_factura(datos: FacturaRequest, cliente: ClienteAPI, peticion: Request
         # 200 y no 201: no se creó nada, se está devolviendo lo que ya existía.
         respuesta_http.status_code = status.HTTP_200_OK
         return con_ultimo_evento(respuesta_documento(ya_emitido, peticion), ya_emitido)
+
+    # El cupo se comprueba antes de numerar. Después de reservar el consecutivo ya
+    # se gastó un número de la resolución, y devolverlo no es posible.
+    cupo = cupo_disponible(cliente)
+    if cupo["agotado"]:
+        raise _error(
+            status.HTTP_403_FORBIDDEN, "cupo_agotado",
+            f"El plan {cliente['plan']} incluye {cupo['cupo']} documentos al mes y "
+            f"este mes ya se emitieron {cupo['emitidos']}. Escríbenos para ampliar "
+            "el plan.")
 
     empresa = get_branch_by_id(cliente["cod_empresa"])
     if not empresa:
@@ -133,12 +150,66 @@ def emitir_factura(datos: FacturaRequest, cliente: ClienteAPI, peticion: Request
 
     registrar_transmision(documento["cod_documento"], respuesta)
 
+    # El correo sale después de responder: el punto de venta no tiene por qué
+    # esperar a que un servidor de correo ajeno conteste para saber que ya facturó.
+    if datos.enviar_email:
+        tareas.add_task(enviar_por_correo, emitido["id_publico"])
+
     documento = get_documento(emitido["id_publico"], cliente["cod_cliente_api"])
     salida = respuesta_documento(documento, peticion)
     salida.qr = respuesta.qr
     salida.dian = ResultadoDian(proveedor=respuesta.proveedor, codigo=respuesta.codigo,
                                 mensaje=respuesta.mensaje)
     return salida
+
+
+# ── Consulta ────────────────────────────────────────────────────────────────
+
+@router.get("/documentos", response_model=ListaDocumentos,
+            summary="Listar los documentos emitidos",
+            responses={401: {"model": RespuestaError}, 403: {"model": RespuestaError}})
+def listar_documentos(
+    cliente: ClienteAPI,
+    tipo: Annotated[str | None, Query(description="FV, NC o ND")] = None,
+    estado: Annotated[str | None, Query(
+        description="ACEPTADO, PENDIENTE, RECHAZADO o ERROR")] = None,
+    desde: Annotated[str | None, Query(description="Fecha inicial, AAAA-MM-DD")] = None,
+    hasta: Annotated[str | None, Query(description="Fecha final, AAAA-MM-DD")] = None,
+    buscar: Annotated[str | None, Query(
+        description="Texto libre: número, referencia externa, CUFE o nombre del "
+                    "comprador")] = None,
+    pagina: Annotated[int, Query(ge=1)] = 1,
+    por_pagina: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> ListaDocumentos:
+    """Los documentos de **este** cliente, del más reciente al más antiguo.
+
+    Es lo que alimenta la conciliación: el sistema del cliente pide los documentos
+    de un mes y compara contra sus propias ventas. Por eso cada fila trae la
+    `referencia_externa` con la que él los envió.
+
+    La llave decide qué se ve: no hay forma de pedir los documentos de otro
+    cliente, ni siquiera conociendo su identificador.
+    """
+    filtros = {
+        "cod_cliente_api": cliente["cod_cliente_api"],
+        "tipo": tipo.upper() if tipo else None,
+        "estado": estado.upper() if estado else None,
+        "desde": desde, "hasta": hasta, "q": (buscar or "").strip() or None,
+    }
+
+    total = contar_documentos(filtros)
+    paginas = max(1, -(-total // por_pagina))
+    filas = buscar_documentos(filtros, limite=por_pagina,
+                              desplazamiento=(pagina - 1) * por_pagina)
+
+    return ListaDocumentos(
+        total=total, pagina=pagina, por_pagina=por_pagina, paginas=paginas,
+        documentos=[DocumentoResumen(
+            id=f["id_publico"], numero=f["numero"], tipo=f["tipo"], estado=f["estado"],
+            fecha_emision=f["fecha_emision"], total=float(f["total"] or 0),
+            cufe=f["cufe"], referencia_externa=f["referencia_externa"],
+        ) for f in filas],
+    )
 
 
 # ── Descarga ────────────────────────────────────────────────────────────────

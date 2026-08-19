@@ -64,6 +64,11 @@ Factugest/
 │   ├── formularios.py       # respuesta única de un formulario rechazado
 │   └── api/v1/              # API de integración (middleware DIAN)
 │       ├── dependencias.py  # ClienteAPI: resuelve la llave X-API-Key
+│       ├── errores.py       # forma única de todos los errores de /api/
+│       ├── comun.py         # lo que comparten factura y notas: respuesta, envío, proveedor
+│       ├── modelos.py       # contrato Pydantic de entrada y salida
+│       ├── facturas.py      # POST /facturas · GET /documentos y sus descargas
+│       ├── notas.py         # POST /notas-credito · POST /notas-debito
 │       └── sistema.py       # GET /api/v1/ping
 ├── services/                # lógica de negocio reutilizable por web y API
 │   ├── calculo_documento.py # aritmética tributaria (pura): bases, descuentos, prorrateo
@@ -73,6 +78,7 @@ Factugest/
 │   ├── consumo_service.py   # consumo contra el cupo del plan, contado de `documentos`
 │   ├── facturacion_planes.py# la mensualidad: se emite por nuestra propia API
 │   ├── autoservicio_client.py# cliente HTTP de nuestra propia API (llave en el .env)
+│   ├── correo_service.py    # manda el PDF y el XML al comprador, en segundo plano
 │   ├── invoice_service.py   # CRUD facturas + get_dashboard_stats
 │   ├── inventory_service.py # kardex, alertas, valorización (único punto de escritura de stock)
 │   ├── report_service.py    # métricas del tablero: ventas, cartera, rankings, impuestos
@@ -139,6 +145,33 @@ no una persona. Cada cliente integrado tiene una llave propia.
 
 > `/api/v1`, `/docs`, `/redoc` y `/openapi.json` están en `_PUBLIC_PREFIXES` de
 > `auth.py`: si no, el `AuthMiddleware` los mandaría al formulario de login.
+
+### Errores de la API
+
+Todos salen con la misma forma, del 401 al 500:
+
+```json
+{"detail": {"codigo": "cupo_agotado", "mensaje": "...", "campo": "items"}}
+```
+
+Se levantan con `routes/api/v1/errores.error(codigo_http, codigo, mensaje, campo)`, y
+`registrar_manejadores(app)` se encarga de los que no pasan por ahí: los 422 de Pydantic,
+los 404 y 405 del enrutador y cualquier excepción no prevista. **El `codigo` es la parte
+estable**; el `mensaje` está escrito para que lo lea una persona. De un fallo inesperado,
+la traza va al log del servidor y al cliente solo le llega que falló.
+
+Los manejadores solo actúan sobre rutas que empiezan por `/api/`: las de la web siguen
+devolviendo HTML.
+
+### Cupo del plan
+
+`POST /api/v1/facturas` rechaza con **403 `cupo_agotado`** cuando el cliente ya emitió los
+documentos que incluye su plan en el mes. Se comprueba **antes de numerar**: después de
+reservar el consecutivo ya se gastó un número de la resolución.
+
+Las notas **no** se bloquean por cupo, aunque sí lo consumen: negarle a un cliente la
+corrección de una factura mal emitida lo dejaría con un documento equivocado ante la DIAN
+y sin forma de arreglarlo hasta el mes siguiente.
 
 ### Roles (compartidos entre web y API)
 ```python
@@ -399,17 +432,16 @@ El backend nació como monolito FastAPI con frontend Jinja. Cuando se necesitó 
 | 1 — Emisión de FV/NC/ND con PDF, XML UBL 2.1 y CUFE | ✅ (CUFE en pre-producción) |
 | 2 — Control de inventarios con alertas y kardex | ✅ |
 | 3 — Tablero de control con métricas y reportes exportables | ✅ |
-| API REST de integración (`/api/v1/`) | ⏳ fuera del alcance actual |
+| 3.3 — API REST de integración (`/api/v1/`) | ✅ facturas, notas, consulta, listado, cupo y correo |
 
 ---
 
 ## TODOs / Pendientes conocidos
 
-- [ ] `POST /api/v1/notas-credito` y `/notas-debito` (fase 3.2 y 3.3).
-- [ ] Formato único de errores de la API y envío del documento por correo (3.5 y 3.6).
-- [ ] Rechazar la emisión cuando el cliente supera el cupo del plan (3.7): hoy el cupo se
-      mide y se cobra, pero no bloquea.
-- [ ] DIAN real: el CUFE actual es de pruebas.
+- [ ] DIAN real: el CUFE actual es de pruebas. El XML de una nota sale como `<Invoice>`
+      con el código de tipo 91/92 y su `BillingReference`, no como `<CreditNote>` UBL:
+      cambiarlo va con la 7.2, cuando haya un proveedor que lo valide de verdad.
+- [ ] Desplegar fuera de local (fase 6): Docker, HTTPS, dominio y respaldos.
 - [ ] Migrar contraseñas legacy (ya hay un `migrate_passwords` en `main.py` que hashea al arrancar).
 - [ ] Cliente móvil Flutter (JWT en `/api/v1/auth/login` y CORS): en pausa desde que el
       rumbo pasó a proveedor + API middleware. La API de integración se autentica con

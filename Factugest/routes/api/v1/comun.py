@@ -92,3 +92,45 @@ def proveedor_o_error():
         return get_proveedor()
     except ErrorProveedorDian as e:
         raise error(status.HTTP_502_BAD_GATEWAY, "proveedor_mal_configurado", str(e))
+
+
+def enviar_por_correo(id_publico: str):
+    """Manda el documento al comprador. Corre en segundo plano, después de responder.
+
+    Se traga cualquier excepción a propósito: esto se ejecuta cuando la respuesta
+    HTTP ya salió, así que un fallo aquí no puede llegarle al cliente. Lo que sí
+    queda es el rastro en `documento_eventos`, que es donde se mira cuando alguien
+    dice que no le llegó su factura.
+    """
+    from services.branches import get_branch_by_id
+    from services.correo_service import (CorreoFallido, CorreoNoConfigurado,
+                                         enviar_documento)
+    from services.documento_canonico import emisor_desde_empresa
+    from services.documento_service import (a_documento_canonico, get_documento,
+                                            get_lineas, get_receptor,
+                                            registrar_evento)
+    from services.pdf_service import generate_invoice_pdf
+
+    documento = get_documento(id_publico)
+    if not documento:
+        return
+
+    cod = documento["cod_documento"]
+    try:
+        emisor = get_branch_by_id(documento["cod_empresa"]) or {}
+        receptor = get_receptor(documento["cod_receptor"]) or {}
+        cabecera, lineas, emi = a_documento_canonico(
+            documento, get_lineas(cod), receptor, emisor_desde_empresa(emisor))
+
+        destino = enviar_documento(documento, emisor, receptor.get("email"),
+                                   generate_invoice_pdf(cabecera, lineas),
+                                   documento.get("xml"))
+        registrar_evento(cod, "CORREO_ENVIADO",
+                         mensaje=f"Enviado a {destino} con el PDF y el XML adjuntos")
+    except CorreoNoConfigurado as e:
+        registrar_evento(cod, "CORREO_OMITIDO", mensaje=str(e))
+    except CorreoFallido as e:
+        registrar_evento(cod, "CORREO_FALLIDO", mensaje=str(e))
+    except Exception as e:                      # noqa: BLE001 — ver el docstring
+        registrar_evento(cod, "CORREO_FALLIDO",
+                         mensaje=f"No se pudo armar el correo: {type(e).__name__}: {e}")

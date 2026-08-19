@@ -37,7 +37,60 @@ from routes.api.v1.facturas import router as api_facturas_router
 from routes.api.v1.notas import router as api_notas_router
 from routes.api.v1.errores import registrar_manejadores
 
-app = FastAPI(title="Factugest", description="Sistema de Facturación Electrónica Colombia")
+DESCRIPCION_API = """
+API de facturación electrónica para Colombia. Tu sistema envía los datos de una
+venta y FactuGest se encarga del resto: calcula los impuestos, numera con **tu**
+resolución de la DIAN, genera el CUFE, el XML UBL 2.1 y la representación gráfica
+en PDF, transmite al proveedor tecnológico y te devuelve el documento validado.
+
+No tienes que cambiar tu software: solo llamar a esta API.
+
+### Cómo empezar
+
+1. Pon tu llave en el encabezado `X-API-Key` de cada petición. Tiene la forma
+   `fg_live_7d3a9f21.mXk2Qp8vLr4TnW6yBc1ZsJd5HgF0aEuO`.
+2. Llama a `GET /api/v1/ping`. Si responde, la llave sirve y te dice con qué
+   emisor vas a numerar. Es la prueba que conviene hacer antes de escribir nada.
+3. Emite con `POST /api/v1/facturas`.
+
+### Dos cosas que evitan los problemas típicos
+
+**Manda siempre `referencia_externa`** con el identificador de la venta en tu
+sistema. Si la red se cae y reintentas, el segundo intento devuelve la factura que
+ya se emitió —con código `200` en lugar de `201`— en vez de emitir otra. Sin eso,
+un reintento quema un segundo número de una resolución autorizada y finita.
+
+**Los precios los pones tú, los impuestos los calculamos nosotros.** Envía la base
+y la tarifa; el prorrateo del IVA sobre un descuento de factura, los redondeos y
+los totales salen de aquí, iguales para todos los que se integran.
+
+### Cuando algo sale mal
+
+Todos los errores tienen la misma forma, del `401` al `500`:
+
+```json
+{"detail": {"codigo": "cupo_agotado", "mensaje": "...", "campo": null}}
+```
+
+Programa contra `codigo`, que es estable; `mensaje` está escrito para que lo lea
+una persona y puede cambiar de redacción.
+"""
+
+ETIQUETAS_API = [
+    {"name": "Sistema",
+     "description": "Comprobar que la llave sirve. Lo primero que se prueba."},
+    {"name": "Documentos",
+     "description": "Emitir facturas y notas, consultarlas y descargar el PDF y el XML."},
+]
+
+app = FastAPI(
+    title="FactuGest — API de facturación electrónica",
+    description=DESCRIPCION_API,
+    version="1.0",
+    openapi_tags=ETIQUETAS_API,
+    contact={"name": "FactuGest", "email": "integraciones@factugest.co"},
+    license_info={"name": "Uso bajo contrato de servicio"},
+)
 
 # Los middlewares se ejecutan en orden inverso al registro:
 # AuthMiddleware corre primero, luego SessionMiddleware lo prepara.

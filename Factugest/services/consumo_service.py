@@ -92,6 +92,33 @@ def _con_cupo(fila: dict) -> dict:
     return fila
 
 
+def documentos_del_mes(cod_cliente_api: int, periodo: str = None) -> int:
+    """Cuántos documentos lleva emitidos un cliente en un mes."""
+    fila = get_one(
+        "SELECT COUNT(*) AS n FROM documentos "
+        "WHERE cod_cliente_api = %s AND LEFT(fecha_emision, 7) = %s",
+        (cod_cliente_api, periodo or periodo_actual()))
+    return int(fila["n"] if fila else 0)
+
+
+def cupo_disponible(cliente: dict) -> dict:
+    """Cuánto le queda del plan a un cliente este mes.
+
+    Lo consultan la API antes de emitir y el panel para mostrar la barra. Un plan
+    sin `limite_mensual` es ilimitado y siempre tiene cupo: `restante` viene en
+    `None` porque no hay un número que devolver, no porque sea cero.
+    """
+    cupo = cliente.get("limite_mensual")
+    emitidos = documentos_del_mes(cliente["cod_cliente_api"])
+
+    if not cupo:
+        return {"cupo": None, "emitidos": emitidos, "restante": None, "agotado": False}
+
+    cupo = int(cupo)
+    return {"cupo": cupo, "emitidos": emitidos, "restante": max(0, cupo - emitidos),
+            "agotado": emitidos >= cupo}
+
+
 def serie_por_cliente(cod_cliente_api: int, meses: int = 6) -> list:
     return get_many(
         "SELECT LEFT(fecha_emision, 7) AS periodo, COUNT(*) AS emitidos, "
