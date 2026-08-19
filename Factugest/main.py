@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -21,7 +21,6 @@ from routes.invoice_payments import router as invoice_payments_router
 from routes.productos import router as products_router
 from routes.inventory import router as inventory_router
 from routes.logs import router as logs_router
-from routes.product_discount import router as product_discount_router
 from routes.ubicacion import router as ubicacion_router
 from services.report_service import etiqueta_estado
 from services.validaciones import (abreviatura_documento, nombre_documento,
@@ -29,6 +28,10 @@ from services.validaciones import (abreviatura_documento, nombre_documento,
 from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
 from routes.perfil import router as perfil_router
+from routes.clientes_api import router as clientes_api_router
+from routes.documentos import router as documentos_router
+from routes.consumo import router as consumo_router
+from routes.configuracion import router as configuracion_router
 from routes.api.v1.sistema import router as api_sistema_router
 from routes.api.v1.facturas import router as api_facturas_router
 
@@ -56,11 +59,17 @@ app.include_router(invoice_payments_router, include_in_schema=False)
 app.include_router(products_router, include_in_schema=False)
 app.include_router(inventory_router, include_in_schema=False)
 app.include_router(logs_router, include_in_schema=False)
-app.include_router(product_discount_router, include_in_schema=False)
 app.include_router(ubicacion_router, include_in_schema=False)
 app.include_router(reports_router, include_in_schema=False)
 app.include_router(perfil_router, include_in_schema=False)
 app.include_router(dashboard_router, include_in_schema=False)
+
+# Los tres módulos del proveedor: a quién le damos servicio, qué se emitió por
+# cuenta de ellos y cuánto consumieron del plan que pagan.
+app.include_router(clientes_api_router, include_in_schema=False)
+app.include_router(documentos_router, include_in_schema=False)
+app.include_router(consumo_router, include_in_schema=False)
+app.include_router(configuracion_router, include_in_schema=False)
 
 # API de integración: misma aplicación, otra puerta. Se autentica con la llave
 # del cliente, no con la sesión de la web.
@@ -124,16 +133,6 @@ def migrate_passwords():
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("static/img/favicon.ico", media_type="image/x-icon")
-
-
-@app.get("/settings", name="setting", include_in_schema=False)
-def setting(request: Request):
-    return templates.TemplateResponse(request, "settings/index.html")
-
-
-@app.get("/settings/new", name="settings_new", include_in_schema=False)
-def setting_new(request: Request):
-    return templates.TemplateResponse(request, "settings/form.html")
 
 
 if __name__ == "__main__":

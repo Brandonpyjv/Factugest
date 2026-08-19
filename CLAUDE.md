@@ -42,6 +42,10 @@ Factugest/
 ├── templates_config.py      # Jinja2 setup
 ├── routes/                  # APIRouter por dominio (web Jinja)
 │   ├── dashboard.py         # ruta "/" — tablero de control (y variante CAJERO)
+│   ├── clientes_api.py      # /clientes-api — alta, plan, cupo y rotación de llave
+│   ├── documentos.py        # /documentos — lo emitido por cuenta de terceros
+│   ├── consumo.py           # /consumo — cupo del plan y facturación de la mensualidad
+│   ├── configuracion.py     # /configuracion — centro de catálogos y parámetros
 │   ├── reports.py           # /reports — 8 reportes + export CSV/PDF
 │   ├── inventory.py         # /inventory — panel, kardex, movimientos
 │   ├── perfil.py            # /perfil/foto — foto de perfil (fuera de /users a propósito)
@@ -54,7 +58,6 @@ Factugest/
 │   ├── taxes.py
 │   ├── payment_methods.py
 │   ├── invoice_payments.py
-│   ├── product_discount.py
 │   ├── logs.py
 │   ├── ubicacion.py
 │   ├── login.py
@@ -66,6 +69,10 @@ Factugest/
 │   ├── calculo_documento.py # aritmética tributaria (pura): bases, descuentos, prorrateo
 │   ├── numeracion_service.py# reserva atómica de consecutivos por emisor
 │   ├── documento_canonico.py# contrato de entrada de pdf_service y xml_service
+│   ├── documento_service.py # documentos emitidos por cuenta de terceros
+│   ├── consumo_service.py   # consumo contra el cupo del plan, contado de `documentos`
+│   ├── facturacion_planes.py# la mensualidad: se emite por nuestra propia API
+│   ├── autoservicio_client.py# cliente HTTP de nuestra propia API (llave en el .env)
 │   ├── invoice_service.py   # CRUD facturas + get_dashboard_stats
 │   ├── inventory_service.py # kardex, alertas, valorización (único punto de escritura de stock)
 │   ├── report_service.py    # métricas del tablero: ventas, cartera, rankings, impuestos
@@ -83,6 +90,7 @@ Factugest/
 │   ├── payment_methods_service.py
 │   ├── invoice_payments_service.py
 │   ├── product_discount_service.py
+│   ├── api_key_service.py   # genera, verifica, rota y suspende las llaves
 │   ├── logs_service.py
 │   └── ubicacion_service.py
 ├── templates/               # Jinja2: layout.html + carpeta por dominio
@@ -174,6 +182,7 @@ La base tiene dos zonas que no se mezclan:
 |---|---|---|
 | **Comercial** | `facturas`, `detalle_factura`, `customers`, `productos` | Nuestras propias ventas: los planes de facturación que vendemos. |
 | **Middleware** | `clientes_api`, `receptores`, `documentos`, `documento_lineas`, `documento_eventos` | Lo que emitimos por cuenta de terceros a través de `/api/v1/`. |
+| **Puente** | `facturas_plan` | Qué mes de qué cliente ya se cobró: enlaza la mensualidad en `facturas` con el documento electrónico en `documentos`. |
 | **Compartida** | `empresas`, `municipios`, `impuestos` | Emisores y catálogos. Una fila de `empresas` es un emisor, sea nuestro o de un cliente. |
 
 **Nunca guardes en `facturas` un documento emitido para un tercero**: el tablero y los
@@ -183,6 +192,19 @@ el plan) y una de `empresas` (con qué NIT y resolución emite).
 
 El consumo por cliente y por mes **se cuenta de `documentos`**; no hay tabla de
 contadores, justamente para que no pueda desviarse de la realidad.
+
+### Invariante de la mensualidad
+
+La factura del plan **no reserva un consecutivo propio**: se queda con el número que
+devolvió la API. `services/facturacion_planes.py` emite por `POST /api/v1/facturas` con
+nuestra propia llave (`FACTUGEST_API_KEY` del `.env`, cliente «FactuGest — autoservicio»)
+y guarda ese número y ese CUFE en `facturas`. Numerarla otra vez aquí gastaría dos números
+de una resolución autorizada para una sola venta y dejaría el PDF diciendo algo distinto
+de la factura.
+
+Emitir va **antes** de guardar: si la API falla, no queda una factura nuestra sin número
+real. Volver a pulsar el botón es seguro porque la `referencia_externa`
+(`PLAN-<cliente>-<AAAA-MM>`) hace idempotente la emisión.
 
 ### Invariante de numeración
 
@@ -253,6 +275,35 @@ contrato del documento canónico y los puntos del XML donde el emisor cambia la 
 
 ---
 
+## Navegación del panel
+
+El menú lateral se agrupa **por trabajo, no por tabla**. Los grupos son:
+
+| Grupo | Qué hay | Para quién |
+|---|---|---|
+| *(sin grupo)* | Inicio | todos |
+| **Plataforma** | Clientes API · Documentos emitidos · Consumo y planes | solo roles admin |
+| **Facturación** | Facturas · Nueva factura · Clientes | todos |
+| **Catálogo** | Planes y productos · Inventario · Movimientos | inventario solo admin |
+| **Análisis** | Reportes | solo roles admin |
+| *(pie)* | Configuración | solo roles admin |
+
+Dos reglas que conviene no romper al agregar una pantalla:
+
+1. **Un destino, un lugar en el menú.** La barra de arriba repetía cuatro enlaces que el
+   lateral ya tenía; ahora solo lleva la marca, la acción del día («Nueva factura») y la
+   cuenta. Dos caminos al mismo sitio obligan a decidir por cuál ir sin ganar nada.
+2. **Lo que se ajusta de vez en cuando va en `/configuracion`**, no en el menú lateral.
+   Impuestos, descuentos, métodos de pago, estados de pago, empresas emisoras, usuarios y
+   auditoría son parámetros, no trabajo diario. La página los agrupa en tarjetas por
+   *para qué sirven* y muestra el conteo de cada catálogo.
+
+El enlace activo se marca comparando `request.url.path` en `layout.html`; la clase la pone
+la macro `item()`. Si una pantalla nueva no aparece resaltada, es que su ruta no cuelga del
+prefijo del enlace.
+
+---
+
 ## CRUD implementado
 
 CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursales), Descuentos, Impuestos, Métodos de Pago, Estados de Pago.
@@ -271,17 +322,33 @@ CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursale
 
 ### Datos de demostración
 
-`python seed_demo.py` genera seis meses de operación (ventas, notas crédito y
-débito, compras, mermas, cartera en todos los tramos) para poder mostrar el
-tablero y los reportes con contenido. `python seed_demo.py --limpiar` lo deshace
-exactamente. Es determinista y se verifica a sí mismo. **No usar en producción.**
+Hay dos sembradores y siembran negocios distintos:
+
+- `python seed_proveedor.py` — **el que corresponde al producto de hoy**. Crea la empresa
+  emisora FactuGest S.A.S., los planes como productos de servicio, cinco empresas
+  suscritas (con su `empresas`, su `customers` y su `clientes_api`), tres meses de tráfico
+  en `documentos` y seis meses de mensualidades en `facturas`. Deja el último mes cerrado
+  **sin cobrar**, que es el que se factura en vivo desde `/consumo`. Muestra las llaves
+  generadas una sola vez: la del autoservicio va al `.env`.
+- `python seed_demo.py` — la operación de una tienda al detal (ventas, notas, compras,
+  mermas, cartera). Sirve para mostrar inventario y reportes con volumen.
+
+Los dos son deterministas, se verifican a sí mismos y traen `--limpiar` para deshacer
+exactamente lo que crearon. **No usar en producción.**
+
+> El sembrador respeta la convención de `numeracion_service`: `consecutivo_actual` es el
+> **siguiente número sin usar**, no el último usado. Dejarlo corrido en uno hace que la
+> primera emisión real choque contra el índice único del emisor; hay una comprobación en
+> `verificar()` justamente por eso.
 
 ### Alcance por rol
 
 - `ADMIN` / `JEFE_TIENDA` / `SUPERVISOR` → tablero completo, inventario y reportes,
   limitados a su propia empresa. Solo `ADMIN` puede consolidar todas las empresas.
 - `CAJERO` → panel operativo (facturar, clientes, consultar productos). Sin cifras
-  financieras. `/inventory` y `/reports` están en `_ADMIN_ONLY_PREFIXES`.
+  financieras. `/inventory`, `/reports`, `/configuracion` y los tres módulos de la
+  plataforma (`/clientes-api`, `/documentos`, `/consumo`) están en `_ADMIN_ONLY_PREFIXES`:
+  ahí se ven las llaves y las cifras de todos los clientes.
 
 **Fotos de perfil**: `puede_cambiar_foto` permite a cada quien la suya y a un
 superior las de sus inferiores. La excepción del propio usuario no es un descuido:
@@ -338,8 +405,12 @@ El backend nació como monolito FastAPI con frontend Jinja. Cuando se necesitó 
 
 ## TODOs / Pendientes conocidos
 
-- [ ] Construir endpoints `/api/v1/` para todos los dominios (en progreso).
-- [ ] Implementar JWT auth en `/api/v1/auth/login`.
-- [ ] Habilitar CORS para el origen de Flutter.
+- [ ] `POST /api/v1/notas-credito` y `/notas-debito` (fase 3.2 y 3.3).
+- [ ] Formato único de errores de la API y envío del documento por correo (3.5 y 3.6).
+- [ ] Rechazar la emisión cuando el cliente supera el cupo del plan (3.7): hoy el cupo se
+      mide y se cobra, pero no bloquea.
 - [ ] DIAN real: el CUFE actual es de pruebas.
 - [ ] Migrar contraseñas legacy (ya hay un `migrate_passwords` en `main.py` que hashea al arrancar).
+- [ ] Cliente móvil Flutter (JWT en `/api/v1/auth/login` y CORS): en pausa desde que el
+      rumbo pasó a proveedor + API middleware. La API de integración se autentica con
+      llave por cliente, no con sesión de usuario.

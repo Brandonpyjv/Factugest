@@ -55,11 +55,15 @@ def puede_cambiar_foto(actor: dict, objetivo: dict) -> bool:
         return True
     return can_manage(actor.get("rol", ""), objetivo.get("rol", ""))
 
-# Rutas exclusivas de roles admin (bloqueadas para CAJERO)
+# Rutas exclusivas de roles admin (bloqueadas para CAJERO).
+# Los tres módulos de la plataforma —clientes, documentos de terceros y consumo—
+# son el negocio del proveedor: un cajero no tiene nada que hacer ahí, y desde
+# ellos se ven las llaves y las cifras de todos los clientes.
 _ADMIN_ONLY_PREFIXES = (
     "/users", "/logs", "/branches",
     "/payment_methods", "/invoice_taxes", "/invoice_payments",
-    "/inventory", "/reports",
+    "/inventory", "/reports", "/configuracion",
+    "/clientes-api", "/documentos", "/consumo",
 )
 
 # Acciones de escritura bloqueadas para CAJERO.
