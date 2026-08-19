@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% import "_badges.html" as b %}
+{% import "_tabla.html" as t %}
 
 {% block title %}Clientes API | Factugest{% endblock %}
 
@@ -47,6 +48,27 @@
         </div>
         {% endfor %}
     </div>
+
+    {% call t.filtros(url_for('clientes_api'), filtros, 'Nombre, NIT, emisor o prefijo de la llave…') %}
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Estado</label>
+            <select name="estado" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                {% for e in estados %}
+                <option value="{{ e }}" {{ 'selected' if filtros.estado == e }}>{{ e|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Plan</label>
+            <select name="plan" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                {% for p in planes %}
+                <option value="{{ p }}" {{ 'selected' if filtros.plan == p }}>{{ p|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endcall %}
 
     <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
         <div class="card-body p-0">
@@ -119,7 +141,9 @@
                         <tr>
                             <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="bi bi-key display-4 d-block mb-3 opacity-25"></i>
-                                Todavía no hay ningún sistema integrado.
+                                {% if filtros.q or filtros.estado or filtros.plan %}
+                                Ningún cliente coincide con la búsqueda.
+                                {% else %}Todavía no hay ningún sistema integrado.{% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -129,9 +153,7 @@
         </div>
     </div>
 
-    <p class="text-muted small mt-3 mb-0">
-        La llave completa solo se ve al crearla o al rotarla: de ella guardamos el hash, no el valor.
-    </p>
+    {{ t.pie(meta, url_for('clientes_api'), consulta, 'clientes') }}
 
 </div>
 {% endblock %}

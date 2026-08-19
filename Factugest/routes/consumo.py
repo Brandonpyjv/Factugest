@@ -11,7 +11,8 @@ nuestra propia API. Esta ruta solo pregunta y muestra.
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
-from services import consumo_service, facturacion_planes
+from services import consumo_service, facturacion_planes, listados
+from services.api_key_service import PLANES
 from services.autoservicio_client import AutoservicioError, configurado
 from services.facturacion_planes import SinFacturarError
 from templates_config import templates
@@ -20,16 +21,34 @@ router = APIRouter(prefix="/consumo")
 
 
 @router.get("", name="consumo")
-def consumo(request: Request, periodo: str = ""):
+def consumo(request: Request, periodo: str = "", q: str = "", plan: str = "",
+            cobro: str = "", pagina: int = 1):
     periodos = consumo_service.periodos_recientes(12)
     periodo = periodo if periodo in periodos else periodos[0]
 
     aviso = request.session.pop("aviso_plan", None)
 
+    todos = consumo_service.consumo_del_periodo(periodo)
+    filas = listados.buscar(todos, q, ("nombre", "cliente_nombre", "emisor_nombre"))
+    filas = listados.igual_a(filas, "plan", plan)
+    if cobro == "pendiente":
+        filas = [f for f in filas if not f["cod_factura_plan"]]
+    elif cobro == "cobrado":
+        filas = [f for f in filas if f["cod_factura_plan"]]
+    elif cobro == "alerta":
+        filas = [f for f in filas if f["semaforo"] in ("ALERTA", "EXCEDIDO")]
+
+    pagina_filas, meta = listados.paginar(filas, pagina)
+    filtros = {"periodo": periodo, "q": q, "plan": plan, "cobro": cobro}
+
     return templates.TemplateResponse(request, "consumo/index.html", {
         "periodo": periodo,
         "periodos": periodos,
-        "clientes": consumo_service.consumo_del_periodo(periodo),
+        "clientes": pagina_filas,
+        "meta": meta,
+        "filtros": filtros,
+        "consulta": listados.query(filtros),
+        "planes": PLANES,
         "resumen": consumo_service.resumen_plataforma(periodo),
         "serie": consumo_service.serie_de_la_plataforma(6),
         "autoservicio": configurado(),

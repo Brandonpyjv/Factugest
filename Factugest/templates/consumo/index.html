@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% import "_tabla.html" as t %}
 
 {% block title %}Consumo y planes | Factugest{% endblock %}
 
@@ -75,6 +76,28 @@
         </div>
         {% endfor %}
     </div>
+
+    {% call t.filtros(url_for('consumo'), filtros, 'Nombre del cliente o de su emisor…') %}
+        <input type="hidden" name="periodo" value="{{ periodo }}">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Plan</label>
+            <select name="plan" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                {% for p in planes %}
+                <option value="{{ p }}" {{ 'selected' if filtros.plan == p }}>{{ p|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Situación</label>
+            <select name="cobro" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todas</option>
+                <option value="pendiente" {{ 'selected' if filtros.cobro == 'pendiente' }}>Sin cobrar</option>
+                <option value="cobrado" {{ 'selected' if filtros.cobro == 'cobrado' }}>Ya cobradas</option>
+                <option value="alerta" {{ 'selected' if filtros.cobro == 'alerta' }}>Cerca del cupo</option>
+            </select>
+        </div>
+    {% endcall %}
 
     <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;overflow:hidden;">
         <div class="card-body p-0">
@@ -164,7 +187,11 @@
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="7" class="text-center py-5 text-muted">Sin clientes integrados.</td></tr>
+                        <tr><td colspan="7" class="text-center py-5 text-muted">
+                            {% if filtros.q or filtros.plan or filtros.cobro %}
+                            Ningún cliente coincide con la búsqueda.
+                            {% else %}Sin clientes integrados.{% endif %}
+                        </td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -172,7 +199,9 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm" style="border-radius:12px;">
+    {{ t.pie(meta, url_for('consumo'), consulta, 'clientes') }}
+
+    <div class="card border-0 shadow-sm mt-4" style="border-radius:12px;">
         <div class="card-header bg-white border-bottom border-light py-3">
             <h6 class="m-0 fw-bold text-primary"><i class="bi bi-bar-chart me-2"></i>Volumen del servicio</h6>
         </div>

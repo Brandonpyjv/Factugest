@@ -15,7 +15,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 
 from routes.formularios import formulario_invalido
-from services import consumo_service
+from services import consumo_service, listados
 from services.api_key_service import (CUPO_SUGERIDO, ESTADOS, PLANES,
                                       actualizar_cliente_api, cambiar_estado,
                                       crear_cliente_api, eliminar_cliente_api,
@@ -38,9 +38,25 @@ def _catalogos():
 
 
 @router.get("", name="clientes_api")
-def clientes_api(request: Request):
+def clientes_api(request: Request, q: str = "", estado: str = "", plan: str = "",
+                 pagina: int = 1):
+    todos = get_all_clientes_api()
+
+    filas = listados.buscar(todos, q, ("nombre", "empresa_nombre", "empresa_nit",
+                                       "cliente_nombre", "api_key_prefijo"))
+    filas = listados.igual_a(filas, "estado", estado)
+    filas = listados.igual_a(filas, "plan", plan)
+
+    pagina_filas, meta = listados.paginar(filas, pagina)
+    filtros = {"q": q, "estado": estado, "plan": plan}
+
     return templates.TemplateResponse(request, "clientes_api/index.html", {
-        "clientes": get_all_clientes_api(),
+        "clientes": pagina_filas,
+        "meta": meta,
+        "filtros": filtros,
+        "consulta": listados.query(filtros),
+        "estados": ESTADOS,
+        "planes": PLANES,
         "resumen": consumo_service.resumen_plataforma(),
     })
 

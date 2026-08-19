@@ -24,6 +24,7 @@ from services.inventory_service import (verificar_disponibilidad,
 from services.numeracion_service import reservar_numero, RangoResolucionAgotadoError
 from services.documento_canonico import emisor_desde_factura
 from services.validaciones import abreviatura_documento
+from services import listados
 from templates_config import templates
 from database import get_one, get_many, execute_update, transaction
 
@@ -31,9 +32,38 @@ router = APIRouter(prefix="/invoice")
 
 
 @router.get("", name="invoice")
-def invoice(request: Request):
-    data = get_all_invoices_detailed()
-    return templates.TemplateResponse(request, "invoice/index.html", {"all_invoices": data})
+def invoice(request: Request, q: str = "", tipo: str = "", estado: str = "",
+            desde: str = "", hasta: str = "", pagina: int = 1):
+    todas = get_all_invoices_detailed()
+
+    filas = listados.buscar(todas, q, ("numero_factura", "cliente", "cliente_doc",
+                                       "observaciones"))
+    filas = listados.igual_a(filas, "tipo_factura", tipo)
+    filas = listados.igual_a(filas, "estado_pago", estado)
+    filas = listados.entre_fechas(filas, "fecha", desde, hasta)
+
+    pagina_filas, meta = listados.paginar(filas, pagina)
+    filtros = {"q": q, "tipo": tipo, "estado": estado, "desde": desde, "hasta": hasta}
+
+    # El resumen mira lo filtrado, no el total histórico: si se acota a un mes, las
+    # cifras de arriba tienen que hablar de ese mes.
+    facturado = sum(float(f["total"] or 0) for f in filas if f["tipo_factura"] == "FV")
+    por_cobrar = sum(float(f["total"] or 0) for f in filas
+                     if (f.get("estado_pago") or "").lower() in ("pending", "partially paid",
+                                                                 "overdue"))
+    return templates.TemplateResponse(request, "invoice/index.html", {
+        "all_invoices": pagina_filas,
+        "meta": meta,
+        "filtros": filtros,
+        "consulta": listados.query(filtros),
+        "estados": sorted({f["estado_pago"] for f in todas if f.get("estado_pago")}),
+        "resumen": {
+            "documentos": len(filas),
+            "facturado": facturado,
+            "por_cobrar": por_cobrar,
+            "notas": sum(1 for f in filas if f["tipo_factura"] in ("NC", "ND")),
+        },
+    })
 
 
 def _render_invoice_form(request: Request, error: str = None, status_code: int = 200,
