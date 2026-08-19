@@ -15,6 +15,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 
 from routes.formularios import formulario_invalido
+from services import auditoria_service as auditoria
 from services import consumo_service, listados
 from services.api_key_service import (CUPO_SUGERIDO, ESTADOS, PLANES,
                                       actualizar_cliente_api, cambiar_estado,
@@ -84,6 +85,8 @@ def crear_cliente_api_post(request: Request, nombre: str = Form(...),
     # La llave viaja en la sesión y no en la URL: una URL queda en el historial del
     # navegador, en los registros del servidor y en el hombro del que va pasando.
     request.session["llave_nueva"] = {"cod": cod, "llave": llave}
+    auditoria.registrar(request, "CREO", "cliente_api", cod,
+                        f"Dio de alta a «{d['nombre']}» con plan {d['plan']} y generó su llave")
     return RedirectResponse(url=f"/clientes-api/{cod}", status_code=303)
 
 
@@ -138,8 +141,15 @@ def actualizar_cliente_api_post(request: Request, cod_cliente_api: int,
             {"cliente": get_cliente_api_by_id(cod_cliente_api), **_catalogos()}, enviado)
 
     d = v.datos
+    anterior = get_cliente_api_by_id(cod_cliente_api)
     actualizar_cliente_api(cod_cliente_api, d["nombre"], d["cod_empresa"],
                            d["cod_cliente"], d["plan"], d["limite_mensual"])
+    auditoria.registrar(
+        request, "ACTUALIZO", "cliente_api", cod_cliente_api,
+        f"Modificó al cliente «{d['nombre']}»",
+        cambios=auditoria.diferencias(anterior, get_cliente_api_by_id(cod_cliente_api),
+                                      campos={"nombre", "plan", "limite_mensual",
+                                              "cod_empresa", "cod_cliente"}))
     return RedirectResponse(url=f"/clientes-api/{cod_cliente_api}", status_code=303)
 
 
@@ -147,7 +157,11 @@ def actualizar_cliente_api_post(request: Request, cod_cliente_api: int,
 def cambiar_estado_cliente_api(request: Request, cod_cliente_api: int,
                                estado: str = Form(...)):
     if estado in ESTADOS:
+        cliente = get_cliente_api_by_id(cod_cliente_api)
         cambiar_estado(cod_cliente_api, estado)
+        auditoria.registrar(request, "CAMBIO_ESTADO", "cliente_api", cod_cliente_api,
+                            f"Puso a «{(cliente or {}).get('nombre')}» en estado "
+                            f"{estado.lower()}")
     return RedirectResponse(url=f"/clientes-api/{cod_cliente_api}", status_code=303)
 
 
@@ -159,15 +173,25 @@ def rotar_llave_cliente_api(request: Request, cod_cliente_api: int):
     cuando una llave se filtró, y dejarla funcionando «un ratito más» sería dejar
     entrar a quien la tenga justo cuando se descubrió que la tiene.
     """
+    cliente = get_cliente_api_by_id(cod_cliente_api)
     llave = rotar_llave(cod_cliente_api)
     request.session["llave_nueva"] = {"cod": cod_cliente_api, "llave": llave}
+    # Se registra que se rotó, nunca la llave: un registro de auditoría que
+    # contenga credenciales convierte el registro en el objetivo del ataque.
+    auditoria.registrar(request, "ROTO_LLAVE", "cliente_api", cod_cliente_api,
+                        f"Rotó la llave de «{(cliente or {}).get('nombre')}»; "
+                        "la anterior dejó de servir")
     return RedirectResponse(url=f"/clientes-api/{cod_cliente_api}", status_code=303)
 
 
 @router.post("/{cod_cliente_api}/eliminar", name="eliminar_cliente_api")
 def eliminar_cliente_api_post(request: Request, cod_cliente_api: int):
+    cliente = get_cliente_api_by_id(cod_cliente_api)
     try:
         eliminar_cliente_api(cod_cliente_api)
+        auditoria.registrar(request, "ELIMINO", "cliente_api", cod_cliente_api,
+                            f"Eliminó al cliente «{(cliente or {}).get('nombre')}», "
+                            "que nunca emitió documentos")
     except ValueError:
         return RedirectResponse(url=f"/clientes-api/{cod_cliente_api}", status_code=303)
     return RedirectResponse(url="/clientes-api", status_code=303)

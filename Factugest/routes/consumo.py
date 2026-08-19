@@ -11,6 +11,7 @@ nuestra propia API. Esta ruta solo pregunta y muestra.
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+from services import auditoria_service as auditoria
 from services import consumo_service, facturacion_planes, listados
 from services.api_key_service import PLANES
 from services.autoservicio_client import AutoservicioError, configurado
@@ -84,6 +85,10 @@ def facturar_mensualidad(request: Request, cod_cliente_api: int, periodo: str):
         return RedirectResponse(url=f"/consumo/{cod_cliente_api}/{periodo}",
                                 status_code=303)
 
+    auditoria.registrar(request, "COBRO", "mensualidad",
+                        f"{cod_cliente_api}/{periodo}",
+                        f"Facturó la mensualidad {periodo} con {resultado['numero']} "
+                        f"por ${resultado['total']:,.0f}")
     request.session["aviso_plan"] = {
         "tipo": "exito",
         "texto": f"Mensualidad {resultado['numero']} emitida por ${resultado['total']:,.0f}. "

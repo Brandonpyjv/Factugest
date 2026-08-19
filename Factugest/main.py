@@ -20,7 +20,7 @@ from routes.branches import router as branches_router
 from routes.invoice_payments import router as invoice_payments_router
 from routes.productos import router as products_router
 from routes.inventory import router as inventory_router
-from routes.logs import router as logs_router
+from routes.auditoria import router as auditoria_router
 from routes.ubicacion import router as ubicacion_router
 from services.report_service import etiqueta_estado
 from services.validaciones import (abreviatura_documento, nombre_documento,
@@ -113,7 +113,7 @@ app.include_router(branches_router, include_in_schema=False)
 app.include_router(invoice_payments_router, include_in_schema=False)
 app.include_router(products_router, include_in_schema=False)
 app.include_router(inventory_router, include_in_schema=False)
-app.include_router(logs_router, include_in_schema=False)
+app.include_router(auditoria_router, include_in_schema=False)
 app.include_router(ubicacion_router, include_in_schema=False)
 app.include_router(reports_router, include_in_schema=False)
 app.include_router(perfil_router, include_in_schema=False)

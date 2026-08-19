@@ -58,7 +58,7 @@ Factugest/
 │   ├── taxes.py
 │   ├── payment_methods.py
 │   ├── invoice_payments.py
-│   ├── logs.py
+│   ├── auditoria.py         # /auditoria — el rastro de lo que hicieron los usuarios
 │   ├── ubicacion.py
 │   ├── login.py
 │   ├── formularios.py       # respuesta única de un formulario rechazado
@@ -97,7 +97,8 @@ Factugest/
 │   ├── invoice_payments_service.py
 │   ├── product_discount_service.py
 │   ├── api_key_service.py   # genera, verifica, rota y suspende las llaves
-│   ├── logs_service.py
+│   ├── auditoria_service.py # registra quién hizo qué; solo escribe, nunca corrige
+│   ├── listados.py          # buscar, filtrar y paginar, compartido por las tablas
 │   └── ubicacion_service.py
 ├── templates/               # Jinja2: layout.html + carpeta por dominio
 └── static/                  # CSS, JS, imágenes
@@ -162,6 +163,25 @@ la traza va al log del servidor y al cliente solo le llega que falló.
 
 Los manejadores solo actúan sobre rutas que empiezan por `/api/`: las de la web siguen
 devolviendo HTML.
+
+### Auditoría
+
+`services/auditoria_service.registrar(request, accion, entidad, entidad_id, descripcion)`
+se llama desde las rutas de **escritura**, nunca desde las de lectura. Cuatro reglas:
+
+1. **Solo se escribe.** No hay función para actualizar ni borrar un registro. Si algo
+   quedó mal, se escribe otro contándolo.
+2. **Se guarda el nombre del usuario, no solo su código.** El registro tiene que seguir
+   diciendo quién fue aunque la cuenta se borre o se renombre.
+3. **Registrar no puede tumbar la operación.** `registrar()` se traga cualquier excepción
+   y la manda al log del servidor: un sistema que deja de facturar porque no pudo anotar
+   que facturó es peor que uno sin auditoría.
+4. **La frase se escribe en el momento**, no se reconstruye después leyendo el documento:
+   ese documento puede anularse o desaparecer, y lo que pasó ese día no cambia.
+
+Las acciones están cerradas en `ACCIONES`; si cada ruta inventa su verbo, filtrar por
+acción deja de servir. Nunca entran credenciales al registro —rotar una llave se anota,
+la llave no—.
 
 ### Cupo del plan
 

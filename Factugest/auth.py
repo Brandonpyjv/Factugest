@@ -60,7 +60,7 @@ def puede_cambiar_foto(actor: dict, objetivo: dict) -> bool:
 # son el negocio del proveedor: un cajero no tiene nada que hacer ahí, y desde
 # ellos se ven las llaves y las cifras de todos los clientes.
 _ADMIN_ONLY_PREFIXES = (
-    "/users", "/logs", "/branches",
+    "/users", "/auditoria", "/branches",
     "/payment_methods", "/invoice_taxes", "/invoice_payments",
     "/inventory", "/reports", "/configuracion",
     "/clientes-api", "/documentos", "/consumo",

@@ -38,6 +38,7 @@ def configuracion(request: Request):
             "usuarios":        _cuantos("usuarios", "WHERE activo = 1"),
             "clientes_api":    _cuantos("clientes_api", "WHERE estado = 'ACTIVO'"),
             "documentos":      _cuantos("documentos"),
+            "auditoria":       _cuantos("auditoria"),
         },
         "proveedor_dian": os.getenv("DIAN_PROVEEDOR", "simulado"),
         "autoservicio": autoservicio_configurado(),

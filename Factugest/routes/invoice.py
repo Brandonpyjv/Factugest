@@ -25,6 +25,7 @@ from services.numeracion_service import reservar_numero, RangoResolucionAgotadoE
 from services.documento_canonico import emisor_desde_factura
 from services.validaciones import abreviatura_documento
 from services import listados
+from services import auditoria_service as auditoria
 from templates_config import templates
 from database import get_one, get_many, execute_update, transaction
 
@@ -288,6 +289,9 @@ async def create_invoice_post(
     except RangoResolucionAgotadoError as e:
         return _render_invoice_form(request, error=str(e), status_code=422)
 
+    auditoria.registrar(request, "EMITIO", "factura", numero_factura,
+                        f"Emitió {numero_factura} a {cliente.get('full_name') or 'un cliente'} "
+                        f"por ${total:,.0f}")
     return RedirectResponse(url=f"/invoice/{numero_factura}", status_code=303)
 
 
@@ -505,6 +509,10 @@ async def create_nota_credito_post(
         "UPDATE empresas SET consecutivo_nc = %s WHERE cod_empresa = %s",
         (consec_nc + 1, cod_empresa)
     )
+    auditoria.registrar(
+        request, "ANULO", "factura", inv.get("numero_factura"),
+        f"Emitió la nota crédito {numero_nc} sobre {inv.get('numero_factura')} "
+        f"({'anulación total' if tipo_nc == 'total' else 'devolución parcial'}): {motivo}")
     return RedirectResponse(url=f"/invoice/{numero_nc}", status_code=303)
 
 
@@ -607,6 +615,9 @@ async def create_nota_debito_post(
         "UPDATE empresas SET consecutivo_nd = %s WHERE cod_empresa = %s",
         (consec_nd + 1, cod_empresa)
     )
+    auditoria.registrar(request, "EMITIO", "factura", numero_nd,
+                        f"Emitió la nota débito {numero_nd} sobre "
+                        f"{inv.get('numero_factura')} por ${total_nd:,.0f}: {motivo}")
     return RedirectResponse(url=f"/invoice/{numero_nd}", status_code=303)
 
 
