@@ -135,3 +135,25 @@ def test_sin_color_sale_el_neutro_y_no_el_de_nadie():
     from services.pdf_service import COLOR_POR_DEFECTO, _color
     assert _color(None) == _color(COLOR_POR_DEFECTO)
     assert _color("#4e73df") != _color(None)
+
+
+def test_el_pdf_no_lleva_ningun_color_de_marca_escrito_en_el_codigo():
+    """El color sale del emisor, siempre.
+
+    El defecto que motivó esta prueba: el nombre, el NIT y el régimen se pintaban
+    con una etiqueta `<font color="#4e73df">` metida dentro del texto del párrafo.
+    El marcado gana sobre el estilo, así que ese trozo del membrete se quedó azul
+    aunque el resto del documento ya salía con la marca del emisor.
+
+    Los grises y el rojo de un descuento sí pueden estar fijos: son semánticos, no
+    identidad. Lo que no puede estar escrito es el azul de FactuGest.
+    """
+    import inspect
+
+    from services import pdf_service
+
+    fuente = inspect.getsource(pdf_service)
+    for marca in ("4e73df", "224abe"):
+        assert marca not in fuente, (
+            f"El color {marca} está escrito en pdf_service: el membrete debe "
+            "tomarlo del emisor.")

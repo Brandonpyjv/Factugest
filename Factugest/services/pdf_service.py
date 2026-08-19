@@ -219,11 +219,18 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     else:
         res_text = ''
 
-    # Columna central: info empresa
+    # Columna central: info empresa.
+    #
+    # El color lo pone el estilo y nunca una etiqueta <font> dentro del texto: el
+    # marcado del párrafo gana sobre el estilo, así que un color escrito ahí se
+    # queda fijo pase lo que pase. Fue justamente lo que dejó el nombre, el NIT y
+    # el régimen de todos los emisores pintados con el azul de FactuGest, aunque
+    # el resto del documento ya saliera con su marca.
     emp_lines = [
-        Paragraph(f'<b><font color="#4e73df" size="13">{emp_nombre}</font></b>',
-                  _style('en', alignment=TA_CENTER, fontSize=13, textColor=PRIMARY, fontName='Helvetica-Bold')),
-        Paragraph(f'<font color="#4e73df"><b>{nit_str}</b> {emp_regimen}</font>',
+        Paragraph(emp_nombre,
+                  _style('en', alignment=TA_CENTER, fontSize=13, textColor=PRIMARY,
+                         fontName='Helvetica-Bold')),
+        Paragraph(f'<b>{nit_str}</b> {emp_regimen}',
                   _style('en2', alignment=TA_CENTER, fontSize=7.5, textColor=PRIMARY)),
     ]
     if notes_str:
