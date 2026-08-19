@@ -1,4 +1,4 @@
-"""Tablero de control: consolida las métricas de facturación e inventario.
+"""Tablero de control: consolida las métricas del negocio y del servicio.
 
 Los datos que alimentan las gráficas se serializan aquí, no en la plantilla: MySQL
 devuelve `Decimal` y `date`, que `|tojson` no sabe convertir.
@@ -10,7 +10,6 @@ from fastapi import APIRouter, Request
 
 from auth import ADMIN_ROLES
 from services import consumo_service, report_service as rep
-from services.inventory_service import get_alertas_stock
 from services.invoice_service import get_dashboard_stats
 from templates_config import templates
 
@@ -65,8 +64,7 @@ def index(request: Request, desde: str = "", hasta: str = "",
     # El cajero no gestiona finanzas: su panel es operativo.
     if usuario.get("rol") not in ADMIN_ROLES:
         return templates.TemplateResponse(request, "dashboard/cajero.html", {
-            "stats":    get_dashboard_stats(),
-            "agotados": [a for a in get_alertas_stock(limite=8) if a["estado_stock"] == "AGOTADO"],
+            "stats": get_dashboard_stats(),
         })
 
     desde, hasta = _resolver_rango(desde, hasta, preset)

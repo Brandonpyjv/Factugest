@@ -7,7 +7,7 @@
 
     <div class="mb-4">
         <h1 class="h3 fw-bold mb-1">
-            <i class="bi bi-shop text-primary me-2"></i>Punto de Venta
+            <i class="bi bi-receipt-cutoff text-primary me-2"></i>Facturación
         </h1>
         <p class="text-muted small mb-0">
             Hola {{ request.session.get('user', {}).get('nombre') }}, aquí tienes lo del día.
@@ -31,37 +31,10 @@
                         <i class="bi bi-receipt"></i> Ver Facturas
                     </a>
                     <a href="{{ url_for('product') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                        <i class="bi bi-box-seam"></i> Consultar Productos
+                        <i class="bi bi-box-seam"></i> Ver planes y servicios
                     </a>
                 </div>
             </div>
-
-            <div class="card border-0 shadow-sm" style="border-radius:12px;">
-                <div class="card-header bg-white border-bottom border-light py-3">
-                    <h6 class="m-0 fw-bold text-primary">Sin Existencias</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for a in agotados %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-                            <div>
-                                <div class="fw-bold text-dark small">{{ a.nombre }}</div>
-                                <div class="text-muted font-monospace" style="font-size:0.75rem;">{{ a.sku }}</div>
-                            </div>
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
-                                <i class="bi bi-x-octagon-fill me-1"></i>Agotado
-                            </span>
-                        </div>
-                        {% else %}
-                        <div class="text-center py-4 text-muted small">
-                            <i class="bi bi-check2-circle fs-3 d-block mb-2 text-success opacity-50"></i>
-                            Todos los productos tienen existencias.
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <div class="col-xl-8">
             <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
