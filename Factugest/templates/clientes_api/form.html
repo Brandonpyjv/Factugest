@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+{% import "_form.html" as f %}
+
+{% block title %}{{ 'Editar cliente API' if cliente else 'Nuevo cliente API' }} | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-1 text-gray-800 fw-bold">
+            <i class="bi bi-key text-primary me-2"></i>
+            {{ 'Editar cliente API' if cliente else 'Nuevo cliente API' }}
+        </h1>
+        <p class="text-muted mb-0 small">
+            {% if cliente %}
+            Los datos comerciales. Para cambiar la llave, usa «Rotar llave» en la ficha.
+            {% else %}
+            Al guardar se genera la llave y se muestra una sola vez.
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    {{ f.alerta(errores) }}
+
+                    <form method="POST" novalidate class="needs-validation"
+                          action="{{ url_for('actualizar_cliente_api_post', cod_cliente_api=cliente.cod_cliente_api) if cliente else url_for('crear_cliente_api_post') }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Nombre del cliente o del sistema *</label>
+                            <input type="text" name="nombre" required maxlength="150"
+                                   class="form-control bg-light border-0 {{ f.invalido(errores, 'nombre') }}"
+                                   value="{{ valores.nombre if valores else (cliente.nombre if cliente else '') }}"
+                                   placeholder="Siste Soluciones">
+                            {{ f.mensaje(errores, 'nombre', 'Escribe con qué nombre lo identificamos.') }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Empresa emisora *</label>
+                            <select name="cod_empresa" required
+                                    class="form-select bg-light border-0 {{ f.invalido(errores, 'cod_empresa') }}">
+                                <option value="">— Seleccionar —</option>
+                                {% set actual = (valores.cod_empresa if valores else (cliente.cod_empresa if cliente else '')) %}
+                                {% for e in empresas %}
+                                <option value="{{ e.cod_empresa }}"
+                                        {{ 'selected' if actual and actual|string == e.cod_empresa|string }}>
+                                    {{ e.nombre }} — NIT {{ e.nit }} ({{ e.prefijo_factura or 'sin prefijo' }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {{ f.mensaje(errores, 'cod_empresa', 'Con qué NIT y resolución se numeran sus documentos.') }}
+                            <div class="form-text">
+                                Es su propia empresa, no la nuestra: los consecutivos salen de la resolución
+                                de la DIAN que le autorizaron a él.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Cliente al que se le factura el plan</label>
+                            <select name="cod_cliente"
+                                    class="form-select bg-light border-0 {{ f.invalido(errores, 'cod_cliente') }}">
+                                <option value="">— Sin asociar —</option>
+                                {% set actual_c = (valores.cod_cliente if valores else (cliente.cod_cliente if cliente else '')) %}
+                                {% for c in clientes %}
+                                <option value="{{ c.customer_id }}"
+                                        {{ 'selected' if actual_c and actual_c|string == c.customer_id|string }}>
+                                    {{ c.full_name }} — {{ c.document_number }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {{ f.mensaje(errores, 'cod_cliente') }}
+                            <div class="form-text">
+                                Sin esto no se le puede generar la mensualidad: es la fila de nuestros
+                                clientes a la que va la factura del plan.
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Plan *</label>
+                                <select name="plan" id="plan" required
+                                        class="form-select bg-light border-0 {{ f.invalido(errores, 'plan') }}">
+                                    {% set actual_p = (valores.plan if valores else (cliente.plan if cliente else 'BASICO')) %}
+                                    {% for p in planes %}
+                                    <option value="{{ p }}" {{ 'selected' if actual_p == p }}
+                                            data-cupo="{{ cupos_sugeridos.get(p) or '' }}">{{ p|title }}</option>
+                                    {% endfor %}
+                                </select>
+                                {{ f.mensaje(errores, 'plan') }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Cupo mensual de documentos</label>
+                                <input type="number" name="limite_mensual" id="limite_mensual" min="1"
+                                       class="form-control bg-light border-0 {{ f.invalido(errores, 'limite_mensual') }}"
+                                       value="{{ valores.limite_mensual if valores else (cliente.limite_mensual if cliente and cliente.limite_mensual else '') }}"
+                                       placeholder="Vacío = sin tope">
+                                {{ f.mensaje(errores, 'limite_mensual', 'Un número entero de documentos.') }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold"
+                                    style="border-radius:8px;">
+                                <i class="bi bi-check2-circle me-1"></i>
+                                {{ 'Guardar cambios' if cliente else 'Crear y generar llave' }}
+                            </button>
+                            <a href="{{ url_for('clientes_api') }}" class="btn btn-light border px-4 py-2"
+                               style="border-radius:8px;">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Cómo se conecta</h6>
+                    <p class="small text-muted mb-2">Al cliente le entregas la llave y esta dirección:</p>
+                    <pre class="bg-light border rounded p-3 small mb-3" style="white-space:pre-wrap;">POST /api/v1/facturas
+X-API-Key: fg_live_xxxx.secreto</pre>
+                    <p class="small text-muted mb-0">
+                        Lo primero que debería probar es <code>GET /api/v1/ping</code>: si responde,
+                        la llave sirve y ya sabe con qué emisor va a numerar.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // El cupo del plan es una sugerencia: se propone al cambiar de plan, pero no
+    // se pisa lo que ya se haya escrito a mano para un cliente con trato aparte.
+    document.getElementById('plan').addEventListener('change', function (e) {
+        const cupo = document.getElementById('limite_mensual');
+        if (!cupo.value || cupo.dataset.sugerido === 'si') {
+            cupo.value = e.target.selectedOptions[0].dataset.cupo || '';
+            cupo.dataset.sugerido = 'si';
+        }
+    });
+</script>
+{% endblock %}

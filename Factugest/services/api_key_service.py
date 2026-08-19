@@ -27,10 +27,21 @@ import secrets
 from datetime import datetime
 
 from database import execute_query, execute_update, get_one, get_many
+from services import validaciones as v
 
 PREFIJO_BASE = "fg_live_"
 ESTADOS = ("ACTIVO", "SUSPENDIDO", "REVOCADO")
 PLANES = ("BASICO", "PRO", "ILIMITADO")
+
+# Cupo con el que se propone cada plan. Es una sugerencia del formulario, no una
+# regla: un cliente puede quedar con el cupo que se le haya negociado.
+CUPO_SUGERIDO = {"BASICO": 150, "PRO": 400, "ILIMITADO": None}
+
+ETIQUETA_ESTADO = {
+    "ACTIVO":     ("Activo", "success"),
+    "SUSPENDIDO": ("Suspendido", "warning"),
+    "REVOCADO":   ("Revocado", "danger"),
+}
 
 
 class LlaveInvalidaError(Exception):
@@ -65,6 +76,77 @@ def _partir(llave: str) -> tuple:
     if not prefijo or not secreto:
         raise LlaveInvalidaError("La llave no tiene el formato esperado")
     return prefijo, secreto
+
+
+# ── Validación ──────────────────────────────────────────────────────────────
+
+def validar_cliente_api(datos: dict, cod_cliente_api: int = None):
+    """Reglas del alta de un cliente integrado.
+
+    La empresa emisora es lo único que no puede faltar ni repetirse: es con su
+    NIT y su resolución que se van a numerar los documentos, y dos clientes
+    apuntando a la misma empresa se pisarían el consecutivo.
+    """
+    val = v.Validador()
+    val.campo("nombre", v.razon_social, datos.get("nombre"), maximo=150)
+    val.campo("cod_empresa", v.entero, datos.get("cod_empresa"), minimo=1)
+    val.campo("plan", v.opcion, datos.get("plan"), PLANES)
+
+    cliente = (datos.get("cod_cliente") or "").strip() if isinstance(
+        datos.get("cod_cliente"), str) else datos.get("cod_cliente")
+    if cliente in (None, "", "0"):
+        val.datos["cod_cliente"] = None
+    else:
+        val.campo("cod_cliente", v.entero, cliente, minimo=1)
+
+    # Sin límite es un valor legítimo —es lo que significa el plan ilimitado—, así
+    # que el campo vacío no es un error: es NULL.
+    limite = datos.get("limite_mensual")
+    if limite in (None, "", "0"):
+        val.datos["limite_mensual"] = None
+    else:
+        val.campo("limite_mensual", v.entero, limite, minimo=1, maximo=1000000)
+
+    cod_empresa = val.datos.get("cod_empresa")
+    if cod_empresa:
+        ocupada = get_one(
+            "SELECT cod_cliente_api, nombre FROM clientes_api WHERE cod_empresa = %s "
+            "AND cod_cliente_api <> %s", (cod_empresa, cod_cliente_api or 0))
+        if ocupada:
+            val.errores["cod_empresa"] = (
+                f"Esa empresa emisora ya es de «{ocupada['nombre']}». "
+                "Cada cliente numera con la suya.")
+
+    return val
+
+
+def actualizar_cliente_api(cod_cliente_api: int, nombre: str, cod_empresa: int,
+                           cod_cliente, plan: str, limite_mensual):
+    """Cambia los datos comerciales. La llave no se toca aquí: se rota aparte."""
+    return execute_update(
+        "UPDATE clientes_api SET nombre = %s, cod_empresa = %s, cod_cliente = %s, "
+        "  plan = %s, limite_mensual = %s WHERE cod_cliente_api = %s",
+        (nombre, cod_empresa, cod_cliente, plan, limite_mensual, cod_cliente_api))
+
+
+def tiene_documentos(cod_cliente_api: int) -> int:
+    """Cuántos documentos emitió. Un cliente con documentos no se borra, se revoca."""
+    fila = get_one("SELECT COUNT(*) AS n FROM documentos WHERE cod_cliente_api = %s",
+                   (cod_cliente_api,))
+    return int(fila["n"] if fila else 0)
+
+
+def eliminar_cliente_api(cod_cliente_api: int):
+    """Solo para el que nunca emitió nada.
+
+    Los documentos son la prueba de lo que se transmitió a la DIAN por cuenta de
+    ese cliente; borrarlos junto con su ficha dejaría emisiones sin dueño. Para
+    cortarle el servicio a un cliente que sí operó está `REVOCADO`.
+    """
+    if tiene_documentos(cod_cliente_api):
+        raise ValueError("Ese cliente ya emitió documentos: revócalo en lugar de borrarlo.")
+    return execute_update("DELETE FROM clientes_api WHERE cod_cliente_api = %s",
+                          (cod_cliente_api,))
 
 
 # ── Alta y administración ───────────────────────────────────────────────────
@@ -124,12 +206,24 @@ def get_cliente_api_by_id(cod_cliente_api: int):
 
 
 def get_all_clientes_api():
+    """La lista del panel, con el volumen emitido al lado.
+
+    El conteo va en la misma consulta y no en un bucle: son pocas filas, pero una
+    consulta por cliente es el camino más corto a una lista que se arrastra
+    cuando haya cincuenta.
+    """
     return get_many(
-        "SELECT ca.*, e.nombre AS empresa_nombre, c.full_name AS cliente_nombre "
+        "SELECT ca.*, e.nombre AS empresa_nombre, e.nit AS empresa_nit, "
+        "       c.full_name AS cliente_nombre, "
+        "       COUNT(d.cod_documento) AS documentos_total, "
+        "       COALESCE(SUM(LEFT(d.fecha_emision, 7) = LEFT(CURDATE(), 7)), 0) "
+        "           AS documentos_mes "
         "FROM clientes_api ca "
-        "LEFT JOIN empresas e  ON ca.cod_empresa = e.cod_empresa "
-        "LEFT JOIN customers c ON ca.cod_cliente = c.customer_id "
-        "ORDER BY ca.nombre"
+        "LEFT JOIN empresas e   ON ca.cod_empresa = e.cod_empresa "
+        "LEFT JOIN customers c  ON ca.cod_cliente = c.customer_id "
+        "LEFT JOIN documentos d ON d.cod_cliente_api = ca.cod_cliente_api "
+        "GROUP BY ca.cod_cliente_api "
+        "ORDER BY ca.estado = 'REVOCADO', ca.nombre"
     )
 
 
