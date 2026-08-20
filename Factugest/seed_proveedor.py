@@ -242,6 +242,14 @@ EMPRESAS_COMPRADORAS = [
     ("Servicios Integrales del Oriente", "900412669"),
 ]
 
+# El porcentaje del descuento no dice de dónde salió; el concepto sí, y es lo que
+# la DIAN espera en el AllowanceChargeReason de la línea. Va atado al porcentaje
+# para que el sembrador siga siendo determinista.
+CONCEPTOS_DESCUENTO = {
+    5: "Descuento comercial",
+    10: "Promoción por volumen",
+}
+
 CONCEPTOS = {
     "4741": [("Portátil Lenovo IdeaPad 3", 2150000), ("Impresora Epson L3250", 890000),
              ("Teclado mecánico", 189000), ("Mouse inalámbrico", 45000),
@@ -642,12 +650,14 @@ def _insertar_documento(cur, suscriptor, empresa, consecutivo, cuando, cod_recep
                         conceptos, manifiesto):
     lineas = []
     for descripcion, precio in random.sample(conceptos, random.randint(1, min(3, len(conceptos)))):
+        desc_pct = random.choice([0, 0, 0, 5, 10])
         lineas.append({
             "codigo": descripcion[:12].upper().replace(" ", "-"),
             "descripcion": descripcion,
             "cantidad": random.randint(1, 4),
             "precio_unitario": precio,
-            "descuento_porcentaje": random.choice([0, 0, 0, 5, 10]),
+            "descuento_porcentaje": desc_pct,
+            "descripcion_descuento": CONCEPTOS_DESCUENTO.get(desc_pct),
             "impuesto_porcentaje": 19,
             "impuesto_codigo_dian": "01",
             "unidad_medida": "94",
@@ -689,12 +699,13 @@ def _insertar_documento(cur, suscriptor, empresa, consecutivo, cuando, cod_recep
         cur.execute(
             "INSERT INTO documento_lineas (cod_documento, orden, codigo, descripcion, "
             "  unidad_medida, cantidad, precio_unitario, valor_bruto, descuento_porcentaje, "
-            "  descuento_valor, subtotal, impuesto_codigo_dian, impuesto_porcentaje, "
-            "  impuesto_valor) "
-            "VALUES (%s,%s,%s,%s,'94',%s,%s,%s,%s,%s,%s,'01',%s,%s)",
+            "  descuento_valor, descripcion_descuento, subtotal, impuesto_codigo_dian, "
+            "  impuesto_porcentaje, impuesto_valor) "
+            "VALUES (%s,%s,%s,%s,'94',%s,%s,%s,%s,%s,%s,%s,'01',%s,%s)",
             (cod_documento, orden, linea["codigo"], linea["descripcion"],
              linea["cantidad"], linea["precio_unitario"], linea["valor_bruto"],
-             linea["descuento_porcentaje"], linea["descuento_valor"], linea["subtotal"],
+             linea["descuento_porcentaje"], linea["descuento_valor"],
+             linea.get("descripcion_descuento"), linea["subtotal"],
              linea["impuesto_porcentaje"], linea["impuesto_valor"]))
 
     mensajes = {"ACEPTADO": "Documento validado por la DIAN",
