@@ -43,7 +43,23 @@
                         {% for branch in branches %}
                         <tr style="transition: all 0.2s;">
                             <td class="ps-4 fw-bold text-dark">{{ branch.cod_empresa }}</td>
-                            <td class="fw-bold">{{ branch.nombre }}</td>
+                            <td class="fw-bold">
+                                <span class="d-inline-flex align-items-center gap-2">
+                                    {% if branch.logo %}
+                                    <img src="{{ url_for('static', path='img/logos/' ~ branch.logo) }}"
+                                         alt="" width="30" height="30"
+                                         style="border-radius:6px;object-fit:contain;background:#fff;border:1px solid #eee;">
+                                    {% else %}
+                                    <span class="d-inline-flex align-items-center justify-content-center"
+                                          style="width:30px;height:30px;border-radius:6px;flex:0 0 30px;
+                                                 background:{{ color_monograma(branch.nombre, branch.color_marca) }};
+                                                 color:#fff;font-size:.7rem;letter-spacing:.5px;">
+                                        {{ iniciales(branch.nombre) }}
+                                    </span>
+                                    {% endif %}
+                                    {{ branch.nombre }}
+                                </span>
+                            </td>
                             <td><span class="font-monospace text-muted">{{ branch.nit }}</span></td>
                             <td class="text-muted">{{ branch.direccion }}</td>
                             <td>{{ branch.ciudad }}</td>

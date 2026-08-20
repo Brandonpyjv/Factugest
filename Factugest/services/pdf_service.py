@@ -12,6 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
 from num2words import num2words
 
+from services import monograma
 from services.validaciones import nombre_documento
 
 
@@ -165,7 +166,8 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     emp_gran_c   = dato('gran_contribuyente', 'empresa_gran_contribuyente', 0)
     emp_prefijo  = dato('prefijo_factura', 'empresa_prefijo')
     emp_logo     = dato('logo', 'empresa_logo', None)
-    PRIMARY      = _color(dato('color_marca', 'empresa_color_marca', None))
+    COLOR_MARCA  = dato('color_marca', 'empresa_color_marca', None)
+    PRIMARY      = _color(COLOR_MARCA)
     PRIMARY2     = _oscurecer(PRIMARY)
     res_num      = dato('resolucion_dian', 'empresa_resolucion_dian')
     res_f_desde  = dato('resolucion_fecha_desde', 'empresa_resolucion_fecha_desde')
@@ -226,12 +228,15 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     # queda fijo pase lo que pase. Fue justamente lo que dejó el nombre, el NIT y
     # el régimen de todos los emisores pintados con el azul de FactuGest, aunque
     # el resto del documento ya saliera con su marca.
+    # El `leading` va explícito en las líneas grandes: el estilo base lo tiene en 12
+    # y un nombre de 13 puntos se montaba encima del NIT.
     emp_lines = [
         Paragraph(emp_nombre,
-                  _style('en', alignment=TA_CENTER, fontSize=13, textColor=PRIMARY,
-                         fontName='Helvetica-Bold')),
+                  _style('en', alignment=TA_CENTER, fontSize=13, leading=16,
+                         textColor=PRIMARY, fontName='Helvetica-Bold')),
         Paragraph(f'<b>{nit_str}</b> {emp_regimen}',
-                  _style('en2', alignment=TA_CENTER, fontSize=7.5, textColor=PRIMARY)),
+                  _style('en2', alignment=TA_CENTER, fontSize=7.5, leading=10,
+                         textColor=PRIMARY)),
     ]
     if notes_str:
         emp_lines.append(Paragraph(notes_str, _style('en3', alignment=TA_CENTER, fontSize=7, textColor=colors.HexColor('#555'))))
@@ -253,9 +258,9 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     # Columna derecha: tipo + número + fechas
     right_lines = [
         Paragraph(f'<b>{tipo_label}</b>',
-                  _style('tr', alignment=TA_RIGHT, fontSize=10, textColor=DARK, fontName='Helvetica-Bold')),
+                  _style('tr', alignment=TA_RIGHT, fontSize=10, leading=13, textColor=DARK, fontName='Helvetica-Bold')),
         Paragraph(f'<b>{num_factura}</b>',
-                  _style('tr2', alignment=TA_RIGHT, fontSize=11, textColor=PRIMARY, fontName='Helvetica-Bold')),
+                  _style('tr2', alignment=TA_RIGHT, fontSize=11, leading=14, textColor=PRIMARY, fontName='Helvetica-Bold')),
         Spacer(1, 4),
         Paragraph(f'Fecha de Generación: {fecha_str}', _style('tr3', alignment=TA_RIGHT, fontSize=7.5)),
         Paragraph(f'Fecha de Expedición: {fecha_str}', _style('tr4', alignment=TA_RIGHT, fontSize=7.5)),
@@ -263,17 +268,38 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     ]
 
     # Logo
-    # Sin logo cargado la casilla queda vacía y el membrete de al lado ya abre con
-    # el nombre del emisor: la DIAN no exige logo, y repetir el nombre dos veces
-    # para llenar el hueco se ve peor que el hueco. Lo que no puede llevar una
-    # factura es el logo de otro.
+    # Un logo cargado siempre manda. Cuando no lo hay —que es lo normal en un
+    # negocio pequeño— se dibuja el monograma con las iniciales sobre el color de
+    # la empresa, en vez de dejar el hueco o de repetir el nombre. Lo que no puede
+    # llevar una factura es el logo de otro.
     ruta_logo = _ruta_logo(emp_logo)
-    logo_cell = ''
+    logo_cell = None
     if ruta_logo:
         try:
             logo_cell = Image(ruta_logo, width=3.4 * cm, height=2 * cm, kind='proportional')
         except Exception:
-            logo_cell = ''
+            logo_cell = None
+    if logo_cell is None:
+        # El cuadro va del color de la empresa; si no eligió uno, de un color estable
+        # sacado de su nombre y no del gris de todos, que no distinguiría nada. El
+        # texto del membrete se queda neutro: el acento es el cuadro.
+        fondo = colors.HexColor(monograma.color(emp_nombre, COLOR_MARCA))
+        lado = 2.1 * cm
+        logo_cell = Table(
+            [[Paragraph(monograma.iniciales(emp_nombre),
+                        _style('mono', alignment=TA_CENTER, fontSize=20,
+                               fontName='Helvetica-Bold', textColor=colors.white,
+                               leading=24))]],
+            colWidths=[lado], rowHeights=[lado])
+        logo_cell.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), fondo),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
 
     header_data = [[logo_cell, emp_lines, right_lines]]
     header_table = Table(header_data, colWidths=[3.5 * cm, 9.5 * cm, 5.5 * cm])

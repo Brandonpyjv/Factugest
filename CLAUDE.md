@@ -293,9 +293,29 @@ aquí, y el membrete caía en los valores por defecto. La factura de una clínic
 nombre y el logo de FactuGest, como si la hubiéramos expedido nosotros.
 
 El logo y el color también son de cada empresa (`empresas.logo` y `empresas.color_marca`,
-migraciones 011 y 012; se cargan en **Empresas emisoras › Marca**). Sin logo, el membrete
-imprime el nombre; sin color, se usa un gris azulado que no es la marca de nadie. La DIAN
-no exige logo — lo que una factura no puede llevar es el de otro.
+migraciones 011 y 012; se cargan en **Empresas emisoras › Marca**). Sin color se usa un
+gris azulado que no es la marca de nadie. La DIAN no exige logo — lo que una factura no
+puede llevar es el de otro.
+
+### El monograma: la empresa que no tiene logo
+
+Casi ningún negocio pequeño tiene un archivo de logo a mano, y pedirle uno para poder
+facturar sería poner un trámite delante de un documento fiscal. Cuando no hay logo,
+`services/monograma.py` dibuja las dos iniciales del nombre sobre el color de la empresa,
+al estilo del distintivo de un contacto. Tres reglas:
+
+- **No se guarda como archivo.** Se dibuja al momento, igual en el PDF que en el panel.
+  Un archivo generado habría que regenerarlo cada vez que cambie el nombre o el color, y
+  el día que no se regenere quedaría un distintivo que dice algo distinto del membrete.
+- **El color no es aleatorio.** Sale de `color_marca`; si la empresa no eligió uno, se
+  deriva del nombre —siempre el mismo para el mismo nombre—. Un distintivo que cambia de
+  color en cada factura no distingue nada.
+- **Un logo cargado siempre manda.** El monograma es lo que se usa mientras no lo haya.
+
+Las iniciales se calculan una sola vez: el panel las pide a las funciones globales de
+Jinja `iniciales()` y `color_monograma()`, registradas en `templates_config.py` sobre el
+mismo módulo que usa el PDF. Si la pantalla calculara las suyas, el día que cambien las
+reglas el panel y la factura mostrarían distintivos distintos.
 
 ### Descuentos en el PDF
 

@@ -214,6 +214,7 @@ def get_all_clientes_api():
     """
     return get_many(
         "SELECT ca.*, e.nombre AS empresa_nombre, e.nit AS empresa_nit, "
+        "       e.logo AS empresa_logo, e.color_marca AS empresa_color_marca, "
         "       c.full_name AS cliente_nombre, "
         "       COUNT(d.cod_documento) AS documentos_total, "
         "       COALESCE(SUM(LEFT(d.fecha_emision, 7) = LEFT(CURDATE(), 7)), 0) "
