@@ -341,7 +341,8 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
          Paragraph(cli_nombre.upper(), _style('clv', fontSize=7.5))],
         [Paragraph('<b>Nº Identificación:</b>', _style('clh2', fontSize=7.5, fontName='Helvetica-Bold')),
          Paragraph(f'{cli_doc_tipo} {cli_doc_num}', _style('clv2', fontSize=7.5))],
-        [Paragraph(cli_dir_val, _style('clad', fontSize=7.5, textColor=colors.HexColor('#555'))), ''],
+        [Paragraph('<b>Dirección:</b>', _style('clh8', fontSize=7.5, fontName='Helvetica-Bold')),
+         Paragraph(cli_dir_val.upper(), _style('clv8', fontSize=7.5))],
         [Paragraph(f'<b>Ciudad:</b>', _style('clh3', fontSize=7.5, fontName='Helvetica-Bold')),
          Paragraph(cli_ciudad_v.upper(), _style('clv3', fontSize=7.5))],
         [Paragraph(f'<b>Departamento:</b>', _style('clh4', fontSize=7.5, fontName='Helvetica-Bold')),
@@ -357,7 +358,6 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
         ('TOPPADDING', (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('SPAN', (0, 2), (1, 2)),
     ]))
 
     cli_right = Table([
@@ -425,8 +425,8 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
         total_lineas += 1
 
         desc_desc = d.get('descripcion_descuento', '') or ''
-        desc_label = (f' <font color="#888888" size="6">▸ Dto: {desc_desc} ({desc_pct:.1f}%)</font>' if desc_pct > 0 and desc_desc
-                      else f' <font color="#888888" size="6">▸ Dto: {desc_pct:.1f}%</font>' if desc_pct > 0
+        desc_label = (f' <font color="#888888" size="6">•&nbsp;Dto: {desc_desc} ({desc_pct:.1f}%)</font>' if desc_pct > 0 and desc_desc
+                      else f' <font color="#888888" size="6">•&nbsp;Dto: {desc_pct:.1f}%</font>' if desc_pct > 0
                       else '')
         nombre_cell = Paragraph(nombre + desc_label, _style(f'nm{i}', fontSize=7.5))
 
@@ -444,7 +444,13 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
                                                   fontName='Helvetica-Bold')),
         ])
 
-    col_widths = [0.7*cm, 1.8*cm, 4.5*cm, 1.5*cm, 1.2*cm, 2.0*cm, 1.9*cm, 1.0*cm, 1.7*cm, 2.2*cm]
+    # Las cuatro columnas de dinero están dimensionadas para un importe de ocho
+    # cifras con separadores; con el reparto anterior un IVA de 1.123.470 no cabía y
+    # ReportLab lo partía a mitad de cifra —«1,123,470.0» y debajo «0»—, que en una
+    # factura no es un defecto estético sino una cantidad ilegible. El espacio sale
+    # de DESCRIPCIÓN, la única que puede repartirse en varias líneas sin perder nada.
+    col_widths = [0.8*cm, 1.75*cm, 4.0*cm, 1.5*cm, 1.2*cm,
+                  2.05*cm, 2.05*cm, 1.0*cm, 2.05*cm, 2.15*cm]
     prod_table = Table(rows, colWidths=col_widths, repeatRows=1)
     prod_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),

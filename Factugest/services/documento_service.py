@@ -83,7 +83,19 @@ def resolver_receptor(cod_cliente_api: int, receptor: dict, cursor=None) -> int:
 
 
 def get_receptor(cod_receptor: int):
-    return get_one("SELECT * FROM receptores WHERE cod_receptor = %s", (cod_receptor,))
+    # `receptores` guarda el municipio por código, no por nombre. Sin este JOIN el
+    # documento canónico pedía `ciudad` y `departamento`, que no existen como
+    # columna, y el PDF de todo lo emitido por la API salía con esas dos filas del
+    # comprador en blanco.
+    return get_one("""
+        SELECT r.*,
+               m.nombre AS ciudad,
+               dp.nombre AS departamento
+        FROM receptores r
+            LEFT JOIN municipios m     ON r.cod_municipio  = m.cod_municipio
+            LEFT JOIN departamentos dp ON m.cod_departamento = dp.cod_departamento
+        WHERE r.cod_receptor = %s
+    """, (cod_receptor,))
 
 
 # ── Emisión ─────────────────────────────────────────────────────────────────
