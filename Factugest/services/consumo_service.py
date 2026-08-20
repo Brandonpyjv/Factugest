@@ -27,6 +27,20 @@ def periodo_actual() -> str:
     return f"{hoy.year:04d}-{hoy.month:02d}"
 
 
+def periodo_facturable() -> str:
+    """El ultimo mes cerrado: el unico que ya se puede cobrar.
+
+    La mensualidad se factura sobre un mes terminado, porque hasta que el mes no
+    cierra no se sabe cuantos documentos emitio el cliente ni cuanto excedente
+    lleva. El mes en curso siempre aparece «sin cobrar» —y lo esta—, pero no es
+    algo que nadie pueda resolver todavia: contarlo como pendiente es pedir una
+    accion que no existe.
+    """
+    hoy = date.today()
+    anio, mes = (hoy.year - 1, 12) if hoy.month == 1 else (hoy.year, hoy.month - 1)
+    return f"{anio:04d}-{mes:02d}"
+
+
 def periodos_recientes(cantidad: int = 6) -> list:
     """Los últimos meses con actividad, del más reciente al más antiguo.
 
@@ -167,4 +181,157 @@ def resumen_plataforma(periodo: str = None) -> dict:
         "en_alerta": sum(1 for c in consumo if c["semaforo"] == "ALERTA"),
         "sin_cobrar": sum(1 for c in consumo
                           if c["estado"] == "ACTIVO" and not c["cod_factura_plan"]),
+    }
+
+
+def ingreso_por_plan(periodo: str = None) -> list:
+    """Lo que factura cada plan en un mes: de dónde sale el ingreso recurrente.
+
+    Sale de `facturas_plan`, que es el puente entre la mensualidad cobrada y el
+    cliente que la pagó. No se deduce del precio de lista del plan: un cliente
+    puede haber entrado a mitad de mes o llevar excedentes, y lo que interesa es
+    lo que se cobró, no lo que costaría.
+    """
+    return get_many(
+        "SELECT c.plan, COUNT(*) AS clientes, SUM(f.total) AS total "
+        "FROM facturas_plan fp "
+        "    JOIN clientes_api c ON c.cod_cliente_api = fp.cod_cliente_api "
+        "    JOIN facturas f     ON f.cod_factura     = fp.cod_factura "
+        "WHERE fp.periodo = %s AND f.tipo_factura = 'FV' "
+        "GROUP BY c.plan ORDER BY total DESC", (periodo or periodo_actual(),))
+
+
+def serie_ingreso_recurrente(meses: int = 12) -> list:
+    """Lo facturado en mensualidades, mes a mes. El ingreso que se repite.
+
+    Se separa del total facturado porque no es lo mismo: el total incluye las
+    implementaciones y capacitaciones, que se cobran una vez y no vuelven.
+    Mezclarlas hace ver un crecimiento que el mes siguiente no está.
+
+    Agrupa por el mes en que se **emitió** la factura, no por el periodo de
+    servicio que cobra: la mensualidad de julio se factura en agosto, y como esta
+    serie se dibuja junto a la de ventas totales, las dos tienen que hablar del
+    mismo eje o los picos quedarían corridos un mes entre sí.
+    """
+    filas = get_many(
+        "SELECT LEFT(f.fecha, 7) AS periodo, COUNT(*) AS clientes, "
+        "       SUM(f.total) AS total "
+        "FROM facturas_plan fp "
+        "    JOIN facturas f ON f.cod_factura = fp.cod_factura "
+        "WHERE f.tipo_factura = 'FV' "
+        "GROUP BY periodo ORDER BY periodo DESC LIMIT %s", (meses,))
+    return list(reversed(filas))
+
+
+# ── Series por rango de fechas ──────────────────────────────────────────────
+# El panel filtra por rango, no por mes, y una serie mensual no dice nada dentro
+# de una ventana de siete dias. El agrupador se arma con funciones de fecha y no
+# con DATE_FORMAT, por el motivo del encabezado del modulo.
+
+GRANULARIDADES = ("dia", "semana", "mes")
+
+_AGRUPADOR = {
+    "dia":    "DATE(fecha_emision)",
+    "semana": "DATE(fecha_emision - INTERVAL WEEKDAY(fecha_emision) DAY)",
+    "mes":    "DATE(fecha_emision - INTERVAL (DAY(fecha_emision) - 1) DAY)",
+}
+
+
+def granularidad_sugerida(desde, hasta) -> str:
+    """El grano con el que un rango se lee sin quedar ni plano ni ilegible.
+
+    Quince dias por dia caben en pantalla; un anio por dia son trescientas
+    sesenta y cinco barras de un pixel. Es solo el valor inicial: quien mira
+    puede cambiarlo, y por eso `granularidades_utiles` dice cuales tienen
+    sentido para ese rango.
+    """
+    dias = (date.fromisoformat(str(hasta)) - date.fromisoformat(str(desde))).days
+    if dias <= 21:
+        return "dia"
+    if dias <= 120:
+        return "semana"
+    return "mes"
+
+
+def granularidades_utiles(desde, hasta) -> list:
+    """Las opciones que vale la pena ofrecer para un rango.
+
+    Se descarta el grano que daria un solo punto —un mes dentro de una ventana
+    de siete dias— y el que daria cientos: una grafica de un punto no es una
+    grafica, y una de trescientas barras tampoco.
+    """
+    dias = (date.fromisoformat(str(hasta)) - date.fromisoformat(str(desde))).days
+    opciones = []
+    if dias <= 120:
+        opciones.append("dia")
+    if 7 <= dias <= 400:
+        opciones.append("semana")
+    if dias >= 45:
+        opciones.append("mes")
+    return opciones or ["dia"]
+
+
+def serie_documentos(desde, hasta, granularidad: str = None) -> dict:
+    """Documentos emitidos dentro del rango, agrupados por dia, semana o mes."""
+    granularidad = (granularidad if granularidad in GRANULARIDADES
+                    else granularidad_sugerida(desde, hasta))
+    filas = get_many(
+        f"SELECT {_AGRUPADOR[granularidad]} AS periodo, COUNT(*) AS emitidos, "
+        "       COUNT(DISTINCT cod_cliente_api) AS clientes "
+        "FROM documentos "
+        "WHERE DATE(fecha_emision) BETWEEN %s AND %s "
+        "GROUP BY periodo ORDER BY periodo", (str(desde), str(hasta)))
+    return {"granularidad": granularidad, "puntos": filas}
+
+
+def resumen_del_rango(desde, hasta) -> dict:
+    """Lo emitido dentro del rango: volumen, clientes que emitieron y aceptacion.
+
+    Es el gemelo de `resumen_plataforma` para un rango de fechas. Aquel cuenta
+    sobre todo lo historico y sobre el mes calendario, que es lo que necesita el
+    modulo de consumo; el panel filtra por rango y necesitaba que sus cifras se
+    movieran con el filtro.
+    """
+    fila = get_one(
+        "SELECT COUNT(*) AS emitidos, "
+        "       COUNT(DISTINCT cod_cliente_api) AS clientes, "
+        "       SUM(estado = 'ACEPTADO')  AS aceptados, "
+        "       SUM(estado = 'RECHAZADO') AS rechazados, "
+        "       SUM(estado = 'PENDIENTE') AS pendientes "
+        "FROM documentos "
+        "WHERE DATE(fecha_emision) BETWEEN %s AND %s",
+        (str(desde), str(hasta))) or {}
+    aceptados = int(fila.get("aceptados") or 0)
+    rechazados = int(fila.get("rechazados") or 0)
+    resueltos = aceptados + rechazados
+    return {
+        "emitidos": int(fila.get("emitidos") or 0),
+        "clientes": int(fila.get("clientes") or 0),
+        "aceptados": aceptados,
+        "rechazados": rechazados,
+        "pendientes": int(fila.get("pendientes") or 0),
+        # Sobre lo resuelto, no sobre lo emitido: un lote todavia en proceso no
+        # es un rechazo y no tiene por que hacer caer la cifra.
+        "aceptacion": round(aceptados / resueltos * 100, 1) if resueltos else None,
+    }
+
+
+def ingreso_recurrente_del_rango(desde, hasta) -> dict:
+    """Mensualidades facturadas dentro del rango, y su reparto por plan."""
+    total = get_one(
+        "SELECT COUNT(*) AS mensualidades, COALESCE(SUM(f.total), 0) AS total "
+        "FROM facturas_plan fp JOIN facturas f ON f.cod_factura = fp.cod_factura "
+        "WHERE f.tipo_factura = 'FV' AND DATE(f.fecha) BETWEEN %s AND %s",
+        (str(desde), str(hasta))) or {}
+    por_plan = get_many(
+        "SELECT c.plan, COUNT(*) AS clientes, SUM(f.total) AS total "
+        "FROM facturas_plan fp "
+        "    JOIN clientes_api c ON c.cod_cliente_api = fp.cod_cliente_api "
+        "    JOIN facturas f     ON f.cod_factura     = fp.cod_factura "
+        "WHERE f.tipo_factura = 'FV' AND DATE(f.fecha) BETWEEN %s AND %s "
+        "GROUP BY c.plan ORDER BY total DESC", (str(desde), str(hasta)))
+    return {
+        "total": float(total.get("total") or 0),
+        "mensualidades": int(total.get("mensualidades") or 0),
+        "por_plan": por_plan,
     }

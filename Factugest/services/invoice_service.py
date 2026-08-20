@@ -428,7 +428,13 @@ def delete_invoice(invoice_id: int):
     return execute_update("DELETE FROM facturas WHERE cod_factura = %s", (invoice_id,))
 
 
-def get_dashboard_stats():
+def get_dashboard_stats(recientes: int = 8):
+    """Cifras de cabecera y las ultimas facturas emitidas.
+
+    `recientes` es cuantas filas devuelve la lista: el panel del cajero cabe con
+    ocho y el de administracion muestra mas, porque ahi la lista es lo que deja
+    ver de un vistazo como viene la cobranza.
+    """
     stats = {}
 
     row = get_one("SELECT COUNT(*) AS total FROM facturas WHERE tipo_factura = 'FV'")
@@ -456,6 +462,6 @@ def get_dashboard_stats():
         FROM facturas f
             LEFT JOIN customers c     ON f.cod_cliente = c.customer_id
             LEFT JOIN pagos_factura pf ON f.cod_pago   = pf.cod_pago_factura
-        ORDER BY f.fecha DESC LIMIT 8
-    """)
+        ORDER BY f.fecha DESC, f.cod_factura DESC LIMIT %s
+    """, (recientes,))
     return stats

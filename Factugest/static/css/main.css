@@ -539,11 +539,38 @@ body {
     flex-shrink: 0;
 }
 
-/* Contenedor de canvas: alto explícito para que el eje X quepa dentro de la
-   tarjeta y no aparezca un scroll interno. */
+/* Contenedor de canvas. Chart.js con maintainAspectRatio:false necesita que el
+   contenedor tenga una altura resuelta, de ahi el position:relative. */
 .panel-control .lienzo {
     position: relative;
     width: 100%;
+}
+
+/* Las tarjetas de una fila se igualan a la mas alta (h-100), pero el lienzo tenia
+   un alto fijo: la grafica de tres barras quedaba flotando arriba con media
+   tarjeta en blanco debajo. Estirandolo, cada grafica ocupa lo que su tarjeta le
+   da y el minimo evita que se aplaste cuando la fila es baja. */
+.panel-control .cuerpo-grafica {
+    display: flex;
+    flex-direction: column;
+    /* Sin esto un hijo flexible nunca baja de su contenido y no puede encogerse. */
+    min-height: 0;
+}
+
+.panel-control .cuerpo-grafica .lienzo {
+    flex: 1 1 0;
+    min-height: 260px;
+}
+
+/* El canvas sale del flujo. Chart.js le escribe un alto en pixeles al canvas; si
+   ese alto contara para el contenedor, el contenedor creceria, Chart.js volveria a
+   redimensionar y la tarjeta se estiraria sola en cada vuelta —la primera version
+   de esto dejo el panel en 8.478 px de alto—. Absoluto, el canvas se ajusta a la
+   caja y no la empuja. */
+.panel-control .cuerpo-grafica .lienzo > canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .panel-control .leyenda {
