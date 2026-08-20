@@ -120,17 +120,19 @@ def reservar_y_guardar(cliente_api: dict, tipo: str, calculo: dict, receptor: di
         cur.execute(
             "INSERT INTO documentos (id_publico, cod_cliente_api, cod_empresa, "
             "  cod_receptor, tipo, prefijo, consecutivo, numero, cufe, fecha_emision, "
-            "  fecha_vencimiento, forma_pago, subtotal_bruto, total_descuentos, subtotal, "
+            "  fecha_vencimiento, forma_pago, subtotal_bruto, total_descuentos, "
+            "  descripcion_descuento_factura, subtotal, "
             "  total_impuestos, total, estado, referencia_externa, observaciones, "
             "  orden_compra, proveedor_dian, xml, cod_documento_referencia, motivo_nota, "
             "  creado_en) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
-            "        'PENDIENTE', %s, %s, %s, %s, %s, %s, %s, %s)",
+            "        %s, 'PENDIENTE', %s, %s, %s, %s, %s, %s, %s, %s)",
             (id_publico, cliente_api["cod_cliente_api"], cod_empresa, cod_receptor, tipo,
              numeracion["prefijo"], numeracion["consecutivo"], numeracion["numero"], cufe,
              fecha.strftime("%Y-%m-%d %H:%M:%S.%f"), vencimiento,
              datos.get("forma_pago") or "CONTADO",
-             calculo["subtotal_bruto"], calculo["total_descuentos"], calculo["subtotal"],
+             calculo["subtotal_bruto"], calculo["total_descuentos"],
+             datos.get("descripcion_descuento_factura") or None, calculo["subtotal"],
              calculo["total_impuestos"], calculo["total"],
              datos.get("referencia_externa") or None, datos.get("observaciones") or None,
              datos.get("orden_compra") or None, datos.get("proveedor_dian"), xml,

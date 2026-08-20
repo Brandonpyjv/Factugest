@@ -132,6 +132,8 @@ def emitir_factura(datos: FacturaRequest, cliente: ClienteAPI, peticion: Request
             {"plazo_dias": datos.plazo_dias, "forma_pago": datos.forma_pago,
              "referencia_externa": datos.referencia_externa,
              "observaciones": datos.observaciones, "orden_compra": datos.orden_compra,
+             "descripcion_descuento_factura": (datos.descuento_global.descripcion
+                                               if datos.descuento_global else None),
              "proveedor_dian": proveedor.nombre})
     except RangoResolucionAgotadoError as e:
         raise _error(status.HTTP_409_CONFLICT, "rango_agotado", str(e))

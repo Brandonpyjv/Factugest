@@ -450,25 +450,46 @@ def generate_invoice_pdf(invoice: dict, details: list, emisor: dict = None) -> b
     qr_img  = Image(qr_buf, width=2.8 * cm, height=2.8 * cm)
 
     subtotal_bruto_pdf = subtotal_val + total_desc
-    # Calcular porcentaje del descuento de factura (excluyendo descuentos de productos)
-    product_disc_sum  = sum(float(d.get('descuento_valor', 0) or 0) for d in details)
-    invoice_disc_val  = max(0.0, total_desc - product_disc_sum)
-    base_for_inv_pct  = subtotal_val + invoice_disc_val
-    invoice_disc_pct  = round(invoice_disc_val / base_for_inv_pct * 100, 1) if base_for_inv_pct > 0 and invoice_disc_val > 0 else 0.0
+
+    # Los descuentos vienen de dos sitios distintos y se muestran por separado.
+    # Antes se sumaban en una sola línea rotulada con el porcentaje del descuento
+    # de factura: cuando la rebaja venía de las líneas —que es el caso corriente—
+    # el importe salía bien y el porcentaje decía 0,0 %, porque no había descuento
+    # de factura del que sacar ese número.
+    desc_lineas = sum(float(d.get('descuento_valor', 0) or 0) for d in details)
+    desc_factura = max(0.0, total_desc - desc_lineas)
+
+    # Cada uno sobre la base que de verdad le corresponde: el de línea sobre el
+    # bruto, y el de factura sobre lo que queda después de los de línea, que es
+    # el orden en que los aplica `calculo_documento`.
+    pct_lineas = (round(desc_lineas / subtotal_bruto_pdf * 100, 1)
+                  if subtotal_bruto_pdf > 0 and desc_lineas > 0 else 0.0)
+    base_factura = subtotal_bruto_pdf - desc_lineas
+    pct_factura = (round(desc_factura / base_factura * 100, 1)
+                   if base_factura > 0 and desc_factura > 0 else 0.0)
 
     totals_data = [
         [Paragraph('Total de Líneas', s_right), Paragraph(str(total_lineas), _style('tln', alignment=TA_RIGHT, fontName='Helvetica-Bold'))],
         [Paragraph('Bruto / Subtotal', s_right), Paragraph(f'$ {_fmt(subtotal_bruto_pdf)}', _style('tsub', alignment=TA_RIGHT, fontName='Helvetica-Bold'))],
     ]
-    if total_desc > 0:
-        if desc_factura_label:
-            desc_label_txt = f'(-) Dto: {desc_factura_label} ({invoice_disc_pct:.1f}%)'
-        else:
-            desc_label_txt = f'(-) Descuentos ({invoice_disc_pct:.1f}%)'
-        totals_data.append([
-            Paragraph(f'<font color="#cc0000">{desc_label_txt}</font>', _style('tdesc', alignment=TA_RIGHT, fontSize=7.5)),
-            Paragraph(f'<font color="#cc0000">-$ {_fmt(total_desc)}</font>', _style('tdescv', alignment=TA_RIGHT, fontName='Helvetica-Bold', fontSize=7.5)),
-        ])
+    def fila_descuento(etiqueta, valor, indice):
+        return [
+            Paragraph(f'<font color="#cc0000">{etiqueta}</font>',
+                      _style(f'tdesc{indice}', alignment=TA_RIGHT, fontSize=7.5)),
+            Paragraph(f'<font color="#cc0000">-$ {_fmt(valor)}</font>',
+                      _style(f'tdescv{indice}', alignment=TA_RIGHT,
+                             fontName='Helvetica-Bold', fontSize=7.5)),
+        ]
+
+    if desc_lineas > 0:
+        totals_data.append(fila_descuento(
+            f'(-) Dto. por producto ({pct_lineas:.1f}%)', desc_lineas, 1))
+    if desc_factura > 0:
+        # Con nombre cuando lo hay: «(-) Dto. de factura: Promoción de temporada».
+        etiqueta = ('(-) Dto. de factura: ' + desc_factura_label
+                    if desc_factura_label else '(-) Dto. de factura')
+        totals_data.append(fila_descuento(
+            f'{etiqueta} ({pct_factura:.1f}%)', desc_factura, 2))
     totals_data += [
         [Paragraph('Base Gravable', s_right), Paragraph(f'$ {_fmt(subtotal_val)}', _style('tbg', alignment=TA_RIGHT, fontName='Helvetica-Bold'))],
         [Paragraph('IVA', s_right), Paragraph(f'$ {_fmt(total_imp)}', _style('tiva', alignment=TA_RIGHT, fontName='Helvetica-Bold'))],

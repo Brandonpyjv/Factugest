@@ -615,6 +615,26 @@ def migracion_012_color_de_marca(cursor):
     return pasos
 
 
+# ── 013 · Concepto del descuento de factura en los documentos de la API ─────
+
+def migracion_013_concepto_del_descuento(cursor):
+    """El nombre del descuento global que envía el integrador.
+
+    La API lo recibe —`descuento_global.descripcion`— y se perdía al guardar: no
+    había columna. El PDF terminaba diciendo «(-) Dto. de factura (5.0%)» sin
+    poder explicar de qué descuento se trataba, mientras que en el formulario web
+    sí salía. Lo que el contrato acepta, se guarda.
+    """
+    pasos = []
+    if not _column_exists(cursor, "documentos", "descripcion_descuento_factura"):
+        cursor.execute(
+            "ALTER TABLE documentos ADD COLUMN descripcion_descuento_factura "
+            "VARCHAR(200) DEFAULT NULL COMMENT 'Concepto del descuento global, tal "
+            "como lo envio el integrador' AFTER total_descuentos")
+        pasos.append("columna documentos.descripcion_descuento_factura creada")
+    return pasos
+
+
 MIGRACIONES = [
     ("001", "Módulo de inventario: kardex de movimientos y flag controla_stock",
      migracion_001_inventario),
@@ -636,6 +656,8 @@ MIGRACIONES = [
      migracion_011_logo_por_empresa),
     ("012", "Color de marca de cada empresa emisora",
      migracion_012_color_de_marca),
+    ("013", "Concepto del descuento de factura en los documentos de la API",
+     migracion_013_concepto_del_descuento),
 ]
 
 

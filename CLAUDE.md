@@ -297,6 +297,18 @@ migraciones 011 y 012; se cargan en **Empresas emisoras › Marca**). Sin logo, 
 imprime el nombre; sin color, se usa un gris azulado que no es la marca de nadie. La DIAN
 no exige logo — lo que una factura no puede llevar es el de otro.
 
+### Descuentos en el PDF
+
+Los de línea y el de factura salen en **filas separadas**, cada uno con su porcentaje
+sobre la base que de verdad le corresponde: el de línea sobre el bruto, el de factura
+sobre lo que queda después de los de línea —que es el orden en que los aplica
+`calculo_documento`—. Sumarlos en una sola fila obligaba a rotularla con un porcentaje que
+no correspondía: cuando la rebaja venía de las líneas, la factura mostraba «Descuentos
+(0.0%)» restando dinero real.
+
+El concepto del descuento de línea lo muestra la tabla de líneas; el del descuento de
+factura, la fila del pie, porque no tiene otro sitio donde caber.
+
 ### Duración de la sesión
 
 La sesión se cierra por **inactividad** (`SESION_MINUTOS`, 30 por defecto), no a los
