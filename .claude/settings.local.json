@@ -164,7 +164,16 @@
       "Bash(PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -m pytest -q)",
       "Bash(PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -m pytest)",
       "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
-      "Bash(git -c core.pager=cat diff --cached --stat)"
+      "Bash(git -c core.pager=cat diff --cached --stat)",
+      "Bash(PYTHONIOENCODING=utf-8 python -)",
+      "WebFetch(domain:developers.factus.com.co)",
+      "Bash(curl *)",
+      "Bash(PYTHONIOENCODING=utf-8 python extraer.py)",
+      "Bash(PYTHONIOENCODING=utf-8 cat autenticacion__introduccion.txt autenticacion__auth.txt buenas-practicas__primeros-pasos.txt)",
+      "Bash(PYTHONIOENCODING=utf-8 grep -ril \"multiempresa\\\\|multi-empresa\\\\|varias empresas\\\\|múltiples empresas\\\\|partner\\\\|revendedor\\\\|integrador\" .)",
+      "Bash(PYTHONIOENCODING=utf-8 grep -oE \"\\(bill_number|correction_concept_code|customization_id\\) string[^|]{0,120}\" notas-debito__crear-y-validar.txt)",
+      "Bash(cp \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/699c34f7-76b6-4040-beaf-08dcadca3d23/scratchpad/factus/skills/facturas-crear-y-validar.md\" \"docs/factus/skill-factus-crear-factura.md\")",
+      "Bash(cp -r \"C:/Users/brand/AppData/Local/Temp/claude/D--01--Proyectos-Factugest-Python-Factugest/699c34f7-76b6-4040-beaf-08dcadca3d23/scratchpad/factus/txt\" \"docs/factus/paginas\")"
     ]
   }
 }

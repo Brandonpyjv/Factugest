@@ -317,6 +317,32 @@ Jinja `iniciales()` y `color_monograma()`, registradas en `templates_config.py` 
 mismo módulo que usa el PDF. Si la pantalla calculara las suyas, el día que cambien las
 reglas el panel y la factura mostrarían distintivos distintos.
 
+### Los datos del comprador en el PDF
+
+Cada dato va rotulado y al frente de su etiqueta. La dirección se pintaba sin rótulo y
+ocupando las dos columnas, justo encima de «Ciudad:», así que parecía el valor de la fila
+de abajo: la dirección se leía como si fuera la ciudad, y la ciudad no se leía en ninguna
+parte.
+
+Y no se leía porque tampoco llegaba. `receptores` guarda el municipio por código
+(`cod_municipio`), no por nombre; `get_receptor` hacía `SELECT *` y el documento canónico
+pedía `ciudad` y `departamento`, que no son columnas de esa tabla. El resultado era `None`
+en las dos, y **todo lo emitido por la API salía con esas filas en blanco**. Ahora
+`get_receptor` resuelve el código contra `municipios` y `departamentos`.
+
+### El ancho de la tabla de líneas
+
+Las cuatro columnas de dinero —precio, bruto, IVA y total— están dimensionadas para un
+importe de ocho cifras con separadores. Cuando no cabe, ReportLab no encoge la cifra ni la
+deja desbordar: la parte a mitad de número, y el IVA de una factura corriente salía como
+«1,123,470.0» con un «0» solitario debajo. En una factura eso no es un defecto estético,
+es una cantidad que no se puede leer.
+
+Los 18,59 cm útiles de la página están repartidos al milímetro, así que ensanchar una
+columna es quitarle a otra. El espacio sale de **DESCRIPCIÓN**, que es la única que puede
+repartirse en varias líneas sin perder nada. Antes de recortar cualquiera de las otras,
+mide el peor caso con `stringWidth` y descuenta los 8 pt de padding de la tabla.
+
 ### Descuentos en el PDF
 
 Los de línea y el de factura salen en **filas separadas**, cada uno con su porcentaje
@@ -328,6 +354,12 @@ no correspondía: cuando la rebaja venía de las líneas, la factura mostraba «
 
 El concepto del descuento de línea lo muestra la tabla de líneas; el del descuento de
 factura, la fila del pie, porque no tiene otro sitio donde caber.
+
+El concepto viaja con la línea (`descripcion_descuento`) desde quien emite: el formulario
+web lo manda en un campo oculto junto al porcentaje, y la API lo recibe en
+`descuento_descripcion`. El PDF no lo deduce del porcentaje —un 10 % puede ser una
+promoción o un convenio, y rotularlo por cuenta propia sería ponerle a la factura un
+motivo que nadie declaró—. Si no viene, sale solo el porcentaje.
 
 ### Duración de la sesión
 
@@ -446,9 +478,73 @@ CRUD completo para: Facturas, Clientes, Usuarios, Productos, Empresas (sucursale
 - Consecutivos de factura/NC/ND por empresa.
 - **Control de inventario**: facturar descuenta stock, la NC lo reingresa, kardex
   completo con alertas por bajo mínimo y valorización.
-- **Tablero de control** con filtros de periodo y empresa, gráficas Chart.js y
-  comparativa contra el periodo anterior. Vista reducida para CAJERO.
+- **Tablero de control** en dos secciones —el servicio y la venta—, con filtros de
+  periodo y empresa y gráficas Chart.js. Vista reducida para CAJERO.
 - **Reportes exportables** a CSV y PDF (`/reports`).
+
+### Qué mide el tablero
+
+Está partido en dos, y el orden importa: **el servicio va antes que la venta**, porque
+es lo que FactuGest hace; cobrarlo viene después.
+
+| Sección | Mide |
+|---|---|
+| **El servicio** | Documentos emitidos, clientes que emitieron, aceptación DIAN, ingreso recurrente y volumen por día/semana/mes |
+| **La venta** | Ventas netas, cobrado, cartera, facturación vs. cobro, ingreso por plan y cartera por antigüedad |
+
+**Todo respeta el filtro de periodo**, incluidas las cifras del servicio: si el rango
+cambia y una cifra no se mueve, esa cifra está mintiendo sobre lo que el rótulo dice que
+mide. `consumo_service.resumen_del_rango()` e `ingreso_recurrente_del_rango()` son los
+gemelos por rango de `resumen_plataforma()` e `ingreso_por_plan()`, que siguen contando
+por mes calendario porque es lo que necesita `/consumo`.
+
+Quedan **dos excepciones, y las dos lo dicen en pantalla**:
+
+- **«Consumo del cupo»** va por *mes en curso*: el cupo se agota por mes calendario, así
+  que recortarlo a una ventana móvil daría un consumo que no corresponde con el que se le
+  factura al cliente.
+- **«Mensualidades sin cobrar»** va por *último mes cerrado*: es una cola de trabajo, no
+  una medición del periodo.
+
+Se retiraron dos gráficas que medían una tienda y no un proveedor de facturación:
+**«Productos más vendidos»** —FactuGest vende cuatro planes, no un catálogo— y **«Ventas
+por método de pago»**, donde todo es transferencia y la gráfica era una sola barra. En su
+lugar están el volumen de documentos, el consumo del cupo y el ingreso por plan, que es lo
+que se mira para decidir a quién llamar.
+
+### La ventana por defecto es de un año
+
+FactuGest le factura a cada cliente **una vez al mes**. En los treinta días que traía por
+defecto eso da un solo punto —o ninguno, si el corte cae entre dos cobros—, y el tablero
+abría vacío con el negocio funcionando. Un año muestra la curva de suscriptores, que es lo
+que hay que mirar en un servicio. Los presets son 7, 15, 30 y 90 días y 12 meses, y el
+último es el que trae marcado.
+
+### El grano de las series
+
+Las dos gráficas temporales —documentos emitidos y facturación— se agrupan por **día,
+semana o mes**, y **comparten el grano** para que sus ejes hablen de los mismos tramos y
+se puedan leer una contra otra.
+
+El valor inicial sale del largo del rango (`granularidad_sugerida`): hasta 21 días por
+día, hasta 120 por semana, y por mes de ahí en adelante. Quince días por día caben en
+pantalla; un año por día son 365 barras de un píxel. Quien mira puede cambiarlo con el
+selector **«Agrupar por»**, que solo ofrece los granos con sentido para ese rango
+(`granularidades_utiles`): se descarta el que daría un solo punto —un mes dentro de una
+ventana de siete días— y el que daría cientos.
+
+La semana se rotula por el lunes con que empieza y se marca como tal («sem 17/08»): sin el
+prefijo se lee como el día 17 y no como los siete días que arrancan ahí.
+
+### El mes que se puede cobrar no es el mes en curso
+
+`consumo_service.periodo_facturable()` devuelve el **último mes cerrado**. La mensualidad
+se factura sobre un mes terminado, porque hasta que el mes no cierra no se sabe cuántos
+documentos emitió el cliente ni cuánto excedente lleva.
+
+De ahí salen «Mensualidades sin cobrar» y «Ingreso por plan». Contra el mes en curso, la
+primera decía *14 sin cobrar* el día siguiente de haberlas cobrado todas —siempre cierto,
+nunca accionable— y la segunda salía vacía, porque ese mes todavía no se factura.
 
 ### Datos de demostración
 

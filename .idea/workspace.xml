@@ -7,6 +7,16 @@
     <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/routes/dashboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/dashboard.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/seed_proveedor.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/seed_proveedor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/consumo_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/consumo_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/documento_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/documento_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/invoice_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/invoice_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/pdf_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/pdf_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/services/report_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/services/report_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/static/css/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/static/css/main.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Factugest/templates/dashboard/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/dashboard/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -123,7 +133,8 @@
       <workItem from="1786707222802" duration="778000" />
       <workItem from="1787065967572" duration="23944000" />
       <workItem from="1787146516410" duration="23000" />
-      <workItem from="1787146728509" duration="4186000" />
+      <workItem from="1787146728509" duration="25193000" />
+      <workItem from="1787241187776" duration="8751000" />
     </task>
     <servers />
   </component>
