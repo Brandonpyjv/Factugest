@@ -27,7 +27,12 @@ _MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
 # tinta para los tramos de antigüedad de cartera, que sí tienen orden natural.
 SERIE_FACTURADO = "#4e73df"
 SERIE_COBRADO = "#17a673"
-SERIE_DOCUMENTOS = "#6f42c1"
+# El volumen de documentos va en el azul de la marca (`--marca` del CSS) y no en
+# una tinta propia: es la grafica principal del panel y lo primero que se ve al
+# entrar, asi que quien la mira tiene que reconocer a FactuGest, no un color
+# suelto. No se confunde con la serie de facturado pese a compartir el azul
+# porque viven en secciones distintas y nunca coinciden en una misma grafica.
+SERIE_DOCUMENTOS = "#4e73df"
 RAMPA_ANTIGUEDAD = ["#9cb1ec", "#7a94e5", "#5877de", "#3a58c0", "#243c92"]
 
 # `.title()` sobre el codigo del plan deja «Basico» sin tilde. Los codigos se
@@ -168,7 +173,7 @@ def index(request: Request, desde: str = "", hasta: str = "",
             "cobrado":   [float(p["cobrado"] or 0) for p in serie["puntos"]],
         },
         # El volumen del servicio: lo que se emitio por cuenta de los clientes.
-        # Va en su propia tinta porque no es dinero, es cantidad de documentos.
+        # No es dinero, asi que su eje y su tooltip cuentan documentos, no pesos.
         "documentos": {
             "etiquetas": [_etiqueta_periodo(f["periodo"], serie_documentos["granularidad"])
                           for f in serie_documentos["puntos"]],
