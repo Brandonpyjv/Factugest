@@ -50,7 +50,7 @@ DETALLE = {
      "Si la empresa emisora no tiene resolución vigente, el sistema advierte que el cliente "
      "no podrá emitir hasta corregirlo.",
      "Si el administrador abandona la pantalla sin copiar la llave, esta no puede "
-     "recuperarse: hay que rotarla."],
+     "recuperarse, y hay que rotarla."],
 ),
 "CU-06": (
     ["El administrador ha iniciado sesión con un rol administrativo.",
@@ -69,14 +69,14 @@ DETALLE = {
      "En auditoría consta quién rotó, cuándo y sobre qué cliente."],
     ["Si el integrador no actualiza la llave, sus emisiones fallarán con llave inválida "
      "hasta que lo haga.",
-     "Si falla el guardado, la llave anterior sigue vigente: no se invalida nada hasta que "
+     "Si falla el guardado, la llave anterior sigue vigente, y no se invalida nada hasta que "
      "la nueva quede escrita."],
 ),
 "CU-08": (
     ["El sistema cliente cuenta con una llave válida y su estado es ACTIVO.",
      "La empresa emisora tiene resolución vigente con numeración disponible.",
      "El cliente no ha agotado el cupo de documentos de su plan en el mes."],
-    ["El sistema cliente envía los datos de la venta: comprador, líneas, impuestos y "
+    ["El sistema cliente envía los datos de la venta, con el comprador, las líneas, los impuestos y "
      "descuentos.",
      "El sistema valida la estructura de la petición y el contenido de cada campo.",
      "El sistema comprueba el cupo disponible del cliente para el mes en curso.",
@@ -88,7 +88,7 @@ DETALLE = {
      "El sistema agenda el envío del documento al comprador como tarea de fondo."],
     [("Reenvío con la misma referencia externa",
       ["Si la petición trae una referencia externa ya utilizada, el sistema no emite otro "
-       "documento: responde con el que ya había expedido.",
+       "documento y responde con el que ya había expedido.",
        "El consecutivo no se consume y el cupo no se descuenta por segunda vez."]),
      ("Emisión desde el formulario web",
       ["Un cajero puede originar el mismo caso desde el panel; el recorrido a partir del "
@@ -122,7 +122,7 @@ DETALLE = {
      "El consumo del mes aumentó en un documento.",
      "Si el documento afectaba existencias, estas se reintegran."],
     ["Si la factura de origen no existe o es de otro emisor, el sistema responde 422.",
-     "El cupo agotado no impide emitir la nota: negarle a un cliente la corrección de "
+     "El cupo agotado no impide emitir la nota, porque negarle a un cliente la corrección de "
      "una factura mal emitida lo dejaría con un documento equivocado ante la DIAN y sin "
      "forma de arreglarlo hasta el mes siguiente."],
 ),
@@ -171,7 +171,7 @@ DETALLE = {
     ["El comprador recibe los dos archivos.",
      "En la bitácora del documento consta si el envío salió, se omitió o falló."],
     ["Si el servidor de correo no responde, el intento se anota como fallido y el documento "
-     "sigue siendo válido: la emisión ya había terminado.",
+     "sigue siendo válido, ya que la emisión había terminado.",
      "Si no hay servidor configurado, el envío se anota como omitido y no se interrumpe "
      "nada."],
 ),
@@ -204,11 +204,11 @@ DETALLE = {
      "El sistema guarda en la facturación propia el número y el CUFE que la API devolvió.",
      "El sistema registra el puente entre la mensualidad y el cliente del periodo."],
     [("Cliente sin consumo en el periodo",
-      ["La mensualidad se factura igual: el plan se cobra por disponibilidad del servicio, "
+      ["La mensualidad se factura igual, porque el plan se cobra por disponibilidad del servicio, "
        "no por uso."])],
     ["El cliente tiene su factura del periodo, con número y CUFE reales.",
      "El periodo queda marcado como cobrado y desaparece de la cola de pendientes."],
-    ["Si la API falla, no se guarda ninguna factura: emitir va antes que guardar, para no "
+    ["Si la API falla, no se guarda ninguna factura, ya que emitir va antes que guardar, para no "
      "dejar una factura propia sin número real.",
      "Si se pulsa el botón dos veces, la referencia externa hace que la segunda petición "
      "devuelva el documento ya emitido en lugar de crear otro."],
@@ -292,10 +292,10 @@ DETALLE = {
     [],
     ["Queda constancia de quién hizo qué y cuándo.",
      "El registro conserva el nombre del usuario aunque después se elimine su cuenta."],
-    ["Si el registro falla, la excepción se captura y se envía al log del servidor: la "
+    ["Si el registro falla, la excepción se captura y se envía al log del servidor, y la "
      "operación auditada no se interrumpe. Un sistema que deja de facturar porque no "
      "pudo anotar que facturó es peor que uno sin auditoría.",
-     "Ninguna credencial entra al registro: rotar una llave se anota, la llave no."],
+     "Ninguna credencial entra al registro, de modo que rotar una llave se anota pero la llave no."],
 ),
 "CU-50": (
     ["El sistema cliente incluye el encabezado X-API-Key en la petición."],
@@ -308,7 +308,7 @@ DETALLE = {
     ["La petición queda asociada al cliente integrado y a su empresa emisora."],
     ["Si falta la llave o no corresponde a ningún cliente, el sistema responde 401.",
      "Si la llave es válida pero el cliente está suspendido o revocado, responde 403. La "
-     "distinción importa: en el primer caso el integrador revisa su configuración, en el "
+     "distinción importa, porque en el primer caso el integrador revisa su configuración, en el "
      "segundo tiene que hablar con el proveedor."],
 ),
 "CU-51": (
@@ -338,7 +338,7 @@ DETALLE = {
     ["No se duplica el documento ni se consume un consecutivo adicional.",
      "El consumo del cliente no aumenta por el reintento."],
     ["Si la referencia externa no se envía, el sistema no puede reconocer el reintento y "
-     "emitirá un documento nuevo: por eso el contrato recomienda enviarla siempre."],
+     "emitirá un documento nuevo, y por eso el contrato recomienda enviarla siempre."],
 ),
 }
 
@@ -431,7 +431,7 @@ ETIQUETAS = ["Código", "Módulo", "Actores", "Requisitos que cubre", "Descripci
 
 
 def _viñetas(elementos):
-    return "\n".join(f"— {e}" for e in elementos) if elementos else "No aplica."
+    return "\n".join(f"- {e}" for e in elementos) if elementos else "No aplica."
 
 
 def _pasos(elementos):
@@ -457,7 +457,7 @@ def construir():
                      "Johan Sebastián Acosta Sánchez",
                      "Wilmer Jesús Contreras Rangel"],
         grado="Ficha 3115426\nTecnólogo en Análisis y Desarrollo de Software",
-        institucion=["SERVICIO NACIONAL DE APRENDIZAJE — SENA",
+        institucion=["SERVICIO NACIONAL DE APRENDIZAJE (SENA)",
                      "Centro de la Industria, la Empresa y los Servicios (CIES)",
                      "Tecnólogo en Análisis y Desarrollo de Software"],
         ciudad="CÚCUTA, NORTE DE SANTANDER",
@@ -479,7 +479,7 @@ def _introduccion(d):
     d.parrafo(
         "Este documento describe el comportamiento de los casos de uso de FactuGest. Mientras "
         "el diagrama muestra qué hace el sistema y quién lo usa, la documentación establece "
-        "cómo transcurre cada caso: con qué condiciones empieza, qué pasos recorre, qué "
+        "cómo transcurre cada caso, esto es, con qué condiciones empieza, qué pasos recorre, qué "
         "caminos alternos admite, en qué estado deja al sistema y qué ocurre cuando algo "
         "sale mal."
     )
@@ -489,11 +489,11 @@ def _introduccion(d):
     )
     d.parrafo(
         f"Los {len(DETALLE)} casos críticos llevan ficha completa. Son aquellos de los que "
-        "depende que el sistema cumpla su propósito: la emisión de documentos, la reserva de "
+        "depende que el sistema cumpla su propósito, como la emisión de documentos, la reserva de "
         "la numeración autorizada, el control del cupo, el cobro de la suscripción, la "
         "autenticación de los sistemas integrados y el registro de auditoría. En ellos, el "
         "orden de los pasos y el comportamiento ante el error no son un detalle de "
-        "implementación: emitir antes de guardar, o validar el cupo antes de reservar el "
+        "implementación, y son emitir antes de guardar, o validar el cupo antes de reservar el "
         f"consecutivo, cambia el resultado. Los {len(BREVE)} restantes se presentan en "
         "formato breve, con su precondición y su resultado esperado."
     )
@@ -502,7 +502,7 @@ def _introduccion(d):
         "detalle. Documentar los cincuenta y seis con ficha completa produciría sesenta "
         "páginas en las que los casos que deciden si el sistema sirve quedarían sepultados "
         "entre repeticiones del mismo formulario de mantenimiento de un catálogo. Los casos "
-        "breves siguen siendo verificables: su resultado esperado es lo que la prueba "
+        "breves siguen siendo verificables, porque su resultado esperado es lo que la prueba "
         "comprueba."
     )
 
@@ -512,7 +512,7 @@ def _introduccion(d):
         ["Campo", "Qué registra"],
         [
             ["Código y módulo", "Identificación del caso y módulo al que pertenece."],
-            ["Actores", "Quiénes participan. Los casos incluidos no tienen actor: los "
+            ["Actores", "Quiénes participan. Los casos incluidos no tienen actor, y los "
                         "ejecuta el sistema como parte de otro caso."],
             ["Requisitos que cubre", "Requisitos funcionales que el caso satisface."],
             ["Descripción", "Objetivo del caso en una frase."],
@@ -530,7 +530,7 @@ def _introduccion(d):
 def _fichas(d):
     d.titulo("2. Casos de uso críticos", nivel=1, nueva_pagina=True)
     d.parrafo(
-        "Las fichas siguen el orden de los módulos. Cada una es autosuficiente: puede leerse "
+        "Las fichas siguen el orden de los módulos. Cada una es autosuficiente y puede leerse "
         "sin haber leído la anterior, que es como se consulta esta clase de documento."
     )
 
@@ -539,10 +539,10 @@ def _fichas(d):
         _, nombre, modulo, actores, descripcion, rf = catalogo_completo[codigo]
         precondiciones, flujo, alternos, postcondiciones, excepciones = DETALLE[codigo]
 
-        d.titulo(f"2.{indice} {codigo} — {nombre}", nivel=2, nueva_pagina=True)
+        d.titulo(f"2.{indice} {codigo}. {nombre}", nivel=2, nueva_pagina=True)
         d.tabla(
-            f"Ficha del caso de uso {codigo}: {inicial_minuscula(nombre)}",
-            ["CASO DE USO", f"{codigo} — {nombre}"],
+            f"Ficha del caso de uso {codigo}, {inicial_minuscula(nombre)}",
+            ["CASO DE USO", f"{codigo}. {nombre}"],
             [
                 ["Módulo", modulo],
                 ["Actores", ", ".join(actores) if actores else
@@ -566,7 +566,7 @@ def _breves(d):
         f"Los {len(BREVE)} casos restantes se presentan agrupados por módulo, con la "
         "condición que debe cumplirse para ejecutarlos y el resultado que debe observarse al "
         "terminar. En su mayoría corresponden a consultas y a mantenimiento de catálogos, "
-        "cuyo recorrido es el mismo en todos los casos: el usuario abre el módulo, el sistema "
+        "cuyo recorrido es el mismo en todos los casos, porque el usuario abre el módulo, el sistema "
         "presenta lo existente, el usuario registra o modifica, el sistema valida, guarda y "
         "confirma."
     )

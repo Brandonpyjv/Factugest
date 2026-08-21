@@ -43,8 +43,9 @@ class Diagrama:
     """
 
     def __init__(self, sistema, actores_izq, actores_der, casos, inclusiones=(),
-                 extensiones=(), nota=None):
+                 extensiones=(), nota=None, modulo=None):
         self.sistema = sistema
+        self.modulo = modulo        # segundo renglón del rótulo, con letra menor
         self.actores_izq = actores_izq
         self.actores_der = actores_der
         self.casos = casos
@@ -75,12 +76,14 @@ class Diagrama:
         col_a, col_b = (5.0, 9.0) if dos_columnas else (6.0, None)
         x_izq, x_der = (1.2, ancho - 1.2)
 
-        alto = max(len(primarios) * SEPARACION + 1.6,
-                   len(segundos) * SEPARACION + 1.6,
+        # El rótulo ocupa uno o dos renglones, y los casos tienen que arrancar debajo.
+        cabecera = 2.45 if self.modulo else 2.0
+        alto = max(len(primarios) * SEPARACION + cabecera,
+                   len(segundos) * SEPARACION + cabecera,
                    max(len(self.actores_izq), len(self.actores_der), 1) * 1.9 + 1.4)
 
         casos = {}
-        arriba = alto - 1.4
+        arriba = alto - (2.05 if self.modulo else 1.6)
         for indice, nombre in enumerate(primarios):
             casos[nombre] = (col_a, arriba - indice * SEPARACION)
 
@@ -196,8 +199,11 @@ class Diagrama:
         margen_frontera = 2.6 if ancho > 12 else 3.0
         ejes.add_patch(Rectangle((margen_frontera, 0.45), ancho - 2 * margen_frontera,
                                  alto - 1.05, fill=False, edgecolor=TINTA, lw=1.3, zorder=1))
-        ejes.text(ancho / 2, alto - 0.75, self.sistema, ha="center", va="center",
-                  fontsize=10, color=TINTA, weight="bold")
+        ejes.text(ancho / 2, alto - 0.95, self.sistema, ha="center", va="center",
+                  fontsize=10.5, color=TINTA, weight="bold")
+        if self.modulo:
+            ejes.text(ancho / 2, alto - 1.32, self.modulo, ha="center", va="center",
+                      fontsize=8.6, color=TINTA)
 
         posicion_actor = {**izq, **der}
         for nombre, (x, y) in posicion_actor.items():

@@ -28,10 +28,10 @@ ACTORES = [
      "capacidad limitada de modificación."),
     ("Cajero", "Persona que factura. Emite documentos y consulta clientes y servicios; no "
      "accede a cifras financieras ni a los módulos de plataforma."),
-    ("Sistema cliente", "Sistema externo —punto de venta, ERP o aplicación propia de la "
-     "empresa integrada— que consume la API con su llave para emitir y consultar documentos. "
+    ("Sistema cliente", "Sistema externo, sea punto de venta, ERP o aplicación propia de la "
+     "empresa integrada, que consume la API con su llave para emitir y consultar documentos. "
      "Es un actor no humano y es el que origina la mayor parte de la operación."),
-    ("Comprador", "Destinatario del documento electrónico. No accede al sistema: recibe el "
+    ("Comprador", "Destinatario del documento electrónico. No accede al sistema y recibe el "
      "PDF y el XML en su correo. Se representa como actor porque es quien recibe el "
      "resultado del caso de uso, aunque nunca lo inicie."),
 ]
@@ -39,7 +39,7 @@ ACTORES = [
 
 def _dibujar_general():
     diagrama = Diagrama(
-        sistema="FactuGest",
+        sistema="FACTUGEST",
         actores_izq=["Administrador", "Cajero", "Jefe de tienda"],
         actores_der=["Sistema cliente", "Supervisor", "Comprador"],
         casos=catalogo.GENERAL,
@@ -51,7 +51,8 @@ def _dibujar_modulo(modulo):
     codigo, nombre, izq, der, casos, inclusiones, extensiones, _ = modulo
     nombres = {c[0]: c[1] for c in casos}
     diagrama = Diagrama(
-        sistema=f"FactuGest — {nombre}",
+        sistema="FACTUGEST",
+        modulo=nombre,
         actores_izq=izq,
         actores_der=der,
         casos=catalogo.por_nombre(casos),
@@ -74,7 +75,7 @@ def construir():
                      "Johan Sebastián Acosta Sánchez",
                      "Wilmer Jesús Contreras Rangel"],
         grado="Ficha 3115426\nTecnólogo en Análisis y Desarrollo de Software",
-        institucion=["SERVICIO NACIONAL DE APRENDIZAJE — SENA",
+        institucion=["SERVICIO NACIONAL DE APRENDIZAJE (SENA)",
                      "Centro de la Industria, la Empresa y los Servicios (CIES)",
                      "Tecnólogo en Análisis y Desarrollo de Software"],
         ciudad="CÚCUTA, NORTE DE SANTANDER",
@@ -100,7 +101,7 @@ def _introduccion(d):
         "describe un objetivo que un actor persigue con el sistema y el resultado observable "
         "que obtiene; no describe una pantalla ni una operación sobre la base de datos. Por "
         "esa razón los cincuenta y seis casos que aquí se presentan no coinciden en número "
-        "con los ochenta y dos requisitos funcionales especificados: un caso como «gestionar "
+        "con los ochenta y dos requisitos funcionales especificados, porque un caso como «gestionar "
         "impuestos» cubre el registro, la consulta, la actualización y la eliminación, que "
         "para quien usa el sistema son un mismo propósito."
     )
@@ -108,8 +109,8 @@ def _introduccion(d):
         "Los diagramas se elaboraron contra el sistema construido, no contra el planteamiento "
         "inicial del proyecto. Entre uno y otro el alcance cambió: FactuGest dejó de ser un "
         "facturador para una sola empresa y pasó a ser un proveedor que emite por cuenta de "
-        "terceros mediante una API. Ese cambio introdujo actores que antes no existían —el "
-        "sistema cliente, en primer lugar— y módulos completos como el de clientes integrados "
+        "terceros mediante una API. Ese cambio introdujo actores que antes no existían, como el "
+        "sistema cliente, y módulos completos como el de clientes integrados "
         "y el de consumo y planes."
     )
 
@@ -148,7 +149,7 @@ def _actores(d):
     d.titulo("2. Actores del sistema", nivel=1, nueva_pagina=True)
     d.parrafo(
         "El sistema reconoce seis actores. Cuatro corresponden a los roles del panel y se "
-        "ordenan jerárquicamente; los otros dos no son personas que lo operen: uno es el "
+        "ordenan jerárquicamente; los otros dos no son personas que lo operen, ya que uno es el "
         "sistema externo que consume la API y el otro es quien recibe el documento emitido."
     )
     d.tabla(
@@ -177,11 +178,11 @@ def _general(d, imagen):
     )
     d.parrafo(
         "Dos observaciones sobre lo que el diagrama muestra. La primera es que el sistema "
-        "cliente participa en la emisión de documentos igual que un cajero: para la "
+        "cliente participa en la emisión de documentos igual que un cajero, porque para la "
         "plataforma, una venta registrada por una persona y una enviada por el punto de venta "
         "de un tercero recorren el mismo camino. La segunda es que el comprador aparece "
         "recibiendo un documento sin iniciar ningún caso, lo que corresponde a su situación "
-        "real: es el destinatario de la operación y no tiene acceso al sistema."
+        "real, ya que es el destinatario de la operación y no tiene acceso al sistema."
     )
 
 
@@ -189,7 +190,7 @@ def _modulos(d, dibujos):
     d.titulo("4. Diagramas por módulo", nivel=1, nueva_pagina=True)
     d.parrafo(
         "Los ocho diagramas siguientes corresponden a los ocho módulos funcionales "
-        "especificados en el documento de requisitos. La correspondencia es intencional: "
+        "especificados en el documento de requisitos. La correspondencia es intencional, porque "
         "cada caso de uso indica los requisitos que cubre, de modo que pueda comprobarse que "
         "ningún requisito quedó sin caso y que ningún caso describe algo que no fue "
         "especificado."
@@ -197,10 +198,10 @@ def _modulos(d, dibujos):
 
     for indice, modulo in enumerate(catalogo.MODULOS, start=1):
         codigo, nombre, _, _, casos, _, _, explicacion = modulo
-        d.titulo(f"4.{indice} {codigo} — {nombre}", nivel=2, nueva_pagina=True)
+        d.titulo(f"4.{indice} {codigo}. {nombre}", nivel=2, nueva_pagina=True)
         d.parrafo(explicacion)
         d.figura(
-            f"Diagrama de casos de uso: {inicial_minuscula(nombre)}",
+            f"Diagrama de casos de uso del módulo de {inicial_minuscula(nombre)}",
             dibujos[codigo],
             nota=f"Elaboración propia. Corresponde al módulo {codigo.replace('DCU-0', 'RF ')} "
                  "del documento de requisitos.",
@@ -208,8 +209,8 @@ def _modulos(d, dibujos):
         d.tabla(
             f"Casos de uso del módulo {codigo}",
             ["Código", "Caso de uso", "Actores", "Descripción", "Requisitos"],
-            [[c, n, ", ".join(a) if a else "—", desc, rf] for c, n, a, desc, rf in casos],
-            nota="Elaboración propia. Los casos sin actor son casos incluidos: el sistema los "
+            [[c, n, ", ".join(a) if a else "Ninguno", desc, rf] for c, n, a, desc, rf in casos],
+            nota="Elaboración propia. Los casos sin actor son casos incluidos y el sistema los "
                  "ejecuta como parte de otro y nadie los inicia por separado.",
             anchos=[1.6, 3.2, 3.0, 5.5, 3.0],
         )
@@ -218,9 +219,9 @@ def _modulos(d, dibujos):
 def _matriz(d):
     d.titulo("5. Matriz de casos de uso por actor", nivel=1, nueva_pagina=True)
     d.parrafo(
-        "La matriz resume en qué casos participa cada actor. Sirve para comprobar dos cosas: "
-        "que ningún actor quedó sin casos —lo que indicaría un rol declarado pero no "
-        "utilizado— y que ningún caso quedó sin actor salvo los incluidos, que por definición "
+        "La matriz resume en qué casos participa cada actor. Sirve para comprobar dos cosas, "
+        "que ningún actor quedó sin casos, lo que indicaría un rol declarado pero no "
+        "utilizado, y que ningún caso quedó sin actor salvo los incluidos, que por definición "
         "los ejecuta el sistema."
     )
 

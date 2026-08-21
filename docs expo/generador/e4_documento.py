@@ -19,6 +19,12 @@ from apa import DocumentoAPA
 import e4_cap1
 import e4_cap2
 import e4_cap3
+import e4_cap4
+import e4_cap5a
+import e4_cap5b
+import e4_cap6a
+import e4_cap6b
+import e4_cierre
 import e4_preliminares
 
 SALIDA = Path(__file__).resolve().parent.parent / "entregables"
@@ -30,12 +36,12 @@ CAPITULOS = [
     e4_cap1,
     e4_cap2,
     e4_cap3,
-    # T10 → e4_cap4  (análisis y especificación de requisitos)
-    # T11 → e4_cap5a (diseño: actores, casos de uso, mockups)
-    # T12 → e4_cap5b (diseño: base de datos)
-    # T13 → e4_cap6a (implementación y módulos)
-    # T14 → e4_cap6b (integración, pruebas y resultados)
-    # T15 → e4_cierre (conclusiones, referencias, anexos)
+    e4_cap4,
+    e4_cap5a,
+    e4_cap5b,
+    e4_cap6a,
+    e4_cap6b,
+    e4_cierre,
 ]
 
 

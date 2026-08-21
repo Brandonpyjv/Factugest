@@ -39,6 +39,10 @@ NEGRO = RGBColor(0, 0, 0)
 # Carta (8,5" x 11") menos 2,54 cm por lado: lo que puede ocupar una figura.
 ANCHO_UTIL = Inches(8.5 - 2 * 1.0)
 
+# Del alto útil de la página se reserva sitio para el rótulo «Figura N», el título
+# en cursiva y la nota, que acompañan a la imagen y también ocupan renglones.
+ALTO_UTIL_FIGURA = Inches(11 - 2 * 1.0 - 1.4)
+
 
 # --- Utilidades de bajo nivel (XML de Word) ------------------------------------
 
@@ -378,7 +382,11 @@ class DocumentoAPA:
 
         rotulo = self.parrafo(sangria=False)
         rotulo.add_run(f"Tabla {self.n_tabla}").bold = True
-        self.parrafo(nombre, sangria=False, cursiva=True)
+        titulo = self.parrafo(nombre, sangria=False, cursiva=True)
+        # El rótulo y el nombre viajan pegados a la tabla: sueltos, Word los deja al pie
+        # de una página y arranca la tabla en la siguiente, sin encabezado que la nombre.
+        rotulo.paragraph_format.keep_with_next = True
+        titulo.paragraph_format.keep_with_next = True
 
         t = self.doc.add_table(rows=1, cols=len(encabezados))
         t.style = "Table Grid"          # base; los bordes se reemplazan enseguida
@@ -437,9 +445,12 @@ class DocumentoAPA:
 
         rotulo = self.parrafo(sangria=False)
         rotulo.add_run(f"Figura {self.n_figura}").bold = True
-        self.parrafo(titulo, sangria=False, cursiva=True)
+        subtitulo = self.parrafo(titulo, sangria=False, cursiva=True)
+        rotulo.paragraph_format.keep_with_next = True
+        subtitulo.paragraph_format.keep_with_next = True
 
         p = self.parrafo(sangria=False, alineacion=WD_ALIGN_PARAGRAPH.CENTER)
+        p.paragraph_format.keep_with_next = True
         p.add_run().add_picture(str(ruta), width=ancho or self._ancho_de(ruta))
 
         if nota:
@@ -452,9 +463,20 @@ class DocumentoAPA:
 
     @staticmethod
     def _ancho_de(ruta):
+        """Ancho al que hay que insertar la imagen para que quepa en la página.
+
+        Limita por ancho **y por alto**. Con solo el ancho, una imagen vertical
+        —un formulario, una captura de pantalla larga— entra dentro de los márgenes
+        laterales y se sale por arriba y por abajo: el `.docx` no se queja y el
+        desbordamiento solo aparece al imprimir o al mirar el PDF.
+        """
         imagen = Image.from_file(str(ruta))
         natural = Inches(imagen.px_width / (imagen.horz_dpi or 96))
-        return min(natural, ANCHO_UTIL)
+        ancho = min(natural, ANCHO_UTIL)
+        proporcion = imagen.px_height / imagen.px_width
+        if ancho * proporcion > ALTO_UTIL_FIGURA:
+            ancho = Emu(int(ALTO_UTIL_FIGURA / proporcion))
+        return ancho
 
     # -- piezas del documento --
 

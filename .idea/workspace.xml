@@ -6,8 +6,41 @@
   <component name="ChangeListManager">
     <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Factugest/Ejemplo de factura real/ad09008438980072671326259.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Factugest/Ejemplo de factura real/ad09008438980072671326259.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/CUADERNO_DE_TRABAJO.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/CUADERNO_DE_TRABAJO.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Diagramas de Casos de Uso.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Diagramas de Casos de Uso.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Diagramas de Casos de Uso.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Diagramas de Casos de Uso.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documentacion de Casos de Uso.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documentacion de Casos de Uso.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documentacion de Casos de Uso.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documentacion de Casos de Uso.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Requisitos Funcionales y No Funcionales.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Requisitos Funcionales y No Funcionales.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Requisitos Funcionales y No Funcionales.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Requisitos Funcionales y No Funcionales.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/_prueba_formato_apa.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/_prueba_formato_apa.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/_prueba_horizontal.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/_prueba_horizontal.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-00 general.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-00 general.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-01 Gestión de clientes API.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-01 Gestión de clientes API.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-02 Gestión de documentos electrónicos.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-02 Gestión de documentos electrónicos.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-03 Gestión de consumo y planes.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-03 Gestión de consumo y planes.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-04 Gestión de facturación y cartera propias.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-04 Gestión de facturación y cartera propias.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-05 Gestión de reportes y tablero de control.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-05 Gestión de reportes y tablero de control.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-06 Gestión de configuración y catálogos.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-06 Gestión de configuración y catálogos.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-07 Gestión de seguridad y auditoría.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-07 Gestión de seguridad y auditoría.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-08 Integración mediante API REST.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/DCU-08 Integración mediante API REST.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/diagramas/FIG-scrum.png" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/diagramas/FIG-scrum.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/apa.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/apa.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/casos_de_uso.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/casos_de_uso.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/diagramas_proceso.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/diagramas_proceso.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e1_requisitos.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e1_requisitos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e2_diagramas.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e2_diagramas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e3_documentacion.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e3_documentacion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e4_cap1.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e4_cap1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e4_cap2.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e4_cap2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e4_cap3.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e4_cap3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e4_documento.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e4_documento.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/e4_preliminares.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/e4_preliminares.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/uml.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/uml.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -125,7 +158,7 @@
       <workItem from="1787065967572" duration="23944000" />
       <workItem from="1787146516410" duration="23000" />
       <workItem from="1787146728509" duration="25193000" />
-      <workItem from="1787241187776" duration="22702000" />
+      <workItem from="1787241187776" duration="31017000" />
     </task>
     <servers />
   </component>

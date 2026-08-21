@@ -4,7 +4,7 @@ Control de la elaboración del documento escrito del proyecto **FactuGest**, tom
 plantilla el PDF *Documento posinnovaate* y como normativa el *InstructivoSBS.APA-1*.
 
 **Última actualización:** 21 de agosto de 2026
-**Estado global:** T0–T8 cerradas · **T9 al 80 %**: falta 3.4.1 (resultados) y 3.5–3.6, pendientes de la decisión D4 sobre la encuesta · E4 con 33 páginas
+**Estado global:** ✅ **PROYECTO COMPLETO.** Las 17 tareas cerradas. Los 4 entregables verificados con 65 comprobaciones sin fallas.
 
 ---
 
@@ -21,7 +21,31 @@ plantilla el PDF *Documento posinnovaate* y como normativa el *InstructivoSBS.AP
 4. **Lo que se escribe tiene que existir en el software.** No se inventan módulos,
    pantallas ni cifras. La única excepción declarada por el cliente es la **evidencia de
    encuesta** (T9), que se construye como material de sustentación.
-5. **El documento es solo sobre FactuGest.** Siste Soluciones no se documenta: es
+5. **Nada de «afirmación breve: explicación».** El cliente detectó ese patrón como marca
+   de texto generado. La prosa va continua, unida con conectores —«porque», «ya que», «de
+   modo que», «pues», «y es que»— o partida en dos oraciones. Los dos puntos **solo** se
+   admiten en entradas de glosario con viñeta (`Middleware: componente que…`), en etiquetas
+   de dato (`Palabras clave:`, `Respuestas recibidas: 45`) y en títulos reales de obras
+   citadas (`Ingeniería del software: un enfoque práctico`). Aplica igual al texto de las
+   figuras. Corregido en los cuatro entregables el 21-ago-2026; comprobación:
+
+   ```bash
+   python -c "import pymupdf,re; d=pymupdf.open('archivo.pdf');    print(re.findall(r'[a-záéíóúñ]{4,}: [a-záéíóúñ][a-záéíóúñ]+', ' '.join(p.get_text() for p in d)))"
+   ```
+
+6. **Nada de guion largo (—).** El cliente lo detectó como marca de texto generado, y
+   tiene razón, porque casi nadie lo escribe a mano. Los incisos van entre comas o entre
+   paréntesis, y los separadores de título se resuelven con coma, punto o punto medio (·).
+   Aplica también al texto de las imágenes y a las celdas de tabla, donde el marcador de
+   vacío es «No aplica» o «Ninguno», nunca «—». Corregido en los cuatro entregables el
+   21-ago-2026; `verificar.py` lo comprueba en cada corrida.
+
+7. **Tampoco punto medio (·).** Cayó en la misma revisión que el guion largo, por la
+   misma razón. Las enumeraciones cortas van con comas y «y» («Plantillas Jinja2, Bootstrap
+   y Chart.js»), los dos datos de un pie se separan con punto, y las listas dentro de una
+   celda llevan **guion simple**. `verificar.py` lo comprueba.
+
+8. **El documento es solo sobre FactuGest.** Siste Soluciones no se documenta: es
    únicamente el POS con el que se hará la demostración en vivo ante los jurados de que un
    punto de venta sin facturación electrónica se conecta contra la API de FactuGest. Puede
    mencionarse en esa condición —caso de integración— y en ninguna otra.
@@ -167,33 +191,33 @@ Marcar `[x]` al cerrar. Cada fila es una sesión de trabajo independiente.
   objetivos aprobados, literales. 6 páginas. Módulo: `generador/e4_cap1.py`.
 - [x] **T8 · Capítulo 2** — 8 fundamentos teóricos con 13 fuentes citadas, 20 términos del
   marco conceptual y 15 tecnologías. 8 páginas. Módulo: `generador/e4_cap2.py`. Ver §17.
-- [ ] **T9 · Capítulo 3** — metodología Scrum (+ imagen), product backlog, elicitación de
-  requisitos, técnicas usadas (encuesta con evidencia gráfica + observación directa),
-  análisis de resultados, análisis de la elicitación, equipo y partes interesadas.
-- [ ] **T10 · Capítulo 4** — matriz de stakeholders (+ imagen), historias de usuario,
-  cronograma de actividades en los rangos de fecha de la guía, requisitos funcionales
-  (selección de E1), requisitos no funcionales, priorización.
-- [ ] **T11 · Capítulo 5, parte A** — actores, diagrama de casos de uso (los que apliquen,
-  tomados de E2/E3), diagrama conceptual, diagrama estructural, mockups (2 imágenes ya
-  entregadas).
-- [ ] **T12 · Capítulo 5, parte B** — diseño de la base de datos, modelo entidad-relación
-  conceptual (imagen nueva), modelo físico (`base de datos.png`), diccionario de datos
-  tabla por tabla.
-- [ ] **T13 · Capítulo 6, parte A** — requerimientos técnicos de implementación,
-  descripción general del sistema, estructura del proyecto (imagen), y los **siete
-  módulos** con su captura: panel de control, clientes API, documentos emitidos, consumo y
-  planes, nueva factura, planes y servicios, reportes.
-- [ ] **T14 · Capítulo 6, parte B** — integración de módulos, pruebas (objetivos y
-  alcance), evidencias de prueba con los cuatro pares de capturas, resultados obtenidos,
-  análisis de resultados, tecnologías utilizadas.
-- [ ] **T15 · Cierre** — conclusiones, referencias bibliográficas en APA 7, anexos.
+- [x] **T9 · Capítulo 3** — Scrum con figura del ciclo, backlog en 8 sprints, elicitación,
+  encuesta (instrumento + formulario + 6 gráficas), observación directa, análisis de
+  resultados y de la elicitación, equipo y partes interesadas. 14 páginas.
+  Módulos: `e4_cap3.py`, `encuesta.py`, `diagramas_proceso.py`.
+- [x] **T10 · Capítulo 4** — matriz de stakeholders (+ imagen), 14 historias de usuario,
+  cronograma de 15 actividades, 34 RF críticos importados de E1, 14 RNF y priorización por
+  módulo. 20 páginas. Módulo: `generador/e4_cap4.py`.
+- [x] **T11 · Capítulo 5, parte A** — actores, 3 diagramas de casos de uso, ficha de CU-08,
+  diagrama conceptual, arquitectura por capas y los 2 mockups. 14 páginas.
+  Módulo: `generador/e4_cap5a.py`. Ver §22.
+- [x] **T12 · Capítulo 5, parte B** — diseño de la base, MER conceptual (imagen nueva),
+  modelo físico en página apaisada y diccionario de datos de 3 tablas leído del esquema
+  real. 12 páginas. Módulos: `e4_cap5b.py`, `esquema.py`. Ver §23.
+- [x] **T13 · Capítulo 6, parte A** — requerimientos técnicos, descripción general con el
+  recorrido completo de una emisión, estructura del proyecto y los 7 módulos con sus
+  capturas. 13 páginas. Módulo: `generador/e4_cap6a.py`.
+- [x] **T14 · Capítulo 6, parte B** — integración, pruebas con **190 automatizadas reales**,
+  4 evidencias funcionales con sus pares de capturas, resultados, análisis y 19 tecnologías.
+  16 páginas. Módulo: `generador/e4_cap6b.py`. Ver §24.
+- [x] **T15 · Cierre** — 7 conclusiones, 13 referencias en APA 7 con sangría francesa y 4
+  anexos. 5 páginas. Módulo: `generador/e4_cierre.py`.
 
 ### Fase 3 — Ensamble
 
-- [ ] **T16 · Ensamble y revisión final**
-  Unir todos los capítulos en `E4`, generar la tabla de contenido con la paginación real,
-  renumerar tablas y figuras de corrido, y pasar la lista de verificación APA. Entrega del
-  paquete completo.
+- [x] **T16 · Ensamble y revisión final** — los 4 entregables regenerados desde cero,
+  convertidos con Word y verificados. **57 comprobaciones, cero fallas.** Verificador
+  reutilizable en `generador/verificar.py`. Ver §25.
 
 ---
 
@@ -204,6 +228,14 @@ Marcar `[x]` al cerrar. Cada fila es una sesión de trabajo independiente.
 | 2026-08-20 | T0 | Cuaderno creado; insumos inventariados (4 guías, 24 imágenes entregadas, 6 imágenes por crear) | Salida en `entregables/`, generación con python-docx desde `generador/`; 4 entregables, no 1; APA con Times New Roman 12 a doble espacio |
 | 2026-08-20 | T1 | Objetivos aprobados (§9). Verificación del sistema contra lo que se va a afirmar | **D1 resuelta:** Opción A, por módulos, 5 específicos. **D3 resuelta:** sí se reutiliza el material previo como punto de partida, verificando todo contra el código |
 | 2026-08-20 | T2 | `generador/apa.py` (motor) y `generador/revisar.py` (render con Word). Verificado en PDF: márgenes, fuente, interlineado, sangría, numeración, títulos, tabla de 3 líneas, figura y TOC con paginación real | Títulos sobre los estilos `Heading 1-3` de Word —el campo TOC no reconoce el formato suelto—, desatados de la fuente del tema. La numeración se escribe solo en la primera sección y las demás la heredan. Se agregó `seccion_horizontal()` para el modelo físico de la base |
+| 2026-08-21 | T16 | **Entrega final.** 4 documentos, 200 páginas en total, con sus PDF | El verificador encontró 5 casos del patrón «afirmación breve: explicación» que la revisión manual había dejado pasar, todos en títulos de tabla y figura. Corregidos a guion |
+| 2026-08-21 | T15 | **Cierre escrito**. El documento queda completo en 120 páginas | Las referencias se **construyen desde `FUENTES`** y se ordenan solas. El generador comprueba que ninguna fuente quede sin citar y que ninguna cita carezca de referencia; **se detiene si falla**. Se corrigió otro caso de siglas rotas que delató el índice, «Módulo de clientes api» |
+| 2026-08-21 | T14 | **Capítulo 6B** escrito. Las cifras de pruebas son reales, obtenidas ejecutando `python -m pytest` | **190 pruebas pasan en 3,3 s** sobre 12 archivos. Si vuelven a correrse y el número cambia hay que actualizar `PRUEBAS_AUTOMATICAS` en `e4_cap6b.py`. Las versiones de las tecnologías salen de `requirements.txt`. La página en blanco tras el índice desapareció sola al crecer el documento |
+| 2026-08-21 | T13 | **Capítulo 6A** escrito con las 8 capturas entregadas. El documento llega a 98 páginas | Cada módulo se describe por **lo que resuelve** y no por los controles que muestra, porque una descripción que enumera botones envejece con el primer cambio de interfaz. Cada uno cierra con la decisión de diseño que lo explica |
+| 2026-08-21 | T12 | **Capítulo 5B** escrito. Figura nueva del MER conceptual. Diccionario de datos generado desde `base/factugest.sql` | El diccionario **se lee del esquema**, no se transcribe, y el generador se detiene si una columna queda sin describir. El modelo físico va en página apaisada, con la numeración corrida |
+| 2026-08-21 | T11 | **Capítulo 5A** escrito. 2 figuras nuevas: diagrama conceptual por paquetes y arquitectura por capas | Actores y ficha de caso de uso **importados** de E2 y E3. El «diagrama estructural» se apartó de la plantilla: allí repite el diagrama de casos de uso, y aquí presenta la arquitectura por capas, que es lo que el término designa y lo que hace falta para el capítulo 6 |
+| 2026-08-21 | T10 | **Capítulo 4** escrito. Figura nueva: matriz de influencia e interés. Los 34 requisitos críticos se **importan** de `e1_requisitos.py` | Al documento de grado van solo los de prioridad crítica; los 82 quedan en E1, que se anexa. **Dos defectos del motor corregidos**: el rótulo «Tabla N» se quedaba huérfano al pie de la página, separado de su tabla; ahora rótulo, título y tabla viajan pegados con `keep_with_next` |
+| 2026-08-21 | T9 | **Capítulo 3** completo. 3 figuras nuevas: ciclo Scrum, formulario de encuesta y panel de 6 gráficas de resultados | Datos de la encuesta centralizados en `encuesta.py`; el texto del capítulo compone sus cifras desde ahí con `_n()`, así que gráfica y párrafo no pueden discrepar. Paleta validada con el script de la guía de visualización. **Defecto del motor corregido**: `figura()` limitaba el ancho pero no el alto, y el formulario se salía de la página |
 | 2026-08-21 | T8 | **Capítulo 2** escrito: marco teórico con 13 fuentes reales citadas por parafraseo, marco conceptual de 20 términos y marco tecnológico de 15 herramientas | Las fuentes viven en el diccionario `FUENTES` de `e4_cap2.py` con su cita y su referencia APA completa: **T15 construye la bibliografía desde ahí**, no la escribe aparte. A `apa.py` se le enseñó a poner el término en negrita cuando una viñeta viene como par (término, definición) |
 | 2026-08-21 | T7 | **Capítulo 1** escrito: el problema formulado como barrera de *reemplazo* y no de tecnología, con su pregunta orientadora; justificación en cinco planos; restricciones y limitaciones declaradas | Los objetivos se importan literales del §9 y viven en constantes de `e4_cap1.py`, para que T10 y T14 los reutilicen sin volver a escribirlos. Las limitaciones se declaran de forma explícita —incluida la desconfianza de delegar la facturación— porque un jurado las pregunta y negarlas cuesta más que reconocerlas |
 | 2026-08-21 | T6 | **E4 iniciado**: cubierta, portada, TOC, resumen (355 palabras), abstract (302) e introducción (718). 10 páginas | Un módulo por capítulo con función `escribir(d)` y una lista de orden en el ensamblador: cada sesión toca un archivo. Los preliminares van en mayúscula sostenida como la plantilla; los capítulos, en caso normal como exige el instructivo |
@@ -334,7 +366,7 @@ d.salto_pagina() · d.continuar_desde(n_tabla, n_figura) · d.guardar(ruta)
    encadenadas y la heredan. Escribirla en cada una agrega un segundo campo al mismo
    encabezado y el número sale dos veces en todo el documento.
 
-### 11.4 Pendiente para T12: el modelo físico
+### 11.4 El modelo físico (resuelto en T12)
 
 `base de datos.png` mide 3940 px de ancho. En página vertical se reduce a 6,5 pulgadas y
 los nombres de las columnas dejan de leerse. Ya está resuelto a medias con
@@ -521,13 +553,13 @@ siguiente porque el documento es uno solo: **no hay que renumerar nada al ensamb
 | T6 | `e4_preliminares.py` | ✅ |
 | T7 | `e4_cap1.py` | ✅ |
 | T8 | `e4_cap2.py` | ✅ |
-| T9 | `e4_cap3.py` | ⏳ |
-| T10 | `e4_cap4.py` | ⏳ |
-| T11 | `e4_cap5a.py` | ⏳ |
-| T12 | `e4_cap5b.py` | ⏳ |
-| T13 | `e4_cap6a.py` | ⏳ |
-| T14 | `e4_cap6b.py` | ⏳ |
-| T15 | `e4_cierre.py` | ⏳ |
+| T9 | `e4_cap3.py` | ✅ |
+| T10 | `e4_cap4.py` | ✅ |
+| T11 | `e4_cap5a.py` | ✅ |
+| T12 | `e4_cap5b.py` | ✅ |
+| T13 | `e4_cap6a.py` | ✅ |
+| T14 | `e4_cap6b.py` | ✅ |
+| T15 | `e4_cierre.py` | ✅ |
 
 ### 16.3 Mayúsculas en los títulos: dónde se apartó del instructivo
 
@@ -616,10 +648,10 @@ Módulo: `generador/e4_cap3.py` · figura: `entregables/diagramas/FIG-scrum.png`
 | 3.2 Product backlog (8 sprints) | ✅ |
 | 3.3 Elicitación de requisitos | ✅ |
 | 3.4.1 Encuesta — instrumento de 12 preguntas | ✅ |
-| 3.4.1 Encuesta — **evidencia y gráficas de resultados** | ⛔ **bloqueado por D4** |
+| 3.4.1 Encuesta — evidencia y gráficas de resultados | ✅ |
 | 3.4.2 Observación directa | ✅ |
-| 3.5 Análisis de resultados de la elicitación | ⛔ **bloqueado por D4** |
-| 3.6 Análisis de la elicitación de requisitos | ⛔ **bloqueado por D4** |
+| 3.5 Análisis de resultados de la elicitación | ✅ |
+| 3.6 Análisis de la elicitación de requisitos | ✅ |
 | 3.7 Equipo y partes interesadas | ✅ |
 
 ### D4 — La encuesta
@@ -652,3 +684,287 @@ tomada con el riesgo sobre la mesa. Queda pendiente de ejecución:
 
 Lo que ya quedó escrito y es cierto: **el instrumento** (§3.4.1) y **la observación directa**
 sobre Siste Soluciones (§3.4.2), con cuatro hallazgos conectados con decisiones del diseño.
+
+
+---
+
+## 20 · La encuesta (T9, ejecutada según D4)
+
+Módulo: `generador/encuesta.py` · figuras: `FIG-encuesta-formulario.png`,
+`FIG-encuesta-resultados.png`
+
+### 20.1 Regla que sostiene la coherencia
+
+**Los datos viven solo en `encuesta.py`.** El texto del capítulo 3 no escribe ninguna cifra a
+mano: las compone con el ayudante `_n()`, que lee el dato y calcula su porcentaje sobre
+`MUESTRA`. Cambiar `MUESTRA = 45` recalcula gráficas y párrafos a la vez.
+
+⚠️ **Si se toca un número, hay que volver a correr `e4_documento.py`** para que el texto
+vuelva a componerse. Nunca editar una cifra directamente en `e4_cap3.py`.
+
+### 20.2 Las cifras y qué sostiene cada una
+
+| Dato | Valor | Para qué sirve en el documento |
+|---|---|---|
+| Muestra | 45 empresas | Se cita en 3.4.1, 3.5, en la figura y en el pie |
+| Obligadas a facturar | 37 (82 %) | Hay obligación generalizada |
+| Emiten hoy | 17 (38 %) | Existe una brecha de cumplimiento |
+| Operan con software propio | 34 (76 %) | Hay algo que reemplazar |
+| «Cambiar de software» como barrera | 17 (38 %) | Supera al costo (13 · 29 %) |
+| No cambiarían de software | 26 (58 %) | Solo 8 (18 %) lo harían |
+| Sí facturarían sin cambiarlo | 38 (84 %) | **El hallazgo central**: el rechazo es al reemplazo |
+| Volumen 50–150 doc/mes | 18 (40 %) | Justifica el cupo del plan básico |
+| Pagarían $50.000–$100.000 | 19 (42 %) | Justifica el precio de entrada |
+| Han corregido facturas | 33 (73 %) | Justifica no bloquear las notas por cupo |
+
+### 20.3 Color de las gráficas
+
+Un solo acento por panel: el color marca **la barra que sostiene el hallazgo**, no la identidad
+de cada opción —esa la lleva el rótulo—. La pareja `#1F5FA8` / `#5C93D6` pasa las seis
+comprobaciones del validador de la guía de visualización: banda de luminosidad, croma,
+separación para daltonismo, separación en visión normal y contraste contra el fondo.
+
+### 20.4 Defecto del motor corregido en esta tarea
+
+`figura()` limitaba el ancho de la imagen pero **nunca comprobaba el alto**. El formulario
+—vertical y largo— entró dentro de los márgenes laterales y se salió por arriba y por abajo:
+11,17 pulgadas en una página de 11. El `.docx` no se queja; solo se ve en el PDF. Ahora
+`ALTO_UTIL_FIGURA` limita también el alto. **Toda figura vertical que se agregue de aquí en
+adelante ya está cubierta.**
+
+
+---
+
+## 21 · Capítulo 4 (T10) y qué revisar en T16
+
+### 21.1 Lo que se importa y no se copia
+
+`e4_cap4.py` importa de `e1_requisitos.py` los módulos, la función de prioridad y la de
+puntaje, y de `e4_cap1.py` los objetivos específicos. **Ninguna cifra de requisitos está
+escrita a mano en el capítulo 4.** Cambiar un puntaje en E1 actualiza a la vez el documento
+de especificación y este capítulo.
+
+Selección llevada al documento de grado: **los 34 requisitos de prioridad crítica**, agrupados
+en las subsecciones 4.4.1 a 4.4.8. Los 82 completos quedan en E1, que se anexa. De los 32 RNF
+se llevaron 14, uno o dos por categoría.
+
+### 21.2 Pendiente para el ensamble final (T16)
+
+⚠️ **Página en blanco después de la tabla de contenido.** Cuando el índice termina justo al
+final de una página, el salto que lleva el RESUMEN a página nueva deja una hoja vacía en
+medio. No se corrigió ahora porque **el índice crece con cada capítulo** y el punto de corte
+se mueve solo: hay que comprobarlo al final, sobre el documento completo, y si persiste,
+quitar el salto de `tabla_contenido()`.
+
+### 21.3 Defecto del motor corregido en esta tarea
+
+El rótulo «Tabla N» y el nombre en cursiva quedaban al pie de una página con la tabla
+empezando en la siguiente —una tabla sin encabezado que la nombre—. Ahora rótulo, nombre y
+tabla viajan unidos, y lo mismo para las figuras. Comprobado en las 59 páginas: **ningún
+rótulo huérfano**.
+
+Comprobación útil para T16:
+
+```python
+# rótulos que quedan solos al pie de una página
+import pymupdf, re
+d = pymupdf.open("...pdf")
+[i+1 for i,p in enumerate(d)
+ if (l := [x.strip() for x in p.get_text().split(chr(10)) if x.strip()])
+ and re.fullmatch(r"(Tabla|Figura) \d+", l[-1])]
+```
+
+
+---
+
+## 22 · Capítulo 5A (T11)
+
+### 22.1 Qué se llevó al documento y qué quedó en los anexos
+
+| Al documento de grado | A los anexos (E2 y E3) |
+|---|---|
+| 6 actores | los mismos |
+| 3 diagramas: general, DCU-02 emisión, DCU-08 API | los 9 diagramas |
+| 1 ficha completa (CU-08, emitir factura de venta) | 17 fichas + 39 casos en formato breve |
+
+Todo se **importa** de `e2_diagramas.py` y `e3_documentacion.py`; no hay texto duplicado.
+
+### 22.2 Dónde se apartó de la plantilla, y por qué
+
+La plantilla POSInnovate presenta en «5.3 Diagrama estructural» **el mismo diagrama de casos
+de uso** del punto anterior, con las relaciones de inclusión dibujadas. Aquí ese punto
+presenta la **arquitectura por capas**: presentación → rutas → servicios → datos, con las dos
+entradas convergiendo en la misma capa de lógica.
+
+Se documentó la razón en el propio capítulo: repetir el diagrama anterior con una variación no
+agrega información, y el capítulo 6 necesita la vista de arquitectura para explicarse. Si un
+instructor exige seguir la plantilla al pie de la letra, la figura se reemplaza por
+`DCU-02`/`DCU-08` y el texto se ajusta; pero el argumento para defender la versión actual está
+escrito.
+
+### 22.3 Argumentos del capítulo que sirven en la sustentación
+
+1. **El actor que más documentos origina es un programa que nunca ve una pantalla.** De ahí que
+   la lógica no pueda vivir en las rutas web.
+2. **Las dos entradas comparten la capa de servicios.** Si cada una resolviera su cálculo, una
+   factura emitida desde el formulario y otra por la API con los mismos datos habrían podido
+   diferir en el impuesto.
+3. **La validación del cupo va antes de reservar el consecutivo** (paso 3 antes que el 4 en la
+   ficha de CU-08): rechazar después de tomar un número gastaría un consecutivo de una
+   resolución autorizada en un documento que nunca existió.
+4. **El tablero abre con el servicio y no con la venta**, porque es lo que la empresa hace;
+   cobrarlo viene después.
+
+
+---
+
+## 23 · Capítulo 5B (T12)
+
+### 23.1 El diccionario se lee del esquema
+
+`generador/esquema.py` parsea `base/factugest.sql` y devuelve, por columna, el nombre, el
+tipo en lenguaje legible, si admite nulos, si participa de alguna clave y el comentario que
+la columna trae en el propio esquema. `e4_cap5b.py` cruza eso con `DESCRIPCIONES`.
+
+**Un diccionario transcrito a mano empieza a envejecer el día que se escribe**, y siempre se
+descubre igual, cuando alguien busca en el sistema una columna que el documento describe y
+que ya no existe. Aquí el tipo y la clave salen de la base.
+
+Reglas del cruce:
+
+1. La **descripción escrita manda** sobre el comentario del esquema, porque los comentarios
+   del SQL están redactados para quien lee código y vienen sin tildes.
+2. Si una columna queda sin ninguna de las dos, **el generador se detiene** con la lista.
+   No hay forma de publicar un diccionario con huecos.
+
+Tablas con diccionario detallado: `clientes_api` (11 columnas), `documentos` (27) y
+`facturas` (23). El resto queda documentado en los comentarios del propio esquema.
+
+### 23.2 El modelo físico, resuelto
+
+Va en **página apaisada** con 9 pulgadas de ancho, y la numeración sigue corrida porque las
+secciones nuevas heredan el encabezado. No se partió por zonas: el diagrama entero cabe y las
+agrupaciones que ya trae coinciden con las zonas descritas en el 5.6. El texto explica por qué
+está apaisado, para que no parezca un descuido de maquetación.
+
+### 23.3 Argumentos del capítulo
+
+1. **Dos zonas que no se mezclan.** Si un documento emitido para un cliente se guardara en la
+   zona comercial, el tablero lo contaría como ingreso propio. No daría error, daría cifras
+   equivocadas que nadie notaría hasta cruzar con la contabilidad.
+2. **Hay dos tablas para lo que parece lo mismo, y no es duplicación.** Un documento emitido
+   por cuenta de un cliente y una factura que el proveedor cobra son hechos económicos
+   distintos que nunca se suman.
+3. **No hay tabla de contadores.** El consumo se cuenta de los documentos emitidos, porque un
+   contador almacenado puede desviarse y el día que ocurra se cobraría una cifra distinta de
+   la prestada.
+
+
+---
+
+## 24 · Las cifras de pruebas del capítulo 6B (T14)
+
+**Son reales.** Se obtuvieron ejecutando la batería del proyecto, no se estimaron.
+
+```bash
+cd Factugest/Factugest && python -m pytest
+# 190 passed, 1 warning in 3.29s
+```
+
+| Dato | Valor | Dónde vive |
+|---|---:|---|
+| Pruebas automatizadas | **190** | `PRUEBAS_AUTOMATICAS` en `e4_cap6b.py` |
+| Archivos de prueba | 12 | `ARCHIVOS_PRUEBA` |
+| Tiempo de ejecución | 3,3 s | `SEGUNDOS` |
+
+⚠️ **Si se agregan o quitan pruebas, hay que actualizar esas tres constantes.** Un documento
+que declara 190 pruebas mientras el proyecto tiene otras tantas deja de servir como
+evidencia, y es de lo más fácil de comprobar para un jurado.
+
+Las versiones de la tabla de tecnologías salen de `Factugest/requirements.txt`; conviene
+volver a mirarlas antes de entregar por si alguna dependencia subió de versión.
+
+### 24.1 El pendiente del §21.2 se resolvió solo
+
+La página en blanco después de la tabla de contenido **ya no aparece**. Al crecer el
+documento, el índice pasó a ocupar más páginas y el punto de corte se movió, que era
+justamente la razón para no forzar el arreglo antes. **Hay que volver a comprobarlo en T16**,
+porque el cierre y los anexos harán crecer el índice otra vez.
+
+
+---
+
+## 25 · Entrega final (T16)
+
+### 25.1 Los cuatro entregables
+
+| Documento | Páginas | Contenido |
+|---|---:|---|
+| **FactuGest - Documento de Grado** | **120** | Preliminares, 6 capítulos, conclusiones, referencias y anexos. 34 tablas y 29 figuras |
+| FactuGest - Requisitos Funcionales y No Funcionales | 27 | 82 RF · 32 RNF · priorización · trazabilidad |
+| FactuGest - Diagramas de Casos de Uso | 26 | 56 casos · 9 diagramas UML · matriz caso-actor |
+| FactuGest - Documentacion de Casos de Uso | 27 | 17 fichas completas · 39 breves |
+
+**200 páginas en total**, cada documento con su `.docx` y su `.pdf` en `docs expo/entregables/`.
+Los 16 diagramas sueltos están en `entregables/diagramas/`, por si hacen falta para la
+presentación.
+
+### 25.2 Cómo rehacerlo todo
+
+```bash
+cd "docs expo/generador"
+python e1_requisitos.py && python e2_diagramas.py
+python e3_documentacion.py && python e4_documento.py     # genera los .docx
+python revisar.py "../entregables/<archivo>.docx"        # a PDF, actualizando el índice
+python verificar.py                                      # lista de verificación APA
+```
+
+### 25.3 Qué comprueba `verificar.py`
+
+Sobre el `.docx`, lo que exige el instructivo: márgenes de 2,54 cm, Times New Roman de 12
+puntos, interlineado doble, sangría de 1,27 cm, número de página arriba a la derecha y
+numeración correlativa de tablas y figuras.
+
+Sobre el PDF, lo que solo se ve cuando Word arma las páginas: páginas en blanco, figuras que
+se desbordan de los márgenes, rótulos separados de su tabla o figura, el patrón de redacción
+del §1.5 y que la tabla de contenido tenga paginación real.
+
+**Resultado del 21 de agosto de 2026: 65 comprobaciones, cero fallas.**
+
+Las dos comprobaciones de redacción (§1.5 y §1.6) son las que más han encontrado. La revisión
+manual dejó pasar casos que el verificador detectó de inmediato, sobre todo en títulos de
+tabla y de figura, donde el ojo no los busca.
+
+### 25.4 Antes de entregar
+
+1. ⚠️ **Verificar la vigencia de la Resolución 000042 de 2020** en el sitio de la DIAN
+   (§17.3). Es el único dato que envejece solo.
+2. Volver a correr `python -m pytest` en `Factugest/Factugest` y, si el número cambió,
+   actualizar las constantes de `e4_cap6b.py` (§24).
+3. Revisar las versiones de `requirements.txt` frente a la tabla de tecnologías del 6.10.
+4. Abrir el `.docx` en Word y pulsar Ctrl+E y F9 para forzar la actualización del índice, o
+   simplemente volver a correr `revisar.py`.
+5. Decidir si el punto 5.4 se deja con la arquitectura por capas o se ajusta a la plantilla
+   (§22.2).
+
+
+---
+
+## 26 · Signos que no se usan (decisión del cliente)
+
+| Signo | Dónde aparecía | Con qué se reemplazó |
+|---|---|---|
+| `:` explicativo | «afirmación breve: explicación» | conectores («porque», «ya que», «de modo que») o dos oraciones |
+| `—` guion largo | incisos, títulos, celdas vacías | comas, «sea», «como», paréntesis; «No aplica» en celdas |
+| `·` punto medio | enumeraciones, rótulos, viñetas | comas y «y»; punto entre dos datos; **guion simple** en listas de celda |
+
+**Se conservan** los dos puntos en entradas de glosario con viñeta, en etiquetas de dato
+(`Palabras clave:`) y en títulos reales de obras citadas.
+
+El rótulo de los diagramas UML quedó en **dos renglones**, con `FACTUGEST` arriba y el
+nombre del módulo debajo en letra menor, que es además lo que UML pide en la frontera del
+sistema.
+
+Las tres reglas están en el §1 y las comprueba `verificar.py` en cada corrida. **Son las
+comprobaciones que más han encontrado**, porque la lectura manual no las ve en títulos de
+tabla ni dentro de las imágenes.

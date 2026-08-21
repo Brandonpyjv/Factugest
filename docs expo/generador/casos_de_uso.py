@@ -186,7 +186,7 @@ MODULOS = [
      ["Administrador"], ["Sistema cliente"], M1,
      [("CU-01", "CU-02")], [],
      "Recoge la administración de las empresas integradas. La generación de la llave se "
-     "modela como caso incluido porque no ocurre por decisión aparte: registrar un cliente "
+     "modela como caso incluido porque no ocurre por decisión aparte, ya que registrar un cliente "
      "sin llave no lo deja en condiciones de emitir."),
 
     ("DCU-02", "Gestión de documentos electrónicos",
@@ -195,9 +195,9 @@ MODULOS = [
       ("CU-09", "CU-12"), ("CU-10", "CU-12")],
      [("CU-14", "CU-08")],
      "Es el núcleo del sistema. Los tres casos de emisión comparten los pasos que hacen "
-     "válido a un documento —el consecutivo, el cálculo y los dos archivos—, que por eso se "
+     "válido a un documento, que son el consecutivo, el cálculo y los dos archivos, y por eso se "
      "modelan como casos incluidos y no se repiten en cada uno. El envío al comprador se "
-     "modela como extensión: ocurre después de que la emisión terminó y su resultado no "
+     "modela como extensión, pues ocurre después de que la emisión terminó y su resultado no "
      "condiciona el del documento."),
 
     ("DCU-03", "Gestión de consumo y planes",
@@ -210,7 +210,7 @@ MODULOS = [
     ("DCU-04", "Gestión de facturación y cartera propias",
      ["Administrador", "Cajero"], ["Supervisor"], M4,
      [], [("CU-26", "CU-27")],
-     "Cubre la venta del proveedor: su catálogo de planes, sus clientes, sus facturas y el "
+     "Cubre la venta del proveedor, con su catálogo de planes, sus clientes, sus facturas y el "
      "recaudo. El registro de un pago extiende la actualización del estado porque un abono "
      "parcial no siempre cambia el estado de la factura."),
 
@@ -230,7 +230,7 @@ MODULOS = [
     ("DCU-07", "Gestión de seguridad y auditoría",
      ["Administrador", "Supervisor"], ["Jefe de tienda", "Cajero"], M7,
      [("CU-45", "CU-48"), ("CU-46", "CU-48")], [],
-     "El registro en auditoría se modela como caso incluido de las operaciones de escritura: "
+     "El registro en auditoría se modela como caso incluido de las operaciones de escritura, porque "
      "no es una acción que alguien decida ejecutar, sino una consecuencia obligatoria de "
      "haber modificado algo."),
 

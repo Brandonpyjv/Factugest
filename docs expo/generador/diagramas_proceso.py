@@ -45,6 +45,196 @@ def _flecha(ejes, desde, hasta, curva=0.0, color=GRIS, etiqueta=None):
                   bbox=dict(facecolor="white", edgecolor="none", pad=1.2))
 
 
+PAQUETES = [
+    ("Clientes API", ["Registrar cliente", "Generar y rotar llave", "Cambiar estado"]),
+    ("Documentos electrónicos", ["Emitir factura", "Emitir notas", "Generar PDF y XML"]),
+    ("Consumo y planes", ["Validar cupo", "Facturar mensualidad", "Cobrar excedentes"]),
+    ("Facturación propia", ["Emitir factura propia", "Gestionar clientes", "Registrar pagos"]),
+    ("Reportes y tablero", ["Consultar tablero", "Generar reporte", "Exportar reporte"]),
+    ("Configuración", ["Empresas emisoras", "Impuestos y descuentos", "Marca de la empresa"]),
+    ("Seguridad y auditoría", ["Iniciar sesión", "Asignar rol", "Consultar auditoría"]),
+    ("Integración API REST", ["Autenticar por llave", "Emitir por API", "Consultar y descargar"]),
+]
+
+
+def diagrama_conceptual(destino):
+    """Los ocho módulos como paquetes, con sus casos principales y los actores."""
+    figura, ejes = plt.subplots(figsize=(11.8, 7.2))
+    ejes.set_xlim(0, 15.8)
+    ejes.set_ylim(0, 9.2)
+    ejes.axis("off")
+
+    ejes.add_patch(FancyBboxPatch((2.6, 0.35), 10.5, 8.52,
+                                  boxstyle="round,pad=0.03,rounding_size=0.12",
+                                  facecolor="#FBFCFE", edgecolor=TINTA, linewidth=1.4,
+                                  zorder=0))
+    ejes.text(7.85, 8.55, "FACTUGEST", ha="center", va="center", fontsize=11.5,
+              color=TINTA, weight="bold", zorder=3)
+
+    ancho, alto = 4.9, 1.75
+    for indice, (nombre, casos) in enumerate(PAQUETES):
+        columna, fila = indice % 2, indice // 2
+        x = 2.9 + columna * (ancho + 0.3)
+        y = 6.47 - fila * (alto + 0.14)
+        ejes.add_patch(FancyBboxPatch((x, y), ancho, alto,
+                                      boxstyle="round,pad=0.02,rounding_size=0.08",
+                                      facecolor=SUAVE, edgecolor=ACENTO, linewidth=1.1,
+                                      zorder=1))
+        ejes.text(x + 0.22, y + alto - 0.34, nombre, fontsize=8.8, weight="bold",
+                  color=ACENTO, va="center", zorder=3)
+        for orden, caso in enumerate(casos):
+            ejes.text(x + 0.34, y + alto - 0.76 - orden * 0.38, f"○  {caso}",
+                      fontsize=7.8, color=TINTA, va="center", zorder=3)
+
+    for x, y, nombre in [(1.35, 7.0, "Administrador"), (1.35, 4.4, "Cajero"),
+                         (1.35, 1.9, "Supervisor"), (14.45, 7.0, "Sistema cliente"),
+                         (14.45, 4.4, "Jefe de tienda"), (14.45, 1.9, "Comprador")]:
+        _figura_actor(ejes, x, y, nombre)
+        destino_x = 2.6 if x < 7 else 13.1
+        ejes.plot([x + (0.5 if x < 7 else -0.5), destino_x], [y, y],
+                  color=GRIS, linewidth=0.9, zorder=0)
+
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(figura)
+    return destino
+
+
+def _figura_actor(ejes, x, y, nombre):
+    escala = 0.16
+    ejes.add_patch(plt.Circle((x, y + escala * 2.1), escala * 0.75, fill=False,
+                              ec=TINTA, lw=1.3, zorder=3))
+    ejes.plot([x, x], [y + escala * 1.35, y - escala * 0.6], color=TINTA, lw=1.3, zorder=3)
+    ejes.plot([x - escala, x + escala], [y + escala * 0.9] * 2, color=TINTA, lw=1.3, zorder=3)
+    ejes.plot([x - escala * 0.85, x, x + escala * 0.85],
+              [y - escala * 1.9, y - escala * 0.6, y - escala * 1.9],
+              color=TINTA, lw=1.3, zorder=3)
+    ejes.text(x, y - escala * 2.9, "\n".join(textwrap.wrap(nombre, 16)), ha="center",
+              va="top", fontsize=8, color=TINTA, weight="bold")
+
+
+CAPAS = [
+    ("Presentación", "#E3ECF8", [
+        ("Navegador web\nPlantillas Jinja2, Bootstrap y Chart.js", 3.6),
+        ("Sistema cliente\nPunto de venta, ERP o aplicación propia", 3.6),
+    ]),
+    ("Rutas", "#EDF2F9", [
+        ("routes/ con 24 routers de la aplicación web", 3.6),
+        ("routes/api/v1/ con 9 operaciones de integración", 3.6),
+    ]),
+    ("Lógica de negocio", "#DCE9F7", [
+        ("services/ con 33 servicios de cálculo tributario, numeración, emisión, consumo, "
+         "reportes, PDF y XML", 7.6),
+    ]),
+    ("Datos", "#EDF2F9", [
+        ("Zona comercial\nfacturas, clientes y servicios", 2.45),
+        ("Puente\nfacturas_plan", 2.45),
+        ("Zona middleware\ndocumentos y clientes API", 2.45),
+    ]),
+]
+
+
+def diagrama_estructural(destino):
+    """La arquitectura por capas, con dos entradas sobre una sola lógica y una base en dos zonas."""
+    figura, ejes = plt.subplots(figsize=(10.5, 7.6))
+    ejes.set_xlim(0, 10.5)
+    ejes.set_ylim(0, 9.2)
+    ejes.axis("off")
+
+    y = 7.9
+    centros = []
+    for nombre, color, cajas in CAPAS:
+        ejes.text(0.15, y - 0.45, nombre, fontsize=9, weight="bold", color=ACENTO,
+                  rotation=90, ha="center", va="center")
+        x = 0.75
+        fila = []
+        for texto, ancho in cajas:
+            _caja(ejes, x + ancho / 2, y - 0.45, ancho, 1.02, texto, relleno=color,
+                  borde=BORDE, tamano=7.8, ajuste=46)
+            fila.append((x + ancho / 2, y - 0.45))
+            x += ancho + 0.35
+        centros.append(fila)
+        y -= 1.62
+
+    # Presentación → rutas → servicios → datos
+    for origen, destino_caja in zip(centros[0], centros[1]):
+        _flecha(ejes, (origen[0], origen[1] - 0.51), (destino_caja[0], destino_caja[1] + 0.51))
+    for origen in centros[1]:
+        _flecha(ejes, (origen[0], origen[1] - 0.51), (centros[2][0][0], centros[2][0][1] + 0.51))
+    for destino_caja in centros[3]:
+        _flecha(ejes, (centros[2][0][0], centros[2][0][1] - 0.51),
+                (destino_caja[0], destino_caja[1] + 0.51))
+
+    ejes.text(5.25, 0.55,
+              "Las dos entradas comparten la misma capa de servicios, de modo que una regla "
+              "tributaria se implementa una vez\ny rige por igual para la aplicación web y "
+              "para la API de integración.",
+              ha="center", va="center", fontsize=8, color=GRIS, style="italic")
+
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(figura)
+    return destino
+
+
+CUADRANTES = {
+    # (columna, fila) con fila 1 arriba: (rótulo, qué exige, color, interesados)
+    (0, 1): ("SATISFACER", "Alto interés · Baja influencia", "#DCE9F7",
+             ["Contadores de las empresas", "Siste Soluciones\n(empresa colaboradora)"]),
+    (1, 1): ("INVOLUCRAR", "Alto interés · Alta influencia", "#BBD4EE",
+             ["Empresas clientes integradas", "Equipo de desarrollo",
+              "Instructores y jurados"]),
+    (0, 0): ("MONITOREAR", "Bajo interés · Baja influencia", "#F0F3F7",
+             ["Compradores", "Gremios y cámaras de comercio"]),
+    (1, 0): ("COMUNICAR", "Bajo interés · Alta influencia", "#DCE9F7",
+             ["DIAN", "Proveedores de software\n(punto de venta y ERP)"]),
+}
+
+
+def matriz_stakeholders(destino):
+    """Matriz de influencia e interés, con los interesados de FactuGest en sus cuadrantes."""
+    figura, ejes = plt.subplots(figsize=(10, 6.6))
+    ejes.set_xlim(-0.9, 10.2)
+    ejes.set_ylim(-0.9, 7.2)
+    ejes.axis("off")
+
+    ancho, alto = 4.6, 3.2
+    for (columna, fila), (rotulo, criterio, color, gente) in CUADRANTES.items():
+        x0, y0 = 0.4 + columna * (ancho + 0.2), 0.4 + fila * (alto + 0.2)
+        ejes.add_patch(FancyBboxPatch(
+            (x0, y0), ancho, alto, boxstyle="round,pad=0.02,rounding_size=0.08",
+            facecolor=color, edgecolor=ACENTO, linewidth=1.3, zorder=1))
+        ejes.text(x0 + 0.28, y0 + alto - 0.42, rotulo, fontsize=10.5, weight="bold",
+                  color=ACENTO, va="center", zorder=3)
+        ejes.text(x0 + 0.28, y0 + alto - 0.82, criterio, fontsize=7.6, color=GRIS,
+                  style="italic", va="center", zorder=3)
+        for indice, nombre in enumerate(gente):
+            ejes.text(x0 + 0.28, y0 + alto - 1.32 - indice * 0.62, f"-  {nombre}",
+                      fontsize=8.6, color=TINTA, va="top", zorder=3)
+
+    # Ejes rotulados por fuera, para que no compitan con el contenido del cuadrante.
+    ejes.annotate("", xy=(9.8, -0.42), xytext=(0.4, -0.42),
+                  arrowprops=dict(arrowstyle="-|>", color=TINTA, linewidth=1.3))
+    ejes.text(5.1, -0.75, "INFLUENCIA", fontsize=9.5, weight="bold", color=TINTA,
+              ha="center")
+    ejes.text(0.4, -0.75, "baja", fontsize=8, color=GRIS, ha="left")
+    ejes.text(9.8, -0.75, "alta", fontsize=8, color=GRIS, ha="right")
+
+    ejes.annotate("", xy=(-0.42, 6.8), xytext=(-0.42, 0.4),
+                  arrowprops=dict(arrowstyle="-|>", color=TINTA, linewidth=1.3))
+    ejes.text(-0.72, 3.6, "INTERÉS", fontsize=9.5, weight="bold", color=TINTA,
+              ha="center", va="center", rotation=90)
+    ejes.text(-0.72, 0.4, "bajo", fontsize=8, color=GRIS, ha="center", va="bottom",
+              rotation=90)
+    ejes.text(-0.72, 6.8, "alto", fontsize=8, color=GRIS, ha="center", va="top",
+              rotation=90)
+
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(figura)
+    return destino
+
+
 def ciclo_scrum(destino):
     """El ciclo de Scrum con los valores reales del proyecto.
 
@@ -67,14 +257,14 @@ def ciclo_scrum(destino):
     ejes.add_patch(FancyBboxPatch(
         (7.6, 1.5), 4.9, 4.4, boxstyle="round,pad=0.03,rounding_size=0.15",
         facecolor="#F5F8FC", edgecolor=ACENTO, linewidth=1.4, zorder=0))
-    ejes.text(10.05, 5.6, "SPRINT — 2 semanas", ha="center", va="center",
+    ejes.text(10.05, 5.6, "SPRINT DE 2 SEMANAS", ha="center", va="center",
               fontsize=9.5, color=ACENTO, weight="bold", zorder=3)
 
     _caja(ejes, 10.05, 4.6, 3.9, 0.85, "Reunión diaria de seguimiento",
           relleno="#FFFFFF", borde=BORDE, ajuste=34)
     _caja(ejes, 10.05, 3.5, 3.9, 0.95, "Desarrollo, revisión de código y pruebas",
           relleno="#FFFFFF", borde=BORDE, ajuste=34)
-    _caja(ejes, 10.05, 2.3, 3.9, 0.95, "Incremento: módulo funcionando",
+    _caja(ejes, 10.05, 2.3, 3.9, 0.95, "Incremento. Un módulo funcionando",
           relleno=SUAVE, borde=ACENTO, negrita=True, ajuste=34)
 
     _caja(ejes, 5.6, 1.35, 2.9, 1.1, "Revisión y retrospectiva", ajuste=24)
@@ -89,9 +279,88 @@ def ciclo_scrum(destino):
             etiqueta="lo aprendido vuelve al backlog")
 
     ejes.text(7.0, 0.45,
-              "Cada sprint terminó con un módulo utilizable, no con una parte de varios: "
-              "así el avance se pudo mostrar y corregir.",
+              "Cada sprint terminó con un módulo utilizable y no con una parte de varios, "
+              "de modo que el avance se pudo mostrar y corregir.",
               ha="center", va="center", fontsize=8, color=GRIS, style="italic")
+
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(figura)
+    return destino
+
+
+# (nombre, x, y, zona) — zona 'm' middleware, 'c' comercial, 'p' puente, 's' compartida
+ENTIDADES = [
+    ("EMPRESA\nEMISORA", 2.0, 8.3, "s"),
+    ("CLIENTE API", 2.0, 5.9, "m"),
+    ("PLAN", 2.0, 3.5, "m"),
+    ("RECEPTOR", 2.0, 1.2, "m"),
+    ("DOCUMENTO\nELECTRÓNICO", 7.0, 5.9, "m"),
+    ("LÍNEA DE\nDOCUMENTO", 7.0, 3.5, "m"),
+    ("EVENTO DEL\nDOCUMENTO", 7.0, 1.2, "m"),
+    ("USUARIO", 12.2, 8.3, "s"),
+    ("CLIENTE\nCOMERCIAL", 12.2, 5.9, "c"),
+    ("FACTURA", 12.2, 3.5, "c"),
+    ("DETALLE DE\nFACTURA", 12.2, 1.2, "c"),
+    ("SERVICIO\nO PLAN", 16.6, 2.3, "c"),
+]
+
+# (desde, hasta, etiqueta, cardinalidad)
+RELACIONES = [
+    ("EMPRESA\nEMISORA", "DOCUMENTO\nELECTRÓNICO", "numera", "1:N"),
+    ("CLIENTE API", "DOCUMENTO\nELECTRÓNICO", "emite", "1:N"),
+    ("CLIENTE API", "PLAN", "contrata", "N:1"),
+    ("RECEPTOR", "DOCUMENTO\nELECTRÓNICO", "recibe", "1:N"),
+    ("DOCUMENTO\nELECTRÓNICO", "LÍNEA DE\nDOCUMENTO", "detalla", "1:N"),
+    ("DOCUMENTO\nELECTRÓNICO", "EVENTO DEL\nDOCUMENTO", "registra", "1:N"),
+    ("USUARIO", "FACTURA", "expide", "1:N"),
+    ("CLIENTE\nCOMERCIAL", "FACTURA", "recibe", "1:N"),
+    ("FACTURA", "DETALLE DE\nFACTURA", "detalla", "1:N"),
+    ("SERVICIO\nO PLAN", "DETALLE DE\nFACTURA", "se factura en", "1:N"),
+    ("CLIENTE API", "FACTURA", "se le cobra con", "1:N"),
+]
+
+COLOR_ZONA = {"m": "#DCE9F7", "c": "#E7F0E4", "p": "#F7E9DC", "s": "#EFEFF3"}
+
+
+def modelo_conceptual(destino):
+    """Modelo entidad-relación conceptual, con las dos zonas de la base diferenciadas."""
+    figura, ejes = plt.subplots(figsize=(12.5, 7.6))
+    ejes.set_xlim(0, 18.6)
+    ejes.set_ylim(0, 10.9)
+    ejes.axis("off")
+
+    posicion = {}
+    ancho, alto = 2.5, 1.15
+    for nombre, x, y, zona in ENTIDADES:
+        posicion[nombre] = (x, y)
+        ejes.add_patch(FancyBboxPatch((x - ancho / 2, y - alto / 2), ancho, alto,
+                                      boxstyle="round,pad=0.02,rounding_size=0.08",
+                                      facecolor=COLOR_ZONA[zona], edgecolor=TINTA,
+                                      linewidth=1.2, zorder=2))
+        ejes.text(x, y, nombre, ha="center", va="center", fontsize=8.2, color=TINTA,
+                  weight="bold", zorder=3)
+
+    for desde, hasta, etiqueta, cardinalidad in RELACIONES:
+        (x1, y1), (x2, y2) = posicion[desde], posicion[hasta]
+        ejes.plot([x1, x2], [y1, y2], color=GRIS, linewidth=1.0, zorder=1)
+        # A un tercio del trayecto y no en el centro, porque el punto medio de una
+        # relación entre entidades alineadas cae justo encima de la que queda en medio.
+        medio_x, medio_y = x1 + (x2 - x1) * 0.34, y1 + (y2 - y1) * 0.34
+        ejes.text(medio_x, medio_y, f"{etiqueta}\n{cardinalidad}", ha="center", va="center",
+                  fontsize=7.0, color=GRIS, style="italic", zorder=4,
+                  bbox=dict(facecolor="white", edgecolor="none", pad=1.4))
+
+    leyenda = [("Zona middleware. Lo que se emite por cuenta de terceros", "m"),
+               ("Zona comercial. Lo que el proveedor vende", "c"),
+               ("Entidades compartidas por las dos zonas", "s")]
+    for indice, (texto, zona) in enumerate(leyenda):
+        y = 10.6 - indice * 0.42
+        ejes.add_patch(FancyBboxPatch((0.55, y - 0.13), 0.42, 0.26,
+                                      boxstyle="round,pad=0.01,rounding_size=0.04",
+                                      facecolor=COLOR_ZONA[zona], edgecolor=TINTA,
+                                      linewidth=0.9, zorder=2))
+        ejes.text(1.12, y, texto, fontsize=7.8, color=TINTA, va="center")
 
     Path(destino).parent.mkdir(parents=True, exist_ok=True)
     figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")

@@ -23,7 +23,7 @@ ARCHIVO = SALIDA / "FactuGest - Requisitos Funcionales y No Funcionales.docx"
 # --- Cómo se calcula la prioridad ----------------------------------------------
 
 def puntaje(valor, urgencia):
-    """El valor de negocio pesa más que la urgencia: lo importante manda sobre lo afanado."""
+    """El valor de negocio pesa más que la urgencia, y lo importante manda sobre lo afanado."""
     return round(valor * 0.6 + urgencia * 0.4, 1)
 
 
@@ -103,8 +103,8 @@ RF2 = [
      "Enviar el PDF y el XML al correo del comprador en segundo plano, sin demorar la "
      "respuesta al sistema que emitió.", "Sistema", 4, 4),
     ("RF 2.11", "Registro de eventos del documento",
-     "Registrar cada hecho del documento —emisión, respuesta del proveedor, envío del "
-     "correo— con su fecha y su resultado.", "Sistema", 4, 4),
+     "Registrar cada hecho del documento, sea la emisión, la respuesta del proveedor o el "
+     "envío del correo, con su fecha y su resultado.", "Sistema", 4, 4),
     ("RF 2.12", "Consulta de documentos emitidos",
      "Consultar lo emitido por cuenta de terceros con filtros por cliente, tipo, estado y "
      "rango de fechas.", "Administrador", 4, 4),
@@ -169,7 +169,7 @@ RF4 = [
      "Registrar los pagos recibidos de una factura, totales o parciales, con su método y su "
      "fecha.", "Administrador", 4, 4),
     ("RF 4.7", "Estado de pago de la factura",
-     "Actualizar y consultar el estado de pago de cada factura: pagada, pendiente, vencida, "
+     "Actualizar y consultar el estado de pago de cada factura entre pagada, pendiente, vencida, "
      "anulada, en disputa o reembolsada.", "Administrador", 4, 4),
     ("RF 4.8", "Notas sobre la factura propia",
      "Emitir notas crédito y notas débito referidas a una factura propia ya emitida.",
@@ -205,7 +205,7 @@ RF5 = [
      "Clasificar la cartera pendiente por tramos de vencimiento para orientar la gestión de "
      "cobro.", "Administrador", 4, 3),
     ("RF 5.7", "Generación de reportes",
-     "Generar los siete reportes del sistema: ventas por periodo, cartera por cobrar, "
+     "Generar los siete reportes del sistema, que son ventas por periodo, cartera por cobrar, "
      "productos más vendidos, clientes por facturación, resumen tributario, facturación por "
      "estado de pago y facturación por usuario.", "Administrador", 5, 4),
     ("RF 5.8", "Exportación de reportes",
@@ -250,7 +250,7 @@ RF7 = [
     ("RF 7.2", "Almacenamiento seguro de contraseñas",
      "Guardar únicamente el hash de la contraseña, calculado con bcrypt.", "Sistema", 5, 5),
     ("RF 7.3", "Control de acceso por rol",
-     "Restringir el acceso a cada ruta según la jerarquía de roles: administrador, jefe de "
+     "Restringir el acceso a cada ruta según la jerarquía de roles, que son administrador, jefe de "
      "tienda, supervisor y cajero.", "Sistema", 5, 5),
     ("RF 7.4", "Reserva de los módulos de plataforma",
      "Impedir que el cajero acceda a clientes API, documentos emitidos, consumo, reportes, "
@@ -314,18 +314,18 @@ RF8 = [
 
 MODULOS = [
     ("RF 1", "Gestión de clientes API",
-     "Administra las empresas que se integran con el proveedor: su alta, el plan que "
+     "Administra las empresas que se integran con el proveedor, con su alta, el plan que "
      "contratan, la llave con la que llaman a la API y el estado en que se encuentran.",
-     "Este módulo es la puerta de entrada del negocio: sin un cliente registrado y con llave "
-     "vigente no hay emisión posible. Las reglas de la llave —entregarla una sola vez, "
-     "guardar solo su hash y poder rotarla— son las que permiten que una credencial "
+     "Este módulo es la puerta de entrada del negocio, porque sin un cliente registrado y con llave "
+     "vigente no hay emisión posible. Las reglas de la llave, que son entregarla una sola vez, "
+     "guardar solo su hash y poder rotarla, son las que permiten que una credencial "
      "comprometida se reemplace sin interrumpir el servicio.", RF1),
     ("RF 2", "Gestión de documentos electrónicos",
      "Reúne la emisión de facturas de venta, notas crédito y notas débito por cuenta de "
      "terceros, con todo lo que cada documento debe producir.",
      "Es el núcleo del sistema y el que sostiene el primer objetivo específico. Sus requisitos "
      "no describen únicamente la creación del documento, sino las condiciones que lo hacen "
-     "válido: un consecutivo que no se repite, un cálculo tributario correcto, el membrete de "
+     "válido, y son un consecutivo que no se repite, un cálculo tributario correcto, el membrete de "
      "quien emite y los dos archivos que la normativa exige.", RF2),
     ("RF 3", "Gestión de consumo y planes",
      "Controla cuántos documentos ha emitido cada cliente contra el cupo de su plan y "
@@ -334,36 +334,36 @@ MODULOS = [
      "realmente emitidos y no de un contador aparte, de modo que la cifra que se le cobra al "
      "cliente y la que el sistema muestra no puedan separarse.", RF3),
     ("RF 4", "Gestión de facturación y cartera propias",
-     "Cubre la venta que hace el proveedor: los planes y servicios de su catálogo, sus "
+     "Cubre la venta que hace el proveedor, con los planes y servicios de su catálogo, sus "
      "clientes, sus facturas y el recaudo de las mismas.",
      "Estos requisitos operan sobre la zona comercial de la base, separada de la del "
-     "middleware. La separación no es una preferencia de diseño: si un documento emitido para "
+     "middleware. La separación no es una preferencia de diseño, porque si un documento emitido para "
      "un tercero se guardara aquí, el tablero y los reportes lo contarían como ingreso "
      "propio.", RF4),
     ("RF 5", "Gestión de reportes y tablero de control",
      "Consolida la información del servicio y de la venta en indicadores, gráficas y reportes "
      "exportables.",
-     "El tablero está partido en dos secciones y el orden importa: primero el servicio, que es "
+     "El tablero está partido en dos secciones y el orden importa, porque primero va el servicio, que es "
      "lo que el proveedor hace, y después la venta, que es cobrarlo. Todas las cifras respetan "
      "el filtro de periodo, porque un indicador que no se mueve cuando el rango cambia está "
      "midiendo algo distinto de lo que su rótulo dice.", RF5),
     ("RF 6", "Gestión de configuración y catálogos",
-     "Mantiene los parámetros que la operación usa pero que se ajustan de vez en cuando: "
+     "Mantiene los parámetros que la operación usa pero que se ajustan de vez en cuando, como "
      "impuestos, descuentos, métodos de pago, estados, empresas emisoras y ubicación.",
      "Se agrupan aparte del trabajo diario porque su frecuencia de uso es otra. El catálogo de "
-     "empresas emisoras es el más delicado de todos: de él salen la resolución, el prefijo y "
+     "empresas emisoras es el más delicado de todos, porque de él salen la resolución, el prefijo y "
      "el rango autorizado con los que se numera cada documento.", RF6),
     ("RF 7", "Gestión de seguridad y auditoría",
      "Controla quién entra al panel, qué puede ver según su rol y qué queda registrado de lo "
      "que hace.",
-     "La auditoría solo escribe: no existe forma de corregir ni de borrar un registro, y la "
+     "La auditoría solo escribe, y no existe forma de corregir ni de borrar un registro, y la "
      "frase se redacta en el momento del hecho en vez de reconstruirse después leyendo el "
      "documento, que puede anularse o desaparecer. Un rastro que se puede editar no es un "
      "rastro.", RF7),
     ("RF 8", "Integración mediante API REST",
-     "Expone los servicios de facturación como una interfaz consumible por sistemas externos: "
+     "Expone los servicios de facturación como una interfaz consumible por sistemas externos, como "
      "puntos de venta, ERP o aplicaciones propias del cliente.",
-     "Es el módulo que sostiene la propuesta de valor del proyecto: la empresa cumple con la "
+     "Es el módulo que sostiene la propuesta de valor del proyecto, ya que la empresa cumple con la "
      "obligación de facturar electrónicamente sin cambiar el software con el que ya trabaja. "
      "Por eso sus requisitos incluyen la documentación automática y la idempotencia, que son "
      "las que hacen que integrarse sea barato y reintentar sea seguro.", RF8),
@@ -387,7 +387,7 @@ RNF = [
     ("RNF 04", "Seguridad",
      "Las contraseñas de los usuarios deben almacenarse cifradas con un algoritmo de hash de "
      "un solo sentido.",
-     "Inspección de la tabla de usuarios: no debe existir ninguna contraseña legible."),
+     "Inspección de la tabla de usuarios, en la que no debe existir ninguna contraseña legible."),
     ("RNF 05", "Seguridad",
      "Del secreto de las llaves de la API solo debe conservarse su hash; el prefijo se guarda "
      "en claro únicamente para poder localizar la fila.",
@@ -395,11 +395,11 @@ RNF = [
     ("RNF 06", "Seguridad",
      "Ninguna credencial debe quedar escrita en el registro de auditoría ni en los registros "
      "del servidor.",
-     "Revisión del registro tras rotar una llave: debe constar el hecho, no la llave."),
+     "Revisión del registro tras rotar una llave, en el que debe constar el hecho y no la llave."),
     ("RNF 07", "Seguridad",
      "Toda ruta del panel, salvo el ingreso y los recursos estáticos, debe exigir sesión "
      "iniciada.",
-     "Petición sin sesión a una ruta protegida: debe redirigir al formulario de ingreso."),
+     "Petición sin sesión a una ruta protegida, que debe redirigir al formulario de ingreso."),
     ("RNF 08", "Seguridad",
      "La sesión debe cerrarse por inactividad y no por tiempo transcurrido.",
      "Prueba de inactividad prolongada frente a uso continuo durante el mismo lapso."),
@@ -416,7 +416,7 @@ RNF = [
     ("RNF 12", "Integridad de los datos",
      "El consumo del cliente debe calcularse siempre de los documentos emitidos y nunca de un "
      "contador almacenado.",
-     "Revisión del servicio de consumo: no debe existir tabla de contadores."),
+     "Revisión del servicio de consumo, donde no debe existir tabla de contadores."),
     ("RNF 13", "Integridad de los datos",
      "Los documentos emitidos por cuenta de terceros no deben registrarse en las tablas de la "
      "venta propia.",
@@ -427,18 +427,18 @@ RNF = [
      "Consulta del registro de auditoría después de eliminar un usuario."),
     ("RNF 15", "Trazabilidad",
      "El registro de auditoría no debe ofrecer operaciones de modificación ni de borrado.",
-     "Revisión del servicio: solo existe la función de registrar."),
+     "Revisión del servicio, donde solo existe la función de registrar."),
     ("RNF 16", "Disponibilidad",
      "La indisponibilidad de servicios externos, como el correo, no debe impedir la emisión de "
      "documentos.",
-     "Emisión con el servidor de correo apagado: debe completarse y anotar el intento."),
+     "Emisión con el servidor de correo apagado, que debe completarse y anotar el intento."),
     ("RNF 17", "Disponibilidad",
      "El sistema debe estar disponible al menos el 99 % del tiempo en horario hábil.",
      "Monitoreo del servicio en el entorno de despliegue."),
     ("RNF 18", "Usabilidad",
      "La interfaz debe agruparse por trabajo y no por tabla, y cada destino debe tener un solo "
      "lugar en la navegación.",
-     "Revisión del menú: ningún destino debe alcanzarse por dos caminos distintos."),
+     "Revisión del menú, donde ningún destino debe alcanzarse por dos caminos distintos."),
     ("RNF 19", "Usabilidad",
      "Los formularios deben validar los datos y explicar el error señalando el campo que lo "
      "provocó.",
@@ -476,7 +476,7 @@ RNF = [
     ("RNF 28", "Mantenibilidad",
      "Todo cambio en el esquema de la base debe aplicarse mediante una migración versionada y "
      "repetible.",
-     "Ejecución del migrador dos veces seguidas: la segunda no debe alterar nada."),
+     "Ejecución del migrador dos veces seguidas, de modo que la segunda no altere nada."),
     ("RNF 29", "Mantenibilidad",
      "El sistema debe contar con pruebas automatizadas sobre el cálculo tributario, el "
      "contrato de la API y la generación de los documentos.",
@@ -498,12 +498,12 @@ RNF = [
 # --- Trazabilidad con los objetivos específicos ---------------------------------
 
 TRAZABILIDAD = [
-    ("OE 1", "Emisión de documentos electrónicos", "RF 2", "Nueva factura · Documentos emitidos"),
+    ("OE 1", "Emisión de documentos electrónicos", "RF 2", "Nueva factura y Documentos emitidos"),
     ("OE 2", "API REST de integración", "RF 8, RF 3.3, RF 3.4", "API /api/v1/"),
     ("OE 3", "Clientes API y planes de suscripción", "RF 1, RF 3, RF 4.3",
-     "Clientes API · Consumo y planes · Planes y servicios"),
-    ("OE 4", "Panel de control y reportes", "RF 5", "Panel de control · Reportes"),
-    ("OE 5", "Seguridad, roles y auditoría", "RF 7", "Usuarios · Auditoría"),
+     "Clientes API, Consumo y planes, Planes y servicios"),
+    ("OE 4", "Panel de control y reportes", "RF 5", "Panel de control y Reportes"),
+    ("OE 5", "Seguridad, roles y auditoría", "RF 7", "Usuarios y Auditoría"),
 ]
 
 USUARIOS = [
@@ -513,11 +513,11 @@ USUARIOS = [
      "consolidar las demás."),
     ("Supervisor", "Consulta de la operación y de los reportes de su empresa, con capacidad "
      "limitada de modificación."),
-    ("Cajero", "Solo facturación: emite, consulta clientes y servicios. No accede a cifras "
+    ("Cajero", "Solo facturación. Emite y consulta clientes y servicios. No accede a cifras "
      "financieras ni a los módulos de plataforma."),
-    ("Sistema cliente", "Sistema externo —punto de venta, ERP o aplicación propia— que consume "
+    ("Sistema cliente", "Sistema externo, sea punto de venta, ERP o aplicación propia, que consume "
      "la API con su llave para emitir y consultar sus documentos."),
-    ("Comprador", "Destinatario del documento. No accede al sistema: recibe el PDF y el XML en "
+    ("Comprador", "Destinatario del documento. No accede al sistema y recibe el PDF y el XML en "
      "su correo."),
 ]
 
@@ -545,7 +545,7 @@ def construir():
                      "Wilmer Jesús Contreras Rangel"],
         grado="Documento de especificación de requisitos del proyecto de grado\n"
               "Tecnólogo en Análisis y Desarrollo de Software",
-        institucion=["SERVICIO NACIONAL DE APRENDIZAJE — SENA",
+        institucion=["SERVICIO NACIONAL DE APRENDIZAJE (SENA)",
                      "Centro de la Industria, la Empresa y los Servicios (CIES)",
                      "Tecnólogo en Análisis y Desarrollo de Software"],
         ciudad="CÚCUTA, NORTE DE SANTANDER",
@@ -595,7 +595,7 @@ def _introduccion(d):
         "reemplazarlo."
     )
     d.parrafo(
-        "El sistema administra además el negocio del proveedor: el registro de las empresas "
+        "El sistema administra además el negocio del proveedor, con el registro de las empresas "
         "integradas, la llave con la que cada una accede, el plan de suscripción que contrata, "
         "el control de su consumo mensual contra el cupo de ese plan y la facturación de la "
         "mensualidad correspondiente. Sobre esa operación construye un tablero de control y un "
@@ -603,7 +603,7 @@ def _introduccion(d):
     )
     d.parrafo(
         "Queda fuera del alcance de esta versión la transmisión de los documentos a los "
-        "servicios en producción de la administración tributaria: el código único se genera en "
+        "servicios en producción de la administración tributaria, de modo que el código único se genera en "
         "modalidad de pruebas, a la espera de la habilitación correspondiente."
     )
 
@@ -652,8 +652,8 @@ def _descripcion_general(d):
     )
     d.parrafo(
         "La base de datos está organizada en dos zonas que no se mezclan. La zona comercial "
-        "guarda lo que el proveedor vende: sus planes, sus clientes y sus facturas. La zona de "
-        "middleware guarda lo que el proveedor emite por cuenta de terceros: las empresas "
+        "guarda lo que el proveedor vende, esto es, sus planes, sus clientes y sus facturas. La zona de "
+        "middleware guarda lo que el proveedor emite por cuenta de terceros, con las empresas "
         "integradas, los compradores y los documentos electrónicos. Una tabla puente relaciona "
         "la mensualidad cobrada con el cliente que la pagó."
     )
@@ -715,7 +715,7 @@ def _funcionales(d):
     )
     d.parrafo(
         "La agrupación se aparta deliberadamente de la de un sistema de punto de venta. "
-        "FactuGest no administra mercancía ni compras a proveedores: administra la emisión de "
+        "FactuGest no administra mercancía ni compras a proveedores, sino que administra la emisión de "
         "documentos por cuenta de terceros y la suscripción con la que ese servicio se cobra. "
         "Por esa razón, donde un sistema comercial tendría gestión de inventario y gestión de "
         "compras, aquí hay gestión de clientes API y gestión de consumo y planes."
@@ -731,7 +731,7 @@ def _funcionales(d):
     )
 
     for indice, (codigo, nombre, intro, cierre, requisitos) in enumerate(MODULOS, start=1):
-        d.titulo(f"3.{indice} {codigo} — {nombre}", nivel=2, nueva_pagina=True)
+        d.titulo(f"3.{indice} {codigo}. {nombre}", nivel=2, nueva_pagina=True)
         d.parrafo(intro)
         d.tabla(
             f"Requisitos funcionales del módulo de {inicial_minuscula(nombre)}",
@@ -749,12 +749,12 @@ def _no_funcionales(d):
     d.parrafo(
         "Los requisitos no funcionales establecen las condiciones de calidad que el sistema "
         "debe satisfacer. No describen funcionalidades, sino restricciones sobre la manera en "
-        "que estas se prestan: con qué rapidez, con qué garantías de seguridad, con qué "
+        "que estas se prestan, esto es, con qué rapidez, con qué garantías de seguridad, con qué "
         "integridad de la información y con qué facilidad de mantenimiento."
     )
     d.parrafo(
         "Cada requisito se acompaña de la forma en que se comprueba. Un requisito no funcional "
-        "que no indica cómo verificarse es una aspiración, no un requisito: al momento de "
+        "que no indica cómo verificarse es una aspiración y no un requisito, porque al momento de "
         "evaluar el sistema no habría manera de afirmar si se cumplió."
     )
 
@@ -774,7 +774,7 @@ def _no_funcionales(d):
 
     d.parrafo(
         "Tres de estas categorías merecen una observación. Las de integridad de los datos y "
-        "trazabilidad no son exigencias genéricas de calidad: un consecutivo repetido es un "
+        "trazabilidad no son exigencias genéricas de calidad. Un consecutivo repetido es un "
         "documento rechazado por la administración tributaria, y un rastro de operaciones que "
         "puede editarse no sirve como rastro. La de cumplimiento normativo, por su parte, "
         "recoge obligaciones legales cuyo incumplimiento no degrada el servicio sino que lo "
@@ -807,7 +807,7 @@ def _priorizacion(d):
     d.parrafo(
         "El puntaje individual de cada requisito resulta de ponderar el valor de negocio en un "
         "sesenta por ciento y la urgencia en un cuarenta por ciento. La ponderación no es "
-        "neutra y responde a una decisión explícita: lo importante debe pesar más que lo "
+        "neutra y responde a una decisión explícita, y es que lo importante debe pesar más que lo "
         "afanado, porque un requisito urgente pero de bajo valor desplaza recursos de otro que "
         "sostiene la operación. El puntaje global del módulo es el promedio de los puntajes de "
         "sus requisitos."
@@ -865,7 +865,7 @@ def _trazabilidad(d):
         anchos=[1.8, 5.2, 4.0, 5.3],
     )
     d.parrafo(
-        "La matriz cumple además una función de control sobre la propia especificación: un "
+        "La matriz cumple además una función de control sobre la propia especificación, porque un "
         "requisito que no puede asociarse a ningún objetivo indica alcance no previsto, y un "
         "objetivo sin requisitos asociados indica una promesa que el sistema no está en "
         "condiciones de cumplir. En la especificación resultante no se presenta ninguno de los "
