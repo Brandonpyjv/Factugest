@@ -7,10 +7,39 @@ Este archivo es para retomar sin releer el historial. El *porqué* de cada decis
 
 ---
 
+## ⏭️ Lo primero al retomar — aprobar la vista nueva de factura
+
+**Pendiente, sin empezar.** Se decidió el 20-ago que la vista nueva queda aprobada y la
+anterior se retira. Es lo que dice `CLAUDE.md` en «Las dos vistas de creación de factura»,
+que ya dejó escrito qué hay que quitar.
+
+Lo que hay que hacer, en FactuGest **y en el POS** (los dos tienen las dos vistas):
+
+1. Quitar del menú lateral la entrada **«Nueva factura (anterior)»** en `layout.html`.
+   Debe desaparecer **para todos los roles, el CAJERO incluido** — hoy la ve.
+2. Retirar la ruta **`GET /invoice/new`**. ⚠️ **Cuidado: el `POST /invoice/new` se queda**,
+   porque es el que usan las dos vistas para emitir. Solo se va el GET que pinta el
+   formulario viejo.
+3. Que `/invoice/nueva` sea la única forma de llegar al formulario, y revisar que ningún
+   otro sitio enlace a la vieja (botón «Nueva factura» de la barra superior, el panel del
+   cajero, los enlaces de «Ver todas»).
+4. Borrar la plantilla `invoice/form.html` y la constante `VISTAS`, más el campo oculto
+   `vista` que decidía a cuál devolver los errores.
+
+Verificar al terminar: emitir una factura de principio a fin, y que un error de validación
+—enviar sin cliente o sin líneas— siga devolviendo el formulario nuevo con el error
+señalado y no un JSON crudo.
+
+---
+
 ## Estado
 
-**Cerrado**: las fases 1 a 5 del plan, el track de validación V.1–V.8 y una tanda de puesta
-a punto (P.1–P.12) que no estaba prevista.
+**Cerrado**: las fases 1 a 5 del plan, el track de validación V.1–V.8 y dos tandas de
+puesta a punto (P.1–P.17) que no estaban previstas: el catálogo, las tablas y la auditoría
+el 19; el documento fiscal y el tablero el 20.
+
+Hay además una lectura completa del esquema en `BASE_DE_DATOS.md` —qué tablas sobran, cuál
+es el único hueco real y qué no hay que tocar—, pendiente de leer.
 
 | | FactuGest | Siste Soluciones (POS) |
 |---|---|---|
