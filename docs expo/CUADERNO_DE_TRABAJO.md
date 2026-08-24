@@ -4,7 +4,8 @@ Control de la elaboración del documento escrito del proyecto **FactuGest**, tom
 plantilla el PDF *Documento posinnovaate* y como normativa el *InstructivoSBS.APA-1*.
 
 **Última actualización:** 21 de agosto de 2026
-**Estado global:** ✅ **PROYECTO COMPLETO.** Las 17 tareas cerradas. Los 4 entregables verificados con 65 comprobaciones sin fallas.
+**Estado global:** documento ✅ completo (17 tareas, 4 entregables, 65 comprobaciones sin
+fallas) · **diapositivas de sustentación ✅ completas** (§27), 41 diapositivas verificadas con 8 comprobaciones sin fallas
 
 ---
 
@@ -968,3 +969,358 @@ sistema.
 Las tres reglas están en el §1 y las comprueba `verificar.py` en cada corrida. **Son las
 comprobaciones que más han encontrado**, porque la lectura manual no las ve en títulos de
 tabla ni dentro de las imágenes.
+
+
+---
+
+## 27 · Diapositivas de sustentación
+
+### 27.1 Sobre la normativa (consulta del cliente, 21-ago-2026)
+
+**No hay normativa que regule el diseño de las diapositivas.** El `InstructivoSBS.APA-1`
+menciona PowerPoint dos veces y las dos son ejemplos de **cómo citar** una presentación
+ajena, nunca de cómo hacer la propia. Todo el instructivo trata del documento escrito.
+
+APA 7 sí trae recomendaciones para presentaciones, pero de accesibilidad y citación, no de
+formato obligatorio. Se reducen a que se lea proyectado, que lleve poco texto, que se citen
+las fuentes ajenas y que la portada identifique el trabajo.
+
+### 27.2 Lo que se midió en la plantilla POSInnovate
+
+| Aspecto | POSInnovate | Borrador FactuGest | Recomendable |
+|---|---|---|---|
+| Letra de cuerpo | 16 y 20 pt | **10 a 14 pt** | 20 pt o más |
+| Diapositivas con más de 60 palabras | 7 de 39 | — | ninguna |
+| Numeración | no | no | sí |
+| Diapositiva de referencias | no | no | sí |
+
+El borrador además tenía **27 de 37 diapositivas vacías** y el contenido escrito describía el
+proyecto anterior, con inventario y control de stock, que contradice el documento de grado.
+
+### 27.3 Decisiones del cliente
+
+1. **Se trabaja sobre `Diapositivas factugest.pptx`.** Su diseño, fondo y colores son los que
+   exige el centro de formación y **no se tocan**. Solo se manipulan cuadros de texto e
+   imágenes.
+2. **Se corrigen los defectos de forma.** Cuerpo desde 20 pt, destacados a 24, numeración de
+   diapositivas y una diapositiva de referencias al cierre.
+3. **Se conservan las 37 diapositivas** y la estructura de cinco secciones de la plantilla,
+   pensada para una sustentación de 25 a 35 minutos.
+
+### 27.4 El motor
+
+`generador/ppt.py` abre el archivo del cliente y escribe encima. `limpiar()` borra los cuadros
+de texto que caen por debajo de la zona del título y los iconos sueltos que los acompañaban,
+sin tocar el fondo, el logo del SENA, la marca de agua, la barra del título ni la línea
+inferior. `generador/revisar_ppt.py` convierte a PDF con PowerPoint y renderiza, igual que
+`revisar.py` con los documentos.
+
+**Salida:** `carpeta exposicion/FactuGest - Sustentación.pptx`. El borrador original queda
+intacto.
+
+### 27.5 Cómo se escriben las viñetas
+
+**Cada punto es una idea completa y escrita de corrido.** No se parte en un rótulo destacado
+y un detalle detrás, no lleva negrita en las primeras palabras y no se corta con punto ni con
+dos puntos a mitad de frase.
+
+| Así no | Así sí |
+|---|---|
+| **Ya tienen su propio software.** un punto de venta, un sistema contable… | La mayoría de estas empresas ya opera con un software propio, sea un punto de venta, un sistema contable o una aplicación hecha a la medida años atrás. |
+
+En una diapositiva el patrón se nota más que en un documento, porque las tres viñetas se ven
+a la vez y la repetición salta a la vista. `vinetas()` **rechaza con error** un elemento que
+no sea una frase, para que nadie vuelva al formato anterior sin darse cuenta.
+
+La negrita queda reservada para el mensaje principal de la diapositiva, que es una sola frase
+en azul y a 24 puntos, no para las viñetas.
+
+### 27.6 Plan
+
+- [x] **P0 · Motor y prueba** — `ppt.py`, `revisar_ppt.py` y prueba sobre la diapositiva 4.
+- [x] **P1 · Sección I, Formulación** (1 a 10) — `generador/p1_formulacion.py`. Portada con
+      los nombres completos y la ficha, subtítulo corregido, problema, justificación con las
+      cifras de la encuesta, objetivo general literal, 5 objetivos específicos, alcance en dos
+      columnas, riesgos y restricciones, y cronograma en tabla.
+- [x] **P2 · Sección II, Análisis** (11 a 22) — `generador/p2_analisis.py`. Las once
+      diapositivas que estaban vacías, con la gráfica del contraste de la encuesta, las dos
+      técnicas con sus historias y sus RF, la matriz de stakeholders, la priorización y las
+      tablas de requisitos.
+- [x] **P3 · Sección III, Diseño** (23 a 30) — `generador/p3_diseno.py`. Diagrama general de
+      casos de uso, ficha de CU-08 resumida, ciclo Scrum, los dos mockups, el modelo
+      entidad-relación y el diccionario de la tabla `documentos`.
+- [x] **P4 · Secciones IV y V** — `generador/p4_desarrollo.py`. Las dos tablas de
+      herramientas con sus logotipos, pruebas, evidencia, y **dos diapositivas nuevas** de
+      resultados y referencias, más la evidencia de emisión de factura y su resultado.
+      La presentación pasó de 37 a 41.
+- [x] **P5 · Revisión final** — `generador/verificar_ppt.py`. Ocho comprobaciones sobre las
+      41 diapositivas, sin fallas.
+
+### 27.7 Qué contenido va en cada sección
+
+Todo sale de lo ya producido, sin inventar nada nuevo: el documento de grado para el texto,
+`entregables/diagramas/` para los 16 diagramas y `documento para que te guies claude/` para
+las capturas del sistema y los mockups.
+
+
+---
+
+## 28 · Sección I de la sustentación (P1)
+
+### 28.1 Lo que se corrigió del borrador
+
+| Diapositiva | Antes | Ahora |
+|---|---|---|
+| 2 · Portada | «control de inventarios y gestión comercial para PyMEs» | «emite por cuenta de terceros mediante una API de integración» |
+| 4 · Problema | Falta de control de inventario, stock en tiempo real | La barrera es el reemplazo del software |
+| 5 · Justificación | Cifras inventadas de 60 %, 99 % y 24/7 | 82 %, 38 % y 84 %, tomadas de `encuesta.py` |
+| 7 · Objetivos | 3 tarjetas, una de ellas «Control de Inventarios» | Los 5 objetivos aprobados en T1 |
+| 8, 9, 10 | vacías | Alcance, riesgos con restricciones, y cronograma |
+
+### 28.2 Detalles que costaron
+
+- **Las tarjetas de la justificación se conservaron.** `limpiar()` borra los textos y deja las
+  imágenes de fondo, así que las tres tarjetas del borrador siguen ahí con datos nuevos. En la
+  de objetivos sí hubo que retirarlas con `limpiar(d, imagenes=True)`, porque eran tres y los
+  objetivos son cinco.
+- **Las tablas salían verdes.** PowerPoint aplica el estilo de tabla de su tema, que no tiene
+  relación con los colores de la plantilla. `tabla()` ahora pinta el encabezado en el azul del
+  centro de formación y alterna las filas.
+- **PowerPoint bloquea el archivo** si queda una instancia abierta tras convertir a PDF. Si
+  aparece un `PermissionError` al guardar, hay que cerrarlo:
+  `Get-Process POWERPNT | Stop-Process -Force`.
+
+### 28.3 Las cifras vienen del mismo sitio que el documento
+
+La justificación toma sus porcentajes de `encuesta.py`, igual que el capítulo 3. Cambiar la
+muestra actualiza a la vez el documento y las diapositivas, y **no pueden discrepar**.
+
+
+---
+
+## 29 · Sección II de la sustentación (P2)
+
+### 29.1 La gráfica nueva
+
+`FIG-encuesta-contraste.png` muestra **solo las preguntas 6 y 7**, una al lado de la otra. El
+panel del documento tiene seis distribuciones y proyectado no se distingue cuál importa; aquí
+se ve el hallazgo y nada más. Se genera con `encuesta.grafica_contraste()`.
+
+Está dibujada muy apaisada a propósito, en proporción 4:1, para que en la diapositiva pueda
+ocupar los 11,85 pulgadas de ancho sin que el alto la obligue a encogerse.
+
+### 29.2 Cómo se organizó la sección
+
+La plantilla repite el bloque «herramienta, historias de usuario, requisitos relacionados» dos
+veces, una por técnica. Se respetó:
+
+| Diapositivas | Contenido |
+|---|---|
+| 12, 13, 14 | Encuesta, sus tres historias y los cuatro RF que salen de ella |
+| 15, 16, 17 | Observación directa, sus historias y sus RF |
+| 18 | Matriz de stakeholders |
+| 19, 20 | Escala de priorización y ranking de los ocho módulos |
+| 21, 22 | Requisitos funcionales y no funcionales |
+
+### 29.3 Las cifras se importan
+
+`p2_analisis.py` importa `MODULOS`, `RNF`, `prioridad` y `puntaje` de `e1_requisitos.py`, igual
+que hace el capítulo 4 del documento. **Las tablas de la 20, la 21 y la 22 se calculan solas**,
+así que la sustentación no puede quedar diciendo algo distinto del documento que el jurado
+tiene delante.
+
+### 29.4 Frases que cierran cada diapositiva
+
+Cada una termina con una línea que dice qué hay que retener, y son las que conviene llevar
+preparadas para la exposición:
+
+- **12.** «Rechazan cambiar de software, no facturar electrónicamente.»
+- **13.** «La HU-04 no la pidió nadie. Salió de advertir que el sistema puede perder la
+  respuesta por una falla de red.»
+- **17.** «La observación no produjo funciones nuevas sino condiciones sobre las que ya
+  existían, y esa es la diferencia entre las dos técnicas.»
+- **18.** «La DIAN quedó en alta influencia y bajo interés.»
+- **21.** «Donde un sistema comercial tendría inventario y compras, aquí hay clientes API y
+  consumo y planes.»
+
+
+---
+
+## 30 · Sección III de la sustentación (P3)
+
+### 30.1 Las figuras son las del documento
+
+No se hicieron versiones aparte para la presentación. Si el jurado compara una diapositiva con
+el capítulo 5, encuentra el mismo diagrama.
+
+**La única salvedad es la base de datos.** En el documento va el modelo físico con las
+veintisiete tablas, en página apaisada; en la diapositiva va el modelo conceptual, porque
+veintisiete tablas proyectadas no se leen desde la tercera fila. El pie de la diapositiva lo
+dice, para que no parezca que falta algo.
+
+### 30.2 Dos ajustes de maquetación
+
+1. **El cuadro del título medía seis pulgadas.** Con un título algo más largo, como «Diseño de
+   la Base de Datos», el texto se partía en dos líneas y la segunda caía encima de la barra
+   amarilla. `titulo()` ahora ensancha el cuadro a 11,4 pulgadas.
+2. **Una imagen no siempre debe ocupar todo el ancho.** El modelo entidad-relación es
+   demasiado alto para llenar las once pulgadas, así que al estirarlo se encogía por su altura
+   y dejaba media diapositiva vacía. Quedó a la izquierda con el texto explicativo a la
+   derecha, y así se lee mejor y aprovecha el espacio.
+
+### 30.3 Argumentos que quedan a la vista
+
+- **25.** El cupo se valida en el paso 3, antes de reservar el número en el paso 4.
+- **26.** El alcance cambió durante el desarrollo y se absorbió reordenando el backlog.
+- **27.** Un tablero que abriera con las ventas describiría un comercio, no un proveedor.
+- **29.** Si un documento de un cliente se guardara en la zona comercial, el tablero lo
+  contaría como ingreso propio.
+- **30.** La referencia externa es la que hace idempotente el reintento.
+
+
+---
+
+## 31 · Secciones IV y V de la sustentación (P4)
+
+### 31.1 Cuatro diapositivas que la plantilla no traía
+
+La presentación pasó de 37 a **41**. Se agregaron la evidencia de emisión de una factura, el
+resultado de esa prueba, los resultados obtenidos y las referencias.
+Se crean **duplicando una diapositiva existente**, de modo que heredan el fondo, el logotipo,
+la barra del título y la línea inferior sin rehacerlos.
+
+`ppt.duplicar()` copia el XML de cada forma y **rehace las relaciones**, porque una imagen
+copiada apunta al identificador de relación de la diapositiva original y sin reasignarlo no
+aparece.
+
+⚠️ **La hoja de notas hay que excluirla.** Una hoja de notas pertenece a una sola diapositiva,
+y si dos apuntan a la misma, PowerPoint responde «no se puede abrir el archivo» sin decir por
+qué. Costó un rato encontrarlo.
+
+### 31.2 Los logotipos se conservan
+
+Las diapositivas 32 y 33 traían tabla y logotipos de las tecnologías, y siguen siendo las que
+el proyecto usa, así que se conservaron y solo se reescribieron las descripciones. En la 33 se
+llenó además la cuarta fila, que estaba vacía, con pytest y las 190 pruebas.
+
+**Un detalle que engañó**: los rótulos de esa diapositiva no eran celdas de la tabla sino
+cuadros de texto flotantes encima. Al escribir en las celdas quedó el texto duplicado, uno
+sobre otro. `limpiar(d, tablas=False)` retira los flotantes y conserva la tabla.
+
+### 31.3 Las cifras salen del capítulo 6
+
+`p4_desarrollo.py` importa `PRUEBAS_AUTOMATICAS`, `SEGUNDOS` y `RESULTADOS` de
+`e4_cap6b.py`. La tabla de cumplimiento de la diapositiva de resultados es **la misma** del
+documento.
+
+
+### 31.4 La sección V quedó así
+
+| N.º | Contenido |
+|---|---|
+| 35 | Pruebas del sistema, con los objetivos y el alcance |
+| 36 | Evidencia · RF 4.2, registro de un cliente |
+| 37 | Evidencia · RF 4.1, emisión de una factura |
+| 38 | Resultado obtenido de la emisión |
+| 39 | Resultados obtenidos, con la tabla de cumplimiento de los objetivos |
+| 40 | Referencias |
+| 41 | Cierre del SENA, intacto |
+
+`evidencia()` quedó parametrizada, así que agregar las otras dos pruebas documentadas (registro
+de servicio y creación de usuario) es una línea más. Las capturas ya existen en
+`documento para que te guies claude/`.
+
+⚠️ **PowerPoint bloquea el archivo** después de convertir a PDF. `guardar()` ahora detecta el
+error de permisos, cierra PowerPoint y reintenta una vez, en lugar de fallar con un mensaje que
+no dice nada sobre la causa real.
+
+
+---
+
+## 32 · Revisión final de la presentación (P5)
+
+### 32.1 Qué comprueba `verificar_ppt.py`
+
+| Comprobación | Criterio |
+|---|---|
+| Tamaño de letra | Nada por debajo de 13 puntos |
+| Densidad | Menos de 120 palabras **de prosa** por diapositiva |
+| Diapositivas vacías | Ninguna con menos de tres palabras y sin imagen |
+| Dentro del lienzo | El texto no se sale; a las imágenes se les tolera el sangrado del diseño |
+| Guion largo y punto medio | Ninguno |
+| «Afirmación breve: explicación» | Ninguna, salvo etiquetas como «Fuente:» |
+| Numeración | Presente en todas menos las dos portadas |
+
+**Resultado del 21 de agosto de 2026: 8 comprobaciones, cero fallas.**
+
+### 32.2 Dos calibraciones que hubo que hacer
+
+1. **Las tablas no cuentan para el límite de palabras.** A una tabla nadie la lee entera,
+   quien la mira busca su fila. El límite es para la prosa, que sí se lee de corrido y es la
+   que satura la diapositiva. Sin esa distinción, el diccionario de datos y la ficha de CU-08
+   aparecían como sobrecargadas cuando no lo están.
+2. **Hay tensión entre dos reglas del cliente.** Se pidió poco texto por diapositiva y también
+   ideas completas escritas de corrido. Con frases completas, tres viñetas ya suman noventa
+   palabras. El límite quedó en 120 a propósito, porque bajarlo obligaría a volver a las
+   frases telegráficas que se descartaron.
+
+### 32.3 El pie subió a 13 puntos
+
+Estaba en 12, que era el único texto por debajo del mínimo. Ahora ningún texto de la
+presentación baja de 13, y el cuerpo va de 15 en adelante.
+
+### 32.4 Entregable
+
+`carpeta exposicion/FactuGest - Sustentación.pptx` · **41 diapositivas** · con su PDF al lado.
+El borrador original, `Diapositivas factugest.pptx`, queda intacto.
+
+Para rehacerla entera basta `python p4_desarrollo.py`, que encadena las cuatro secciones y
+numera.
+
+---
+
+## 33 · Guion de la sustentación
+
+**Pedido**: un documento en Word que diga qué tiene que decir cada una de las tres
+personas que exponen, a partir de las diapositivas ya hechas.
+
+**Generador**: `generador/guion_exposicion.py` → `carpeta exposicion/FactuGest - Guion
+de la Sustentación.docx` (15 páginas).
+
+### 33.1 · Reparto
+
+Sigue los roles del capítulo 3, no un corte por cantidad de diapositivas. Que hable de
+cada parte quien la construyó es lo que permite responder cuando el jurado pregunta.
+
+| Expositor | Rol | Diapositivas | Contenido | Tiempo |
+|---|---|---|---|---|
+| Brandon Restrepo | Product Owner | 1 a 10 | Formulación | 8 min |
+| Wilmer Contreras | Analista | 11 a 25 | Análisis y diseño | 11 min |
+| Johan Acosta | Scrum Master | 26 a 41 | Metodología, desarrollo, implementación | 11 min |
+
+Total treinta minutos. El documento dice también qué recortar si dan menos tiempo
+(las diapositivas 13, 16 y 17) y qué no se puede recortar (la 12, que es el hallazgo,
+y la 37, que es la evidencia).
+
+### 33.2 · Estructura
+
+Cada una de las 41 diapositivas lleva dos líneas, «En pantalla» con lo que el jurado
+ve y «Qué decir» con el texto hablado. Los títulos se tomaron del propio `.pptx`, no
+de memoria, para que el guion no se desvíe de la presentación si alguna se reordena.
+
+Cierra con diez preguntas probables del jurado, cada una con su respuesta y con quién
+debería contestarla, y una lista de verificación para el ensayo.
+
+### 33.3 · Por qué no va con interlineado doble
+
+Es material de trabajo, no un entregable académico, y se lee de reojo mientras se
+habla. Va a 1,15 y con espacio antes de cada título. `_compactar()` recorre los
+párrafos al final porque `vinetas()` y `numerada()` fijan el interlineado del
+instructivo por su cuenta.
+
+### 33.4 · Las tres prohibiciones también aplican aquí
+
+Comprobado sobre el `.docx` generado: cero guiones largos, cero puntos medios y cero
+coincidencias de «afirmación breve: explicación». Los catorce casos que había en el
+primer borrador se reescribieron, incluidos dos títulos de sección que se cambiaron
+por los títulos reales de las diapositivas.

@@ -203,3 +203,25 @@ def formulario(destino):
     figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(figura)
     return destino
+
+
+def grafica_contraste(destino):
+    """Las preguntas 6 y 7, una al lado de la otra.
+
+    Es el hallazgo que sostiene el proyecto, y en la sustentación se muestra solo,
+    sin las otras cuatro gráficas. El panel completo del documento tiene seis
+    distribuciones y proyectado no se distingue cuál es la que importa.
+    """
+    # Muy apaisada a propósito, para que en la diapositiva pueda ocupar todo el
+    # ancho disponible sin que el alto la obligue a encogerse.
+    figura, ejes = plt.subplots(1, 2, figsize=(12, 2.95))
+    for cuadro, (titulo, opciones, destacada) in zip(ejes, RESULTADOS[4:6]):
+        _barras(cuadro, titulo, opciones, destacada)
+        cuadro.title.set_fontsize(11)
+        for etiqueta in cuadro.get_yticklabels():
+            etiqueta.set_fontsize(9.5)
+    figura.tight_layout(w_pad=5.0)
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(figura)
+    return destino
