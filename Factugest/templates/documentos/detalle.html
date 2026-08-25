@@ -1,0 +1,193 @@
+{% extends "layout.html" %}
+{% import "_badges.html" as b %}
+
+{% block title %}{{ documento.numero }} | Documentos emitidos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <a href="{{ url_for('documentos') }}" class="text-decoration-none small text-muted">
+                <i class="bi bi-arrow-left"></i> Documentos emitidos
+            </a>
+            <h1 class="h3 mb-1 mt-1 text-gray-800 fw-bold">
+                {{ documento.numero }} {{ b.estado_documento(documento.estado) }}
+            </h1>
+            <p class="text-muted mb-0 small">
+                {{ b.tipo_documento(documento.tipo) }}
+                emitida el {{ documento.fecha_emision.strftime('%d/%m/%Y a las %H:%M') }}
+                por cuenta de <a href="{{ url_for('ver_cliente_api', cod_cliente_api=cliente.cod_cliente_api) }}">{{ cliente.nombre }}</a>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('documento_pdf', id_publico=documento.id_publico) }}" target="_blank"
+               class="btn btn-light border px-3 py-2" style="border-radius:8px;font-weight:600;">
+                <i class="bi bi-file-earmark-pdf me-1 text-danger"></i> Ver PDF
+            </a>
+            {% if documento.xml %}
+            <a href="{{ url_for('documento_xml', id_publico=documento.id_publico) }}"
+               class="btn btn-light border px-3 py-2" style="border-radius:8px;font-weight:600;">
+                <i class="bi bi-filetype-xml me-1 text-primary"></i> Descargar XML
+            </a>
+            {% else %}
+            <button class="btn btn-light border px-3 py-2" style="border-radius:8px;font-weight:600;" disabled
+                    title="Este documento es de la operación sembrada para la demostración: no se transmitió, así que no tiene XML.">
+                <i class="bi bi-filetype-xml me-1"></i> Sin XML
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-building me-2"></i>Emisor</h6>
+                    <div class="fw-bold">{{ emisor.nombre }}</div>
+                    <div class="text-muted small">NIT {{ emisor.nit }}{{ '-' ~ emisor.dv if emisor.dv }}</div>
+                    <div class="text-muted small">{{ emisor.direccion }}, {{ emisor.ciudad }}</div>
+                    <hr>
+                    <div class="text-muted small text-uppercase fw-bold">Resolución</div>
+                    <div class="small">{{ emisor.resolucion_dian or '—' }}</div>
+                    <div class="text-muted small">
+                        Rango {{ emisor.resolucion_desde }}–{{ emisor.resolucion_hasta }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-person me-2"></i>Comprador</h6>
+                    <div class="fw-bold">{{ receptor.nombre }}</div>
+                    <div class="text-muted small font-monospace">
+                        {{ abreviatura_documento(receptor.tipo_documento) }} {{ receptor.numero_documento }}
+                    </div>
+                    <div class="text-muted small">{{ receptor.direccion or '—' }}</div>
+                    <div class="text-muted small">{{ receptor.email or 'Sin correo' }}</div>
+                    <hr>
+                    <div class="text-muted small text-uppercase fw-bold">Régimen</div>
+                    <div class="small">{{ receptor.regimen_tributario|replace('_', ' ')|title }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-upc-scan me-2"></i>Trazabilidad</h6>
+                    <div class="text-muted small text-uppercase fw-bold">CUFE</div>
+                    <div class="small font-monospace text-break">{{ documento.cufe or '—' }}</div>
+                    <div class="text-muted small text-uppercase fw-bold mt-2">Referencia del cliente</div>
+                    <div class="small font-monospace">{{ documento.referencia_externa or '—' }}</div>
+                    <div class="text-muted small text-uppercase fw-bold mt-2">Proveedor DIAN</div>
+                    <div class="small">{{ documento.proveedor_dian or '—' }}</div>
+                    {% if documento.qr %}
+                    <a href="{{ documento.qr }}" target="_blank" class="small d-inline-block mt-2">
+                        <i class="bi bi-qr-code me-1"></i>Enlace de verificación
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;overflow:hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="tabla-encabezado">
+                            <th class="ps-4">#</th>
+                            <th>Código</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Cant.</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Dcto.</th>
+                            <th class="text-end">Base</th>
+                            <th class="text-end">IVA</th>
+                            <th class="pe-4 text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for l in lineas %}
+                        <tr>
+                            <td class="ps-4 text-muted">{{ l.orden }}</td>
+                            <td class="small font-monospace">{{ l.codigo or '—' }}</td>
+                            <td>{{ l.descripcion }}</td>
+                            <td class="text-end">{{ "{:,.2f}".format(l.cantidad).rstrip('0').rstrip('.') }}</td>
+                            <td class="text-end">${{ "{:,.0f}".format(l.precio_unitario) }}</td>
+                            <td class="text-end text-muted">
+                                {{ "{:,.0f}%".format(l.descuento_porcentaje) if l.descuento_porcentaje else '—' }}
+                            </td>
+                            <td class="text-end">${{ "{:,.0f}".format(l.subtotal) }}</td>
+                            <td class="text-end text-muted">
+                                {{ "{:,.0f}".format(l.impuesto_porcentaje) }}% · ${{ "{:,.0f}".format(l.impuesto_valor) }}
+                            </td>
+                            <td class="pe-4 text-end fw-bold">${{ "{:,.0f}".format(l.subtotal + l.impuesto_valor) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="border-top">
+                        <tr>
+                            <td colspan="6"></td>
+                            <td class="text-end text-muted small">Base gravable</td>
+                            <td colspan="2" class="pe-4 text-end">${{ "{:,.0f}".format(documento.subtotal) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6"></td>
+                            <td class="text-end text-muted small">Descuentos</td>
+                            <td colspan="2" class="pe-4 text-end">${{ "{:,.0f}".format(documento.total_descuentos) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6"></td>
+                            <td class="text-end text-muted small">Impuestos</td>
+                            <td colspan="2" class="pe-4 text-end">${{ "{:,.0f}".format(documento.total_impuestos) }}</td>
+                        </tr>
+                        <tr class="fw-bold fs-5">
+                            <td colspan="6"></td>
+                            <td class="text-end">Total</td>
+                            <td colspan="2" class="pe-4 text-end">${{ "{:,.0f}".format(documento.total) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:12px;">
+        <div class="card-header bg-white border-bottom border-light py-3">
+            <h6 class="m-0 fw-bold text-primary"><i class="bi bi-list-check me-2"></i>Qué pasó con este documento</h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="d-flex flex-column gap-3">
+                {% for e in eventos %}
+                <div class="d-flex gap-3">
+                    <div class="text-muted small text-nowrap" style="width:150px;">
+                        {{ e.fecha.strftime('%d/%m/%Y %H:%M:%S') }}
+                    </div>
+                    <div>
+                        <div class="fw-bold small">
+                            {{ e.tipo|title }}
+                            {% if e.codigo %}<span class="text-muted font-monospace">· {{ e.codigo }}</span>{% endif %}
+                            {% if e.proveedor %}<span class="badge bg-light text-dark border ms-1">{{ e.proveedor }}</span>{% endif %}
+                        </div>
+                        <div class="text-muted small">{{ e.mensaje or '—' }}</div>
+                        {% if e.payload %}
+                        <details class="mt-1">
+                            <summary class="small text-muted" style="cursor:pointer;">Respuesta del proveedor</summary>
+                            <pre class="bg-light border rounded p-2 small mt-1 mb-0"
+                                 style="white-space:pre-wrap;">{{ e.payload }}</pre>
+                        </details>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Sin eventos registrados.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

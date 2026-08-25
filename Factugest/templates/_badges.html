@@ -1,0 +1,35 @@
+{# Distintivos compartidos entre los módulos de la plataforma.
+
+   Están aquí y no en cada plantilla porque el estado de un documento se muestra
+   en cuatro pantallas distintas, y un mismo estado pintado de dos colores
+   distintos en dos listas es una forma barata de perder la confianza del que mira. #}
+
+{% macro estado_documento(estado) -%}
+{% if estado == 'ACEPTADO' %}
+<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">
+    <i class="bi bi-check-circle me-1"></i>Aceptado</span>
+{%- elif estado == 'RECHAZADO' %}
+<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">
+    <i class="bi bi-x-circle me-1"></i>Rechazado</span>
+{%- elif estado == 'PENDIENTE' %}
+<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">
+    <i class="bi bi-hourglass-split me-1"></i>Pendiente</span>
+{%- else %}
+<span class="badge rounded-pill bg-secondary-subtle text-secondary border px-3">{{ estado|title }}</span>
+{%- endif %}
+{%- endmacro %}
+
+{% macro estado_cliente(estado) -%}
+{% if estado == 'ACTIVO' %}
+<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">Activo</span>
+{%- elif estado == 'SUSPENDIDO' %}
+<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">Suspendido</span>
+{%- else %}
+<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">Revocado</span>
+{%- endif %}
+{%- endmacro %}
+
+{% macro tipo_documento(tipo) -%}
+{% set nombres = {'FV': 'Factura', 'NC': 'Nota crédito', 'ND': 'Nota débito'} %}
+<span class="badge bg-light text-dark border">{{ nombres.get(tipo, tipo) }}</span>
+{%- endmacro %}

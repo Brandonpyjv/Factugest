@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from services.taxes import (get_all_invoice_taxes, get_tax_by_id,
-                             create_tax, update_tax, delete_tax)
+                             create_tax, update_tax, delete_tax, validar_impuesto)
+from routes.formularios import formulario_invalido
 from templates_config import templates
 
 router = APIRouter(prefix="/invoice_taxes")
+
+PLANTILLA = "invoice_taxes/form.html"
 
 
 @router.get("", name="invoice_taxes")
@@ -20,11 +23,18 @@ def new_tax(request: Request):
 
 @router.post("/new", name="create_tax")
 def create_tax_post(
+    request: Request,
     descripcion: str = Form(...),
-    porcentaje: float = Form(...),
+    porcentaje: str = Form(...),
     codigo_dian: str = Form(""),
 ):
-    create_tax(descripcion, porcentaje, codigo_dian)
+    enviado = {"descripcion": descripcion, "porcentaje": porcentaje,
+               "codigo_dian": codigo_dian}
+    v = validar_impuesto(enviado)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v, {"tax": None}, enviado)
+
+    create_tax(v.datos["descripcion"], v.datos["porcentaje"], v.datos["codigo_dian"])
     return RedirectResponse(url="/invoice_taxes", status_code=303)
 
 
@@ -38,12 +48,20 @@ def edit_tax(request: Request, tax_id: int):
 
 @router.post("/edit/{tax_id}", name="update_tax")
 def update_tax_post(
+    request: Request,
     tax_id: int,
     descripcion: str = Form(...),
-    porcentaje: float = Form(...),
+    porcentaje: str = Form(...),
     codigo_dian: str = Form(""),
 ):
-    update_tax(tax_id, descripcion, porcentaje, codigo_dian)
+    enviado = {"descripcion": descripcion, "porcentaje": porcentaje,
+               "codigo_dian": codigo_dian}
+    v = validar_impuesto(enviado, tax_id=tax_id)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v,
+                                   {"tax": get_tax_by_id(tax_id)}, enviado)
+
+    update_tax(tax_id, v.datos["descripcion"], v.datos["porcentaje"], v.datos["codigo_dian"])
     return RedirectResponse(url="/invoice_taxes", status_code=303)
 
 

@@ -1,4 +1,22 @@
 from database import get_all_from_table, execute_query, execute_update, get_one
+from services.validaciones import Validador, bandera, porcentaje, texto
+
+
+def validar_descuento(datos: dict, discount_id: int = None) -> Validador:
+    """Valida un descuento del catálogo."""
+    v = Validador()
+
+    v.campo("descripcion", texto, datos.get("descripcion"), maximo=100, minimo=2)
+    v.campo("porcentaje", porcentaje, datos.get("porcentaje"))
+    v.campo("aplica_a_producto", bandera, datos.get("aplica_a_producto"))
+    v.campo("aplica_a_factura", bandera, datos.get("aplica_a_factura"))
+
+    # Un descuento que no aplica ni a productos ni a facturas no se puede usar en
+    # ningún lado: se guardaría para no aparecer nunca.
+    if not v.datos.get("aplica_a_producto") and not v.datos.get("aplica_a_factura"):
+        v.errores["aplica_a_producto"] = "Debe aplicar al menos a productos o a facturas"
+
+    return v
 
 
 def get_all_discount():

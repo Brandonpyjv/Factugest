@@ -1,0 +1,177 @@
+{% extends "layout.html" %}
+{% import "_badges.html" as b %}
+{% import "_tabla.html" as t %}
+
+{% block title %}Clientes API | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 fw-bold">
+                <i class="bi bi-key text-primary me-2"></i>Clientes API
+            </h1>
+            <p class="text-muted mb-0 small">
+                Los sistemas que emiten a través de nosotros. Cada uno con su llave,
+                su empresa emisora y su cupo mensual.
+            </p>
+        </div>
+        <a href="{{ url_for('nuevo_cliente_api') }}"
+           class="btn btn-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2"
+           style="border-radius:8px;font-weight:600;">
+            <i class="bi bi-plus-circle-fill"></i> Nuevo cliente
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        {% set tarjetas = [
+            ('Clientes activos', resumen.clientes_activos, 'bi-broadcast', '#e8edff', 'text-primary'),
+            ('Documentos este mes', resumen.documentos_periodo, 'bi-file-earmark-text', '#e6f9f1', 'text-success'),
+            ('Cerca del cupo', resumen.en_alerta + resumen.excedidos, 'bi-speedometer2', '#fff3e0', 'text-warning'),
+            ('Sin cobrar el mes', resumen.sin_cobrar, 'bi-cash-coin', '#fce4ec', 'text-danger')
+        ] %}
+        {% for titulo, valor, icono, fondo, color in tarjetas %}
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:52px;height:52px;background:{{ fondo }};">
+                        <i class="bi {{ icono }} {{ color }} fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">{{ titulo }}</div>
+                        <div class="fs-3 fw-bold text-dark">{{ "{:,}".format(valor) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% call t.filtros(url_for('clientes_api'), filtros, 'Nombre, NIT, emisor o prefijo de la llave…') %}
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Estado</label>
+            <select name="estado" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                {% for e in estados %}
+                <option value="{{ e }}" {{ 'selected' if filtros.estado == e }}>{{ e|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Plan</label>
+            <select name="plan" class="form-select form-select-sm bg-light border-0">
+                <option value="">Todos</option>
+                {% for p in planes %}
+                <option value="{{ p }}" {{ 'selected' if filtros.plan == p }}>{{ p|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endcall %}
+
+    <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="tabla-encabezado">
+                            <th class="ps-4">Cliente</th>
+                            <th>Emite como</th>
+                            <th>Llave</th>
+                            <th>Plan</th>
+                            <th class="text-end">Este mes</th>
+                            <th class="text-end">Histórico</th>
+                            <th>Último uso</th>
+                            <th>Estado</th>
+                            <th class="pe-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for c in clientes %}
+                        <tr>
+                            <td class="ps-4">
+                                <a href="{{ url_for('ver_cliente_api', cod_cliente_api=c.cod_cliente_api) }}"
+                                   class="fw-bold text-decoration-none">{{ c.nombre }}</a>
+                                {% if c.cliente_nombre %}
+                                <div class="text-muted small">Se le factura a {{ c.cliente_nombre }}</div>
+                                {% else %}
+                                <div class="text-warning-emphasis small">
+                                    <i class="bi bi-exclamation-triangle"></i> Sin cliente al que facturarle
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if c.empresa_nombre %}
+                                        {% if c.empresa_logo %}
+                                        <img src="{{ url_for('static', path='img/logos/' ~ c.empresa_logo) }}"
+                                             alt="" width="28" height="28"
+                                             style="border-radius:6px;object-fit:contain;background:#fff;border:1px solid #eee;flex:0 0 28px;">
+                                        {% else %}
+                                        <span class="d-inline-flex align-items-center justify-content-center fw-bold"
+                                              style="width:28px;height:28px;border-radius:6px;flex:0 0 28px;
+                                                     background:{{ color_monograma(c.empresa_nombre, c.empresa_color_marca) }};
+                                                     color:#fff;font-size:.65rem;letter-spacing:.5px;">
+                                            {{ iniciales(c.empresa_nombre) }}
+                                        </span>
+                                        {% endif %}
+                                    {% endif %}
+                                    <div>
+                                        <div class="small">{{ c.empresa_nombre or '—' }}</div>
+                                        <div class="text-muted small font-monospace">NIT {{ c.empresa_nit or '—' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border font-monospace">{{ c.api_key_prefijo }}</span></td>
+                            <td>
+                                <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-3">
+                                    {{ c.plan|title }}
+                                </span>
+                                <div class="text-muted small mt-1">
+                                    {{ "{:,}".format(c.limite_mensual) ~ ' doc/mes' if c.limite_mensual else 'Sin tope' }}
+                                </div>
+                            </td>
+                            <td class="text-end fw-bold text-dark">{{ "{:,}".format(c.documentos_mes) }}</td>
+                            <td class="text-end text-muted">{{ "{:,}".format(c.documentos_total) }}</td>
+                            <td class="text-muted small">
+                                {{ c.ultimo_uso.strftime('%d/%m/%Y %H:%M') if c.ultimo_uso else 'Nunca' }}
+                            </td>
+                            <td>{{ b.estado_cliente(c.estado) }}</td>
+                            <td class="pe-4 text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('ver_cliente_api', cod_cliente_api=c.cod_cliente_api) }}"
+                                       class="btn btn-sm btn-light border text-primary" title="Ver ficha">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('documentos') }}?cliente={{ c.cod_cliente_api }}"
+                                       class="btn btn-sm btn-light border text-secondary" title="Sus documentos">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </a>
+                                    <a href="{{ url_for('editar_cliente_api', cod_cliente_api=c.cod_cliente_api) }}"
+                                       class="btn btn-sm btn-light border text-success" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-key display-4 d-block mb-3 opacity-25"></i>
+                                {% if filtros.q or filtros.estado or filtros.plan %}
+                                Ningún cliente coincide con la búsqueda.
+                                {% else %}Todavía no hay ningún sistema integrado.{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{ t.pie(meta, url_for('clientes_api'), consulta, 'clientes') }}
+
+</div>
+{% endblock %}

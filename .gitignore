@@ -37,5 +37,10 @@ Thumbs.db
 Factugest/static/img/perfiles/*
 !Factugest/static/img/perfiles/.gitkeep
 
-# Registro de lo que generó seed_demo.py en la BD local de cada quien
-Factugest/seed_demo_manifest.json
+# Logos de las empresas emisoras: contenido que sube cada quien, no codigo.
+# El de FactuGest lo deja puesto `seed_proveedor.py`.
+Factugest/static/img/logos/*
+!Factugest/static/img/logos/.gitkeep
+
+# Registro de lo que generaron los sembradores en la BD local de cada quien
+Factugest/seed_proveedor_manifest.*.json

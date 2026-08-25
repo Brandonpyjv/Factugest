@@ -2,13 +2,18 @@ from fastapi import APIRouter, File, Request, Form, UploadFile
 from fastapi.responses import RedirectResponse
 from typing import Optional
 from services.user_service import (get_all_users, get_user_by_id, create_user, update_user,
-                                    delete_user, update_user_photo)
+                                    delete_user, update_user_photo, validar_usuario)
 from services.avatar_service import FotoInvalidaError, eliminar_foto, guardar_foto
 from services.branches import get_all_branches
+from routes.formularios import formulario_invalido
 from auth import can_manage, ROLE_HIERARCHY, ROLE_LABELS
+from services import listados
+from services import auditoria_service as auditoria
 from templates_config import templates
 
 router = APIRouter(prefix="/users")
+
+PLANTILLA = "users/form.html"
 
 # Roles que un actor puede asignar, filtrados por jerarquía
 def _assignable_roles(actor_rol: str) -> list:
@@ -39,12 +44,28 @@ async def _aplicar_foto(archivo: UploadFile, cod_usuario: int, foto_anterior=Non
 
 
 @router.get("", name="users")
-def users(request: Request):
+def users(request: Request, q: str = "", rol: str = "", pagina: int = 1):
     actor = request.session.get("user", {})
-    data = get_all_users()
+    todos = get_all_users()
+
+    filas = listados.buscar(todos, q, ("nombre", "correo", "rol", "empresa_nombre"))
+    filas = listados.igual_a(filas, "rol", rol)
+    pagina_filas, meta = listados.paginar(filas, pagina)
+    filtros = {"q": q, "rol": rol}
+
     return templates.TemplateResponse(request, "users/index.html", {
-        "usuarios": data,
+        "usuarios": pagina_filas,
+        "meta": meta,
+        "filtros": filtros,
+        "consulta": listados.query(filtros),
+        "roles": list(ROLE_HIERARCHY),
         "actor_rol": actor.get("rol", ""),
+        "resumen": {
+            "total": len(todos),
+            "administradores": sum(1 for u in todos if u.get("rol") == "ADMIN"),
+            "cajeros": sum(1 for u in todos if u.get("rol") == "CAJERO"),
+            "con_foto": sum(1 for u in todos if u.get("foto")),
+        },
     })
 
 
@@ -66,14 +87,30 @@ async def create_user_post(
     correo: str = Form(...),
     contrasena: str = Form(...),
     rol: str = Form(...),
-    cod_empresa: Optional[int] = Form(None),
+    cod_empresa: Optional[str] = Form(None),
     foto: UploadFile = File(None),
 ):
     actor = request.session.get("user", {})
     if not can_manage(actor.get("rol", ""), rol):
         return RedirectResponse(url="/users", status_code=303)
-    nuevo_id = create_user(nombre, correo, contrasena, rol, cod_empresa)
+
+    enviado = {"nombre": nombre, "correo": correo, "contrasena": contrasena,
+               "rol": rol, "cod_empresa": cod_empresa}
+    v = validar_usuario(enviado)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v, {
+            "user": None,
+            "empresas": get_all_branches(),
+            "roles_disponibles": _assignable_roles(actor.get("rol", "")),
+        }, enviado)
+
+    d = v.datos
+    nuevo_id = create_user(d["nombre"], d["correo"], d["contrasena"], d["rol"],
+                           d["cod_empresa"])
     await _aplicar_foto(foto, nuevo_id)
+    auditoria.registrar(request, "CREO", "usuario", nuevo_id,
+                        f"Creó al usuario {d['nombre']} ({d['correo']}) con rol "
+                        f"{role_label(d['rol'])}")
     return RedirectResponse(url="/users", status_code=303)
 
 
@@ -99,7 +136,7 @@ async def update_user_post(
     correo: str = Form(...),
     rol: str = Form(...),
     contrasena: str = Form(""),
-    cod_empresa: Optional[int] = Form(None),
+    cod_empresa: Optional[str] = Form(None),
     foto: UploadFile = File(None),
 ):
     actor = request.session.get("user", {})
@@ -108,8 +145,29 @@ async def update_user_post(
         return RedirectResponse(url="/users", status_code=303)
     if not can_manage(actor.get("rol", ""), rol):
         return RedirectResponse(url="/users", status_code=303)
-    update_user(user_id, nombre, correo, rol, contrasena if contrasena else None, cod_empresa)
+
+    enviado = {"nombre": nombre, "correo": correo, "contrasena": contrasena,
+               "rol": rol, "cod_empresa": cod_empresa}
+    v = validar_usuario(enviado, user_id=user_id)
+    if not v.valido:
+        return formulario_invalido(request, PLANTILLA, v, {
+            "user": target,
+            "empresas": get_all_branches(),
+            "roles_disponibles": _assignable_roles(actor.get("rol", "")),
+        }, enviado)
+
+    d = v.datos
+    update_user(user_id, d["nombre"], d["correo"], d["rol"],
+                d["contrasena"] or None, d["cod_empresa"])
     await _aplicar_foto(foto, user_id, target.get("foto"))
+    # La contraseña nunca entra al registro, ni siquiera para decir que cambió de
+    # valor: lo que importa es que se cambió, y eso ya lo dice la acción.
+    auditoria.registrar(
+        request, "ACTUALIZO", "usuario", user_id,
+        f"Modificó al usuario {d['nombre']}"
+        + (" y le cambió la contraseña" if d.get("contrasena") else ""),
+        cambios=auditoria.diferencias(target, get_user_by_id(user_id),
+                                      campos={"nombre", "correo", "rol", "cod_empresa"}))
     return RedirectResponse(url="/users", status_code=303)
 
 
@@ -120,4 +178,6 @@ def delete_user_get(request: Request, user_id: int):
     if not target or not can_manage(actor.get("rol", ""), target.get("rol", "")):
         return RedirectResponse(url="/users", status_code=302)
     delete_user(user_id)
+    auditoria.registrar(request, "ELIMINO", "usuario", user_id,
+                        f"Desactivó al usuario {target['nombre']} ({target['correo']})")
     return RedirectResponse(url="/users", status_code=302)

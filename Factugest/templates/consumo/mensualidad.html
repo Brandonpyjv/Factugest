@@ -1,0 +1,153 @@
+{% extends "layout.html" %}
+
+{% block title %}Mensualidad {{ plan.periodo }} | Factugest{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <a href="{{ url_for('consumo') }}?periodo={{ plan.periodo }}"
+           class="text-decoration-none small text-muted">
+            <i class="bi bi-arrow-left"></i> Consumo y planes
+        </a>
+        <h1 class="h3 mb-1 mt-1 text-gray-800 fw-bold">
+            <i class="bi bi-cash-coin text-primary me-2"></i>Mensualidad de {{ plan.periodo_legible }}
+        </h1>
+        <p class="text-muted mb-0 small">
+            {{ plan.consumo.nombre }} · se le factura a {{ plan.cliente.full_name }}
+            (NIT {{ plan.cliente.document_number }})
+        </p>
+    </div>
+
+    {% if aviso %}
+    <div class="alert alert-danger border-0 shadow-sm" style="border-radius:12px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ aviso.texto }}
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
+                <div class="card-header bg-white border-bottom border-light py-3">
+                    <h6 class="m-0 fw-bold text-primary">Lo que se va a cobrar</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr class="tabla-encabezado">
+                                    <th class="ps-4">Concepto</th>
+                                    <th class="text-end">Cant.</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Base</th>
+                                    <th class="pe-4 text-end">IVA</th>
+                                </tr>
+                            </thead>
+                            <tbody class="border-top-0">
+                                {% for l in plan.lineas %}
+                                <tr>
+                                    <td class="ps-4">
+                                        {{ l.descripcion }}
+                                        <div class="text-muted small font-monospace">{{ l.codigo }}</div>
+                                    </td>
+                                    <td class="text-end">{{ "{:,}".format(l.cantidad) }}</td>
+                                    <td class="text-end">${{ "{:,.0f}".format(l.precio_unitario) }}</td>
+                                    <td class="text-end">${{ "{:,.0f}".format(l.subtotal) }}</td>
+                                    <td class="pe-4 text-end text-muted">
+                                        {{ "{:,.0f}".format(l.impuesto_porcentaje) }}% ·
+                                        ${{ "{:,.0f}".format(l.impuesto_valor) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="border-top">
+                                <tr>
+                                    <td colspan="3"></td>
+                                    <td class="text-end text-muted small">Base gravable</td>
+                                    <td class="pe-4 text-end">${{ "{:,.0f}".format(plan.totales.subtotal) }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3"></td>
+                                    <td class="text-end text-muted small">Impuestos</td>
+                                    <td class="pe-4 text-end">${{ "{:,.0f}".format(plan.totales.total_impuestos) }}</td>
+                                </tr>
+                                <tr class="fw-bold fs-5">
+                                    <td colspan="3"></td>
+                                    <td class="text-end">Total</td>
+                                    <td class="pe-4 text-end">${{ "{:,.0f}".format(plan.totales.total) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                {% if plan.ya_facturado %}
+                <div class="alert alert-info border-0 mb-0 flex-grow-1">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Este periodo ya se facturó ({{ plan.factura_numero }}).
+                </div>
+                {% else %}
+                <form method="POST"
+                      action="{{ url_for('facturar_mensualidad', cod_cliente_api=plan.consumo.cod_cliente_api, periodo=plan.periodo) }}"
+                      onsubmit="this.querySelector('button').disabled = true; this.submit();">
+                    <button class="btn btn-primary px-4 py-2 fw-bold" style="border-radius:8px;"
+                            {{ 'disabled' if not autoservicio }}>
+                        <i class="bi bi-send-check me-1"></i> Emitir la mensualidad
+                    </button>
+                </form>
+                <a href="{{ url_for('consumo') }}?periodo={{ plan.periodo }}"
+                   class="btn btn-light border px-4 py-2" style="border-radius:8px;">Cancelar</a>
+                {% endif %}
+            </div>
+            {% if not autoservicio %}
+            <p class="text-warning-emphasis small mt-2">
+                <i class="bi bi-key me-1"></i>Falta configurar
+                <span class="font-monospace">FACTUGEST_API_KEY</span> para poder emitir.
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-speedometer2 me-2"></i>De dónde sale</h6>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Documentos emitidos</span>
+                        <span class="fw-bold">{{ "{:,}".format(plan.consumo.emitidos) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Cupo del plan</span>
+                        <span>{{ "{:,}".format(plan.consumo.limite_mensual) if plan.consumo.limite_mensual else 'Sin tope' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Por encima del cupo</span>
+                        <span class="{{ 'text-danger fw-bold' if plan.excedente }}">{{ plan.excedente }}</span>
+                    </div>
+                    <hr>
+                    <p class="text-muted small mb-0">
+                        El consumo se cuenta de los documentos que se emitieron ese mes, no de
+                        un contador guardado: así no puede desviarse de lo que de verdad pasó.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-arrow-repeat me-2"></i>Cómo se emite</h6>
+                    <p class="small text-muted mb-2">
+                        Esta factura sale por <span class="font-monospace">POST /api/v1/facturas</span>,
+                        la misma puerta que usa cualquier cliente integrado, con nuestra propia llave.
+                    </p>
+                    <p class="small text-muted mb-0">
+                        Se queda con el número que devuelva la API: numerarla otra vez aquí gastaría
+                        dos consecutivos de la resolución para una sola venta.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

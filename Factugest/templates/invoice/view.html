@@ -74,7 +74,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p class="mb-1 fw-bold">{{ invoice.cliente_nombre }}</p>
-                            <p class="text-muted small mb-0">{{ invoice.document_type }}: {{ invoice.document_number }}</p>
+                            <p class="text-muted small mb-0">{{ abreviatura_documento(invoice.document_type) }}: {{ invoice.document_number }}</p>
                             <p class="text-muted small mb-0">{{ invoice.cliente_email }}</p>
                             <p class="text-muted small">{{ invoice.cliente_address }}</p>
                         </div>

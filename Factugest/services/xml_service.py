@@ -5,6 +5,8 @@ integre el servicio de tercero con habilitación DIAN.
 """
 from datetime import datetime
 
+from services.validaciones import TIPOS_DOCUMENTO
+
 
 def _fmt(val, decimals=2) -> str:
     return f"{float(val or 0):.{decimals}f}"
@@ -20,6 +22,42 @@ def _esc(s: str) -> str:
             .replace('"', '&quot;'))
 
 
+
+# Códigos del anexo técnico de la DIAN para el tipo de documento.
+TIPOS_DOCUMENTO_DIAN = {"FV": "01", "NC": "91", "ND": "92"}
+
+
+def _referencia_al_original(invoice: dict) -> str:
+    """El bloque que enlaza una nota con la factura que corrige.
+
+    `DiscrepancyResponse` lleva el motivo —por qué se emite la nota— y
+    `BillingReference` el número y el CUFE del documento original. Sin los dos, la
+    nota queda sin decir sobre qué aplica.
+    """
+    numero = invoice.get("numero_referencia")
+    if not numero:
+        return ""
+
+    cufe = invoice.get("cufe_referencia") or ""
+    fecha = invoice.get("fecha_referencia")
+    fecha = fecha.strftime("%Y-%m-%d") if hasattr(fecha, "strftime") else str(fecha or "")[:10]
+    motivo = _esc(invoice.get("motivo_nota") or invoice.get("observaciones") or "Ajuste")
+    # 2 es «anulación» en el catálogo de conceptos de corrección de la DIAN; se usa
+    # como concepto general mientras el contrato no lo pida por separado.
+    return f"""    <cac:DiscrepancyResponse>
+        <cbc:ReferenceID>{_esc(numero)}</cbc:ReferenceID>
+        <cbc:ResponseCode>2</cbc:ResponseCode>
+        <cbc:Description>{motivo}</cbc:Description>
+    </cac:DiscrepancyResponse>
+    <cac:BillingReference>
+        <cac:InvoiceDocumentReference>
+            <cbc:ID>{_esc(numero)}</cbc:ID>
+            <cbc:UUID schemeName="CUFE-SHA384">{_esc(cufe)}</cbc:UUID>
+            <cbc:IssueDate>{fecha}</cbc:IssueDate>
+        </cac:InvoiceDocumentReference>
+    </cac:BillingReference>"""
+
+
 def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     fecha = invoice.get('fecha') or datetime.now()
     if hasattr(fecha, 'strftime'):
@@ -31,6 +69,13 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
 
     cufe         = invoice.get('cufe', '')
     num_factura  = str(invoice.get('numero_factura') or invoice.get('cod_factura', ''))
+
+    # Una nota sin la referencia al documento que corrige es una nota huérfana: la
+    # DIAN no sabe sobre qué aplica y el comprador tampoco. Va aquí y no en la
+    # ruta porque el XML es el único sitio donde esa referencia significa algo.
+    tipo_doc     = (invoice.get('tipo_factura') or 'FV').upper()
+    tipo_dian    = TIPOS_DOCUMENTO_DIAN.get(tipo_doc, '01')
+    referencia_xml = _referencia_al_original(invoice) if tipo_doc in ('NC', 'ND') else ''
     prefijo      = empresa.get('prefijo_factura', 'FV')
     nit_empresa  = str(empresa.get('nit', ''))
     dv_empresa   = str(empresa.get('dv', ''))
@@ -50,8 +95,11 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     # Cliente
     cli_nombre = _esc(invoice.get('cliente_nombre', ''))
     cli_doc    = _esc(invoice.get('document_number', ''))
-    cli_tipo   = invoice.get('document_type', 'CC')
-    doc_scheme = '13' if cli_tipo in ('CC', 'C') else '31' if cli_tipo == 'N' else '13'
+    # `document_type` ya guarda el código del anexo técnico, así que no hay nada que
+    # traducir. La traducción a mano que había antes mandaba a un cliente jurídico
+    # con esquema 13 (cédula) en lugar de 31 (NIT).
+    cli_tipo   = str(invoice.get('document_type') or '13').strip()
+    doc_scheme = cli_tipo if cli_tipo in TIPOS_DOCUMENTO else '13'
     cli_dir    = _esc(invoice.get('cliente_address', ''))
     cli_ciudad = _esc(invoice.get('cliente_ciudad', ''))
     cli_correo = _esc(invoice.get('cliente_email', ''))
@@ -64,8 +112,11 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     emp_tel    = _esc(empresa.get('telefono', ''))
     emp_correo = _esc(empresa.get('correo', ''))
     emp_cod_mun = str(empresa.get('cod_municipio') or '76001')
-    emp_regimen = empresa.get('regimen_tributario', 'RESPONSABLE_IVA')
-    tax_level   = 'O-23' if 'RESPONSABLE' in (emp_regimen or '') else 'O-47'
+    emp_regimen = empresa.get('regimen_tributario') or 'RESPONSABLE_IVA'
+    # «NO_RESPONSABLE_IVA» contiene «RESPONSABLE», así que hay que descartar la
+    # negación primero; buscar solo la subcadena clasificaba a los no responsables
+    # como responsables.
+    tax_level   = 'O-47' if emp_regimen.startswith('NO_RESPONSABLE') else 'O-23'
 
     # Descuento global de factura (AllowanceCharge a nivel factura)
     desc_factura_val   = float(invoice.get('total_descuentos', 0) or 0)
@@ -196,9 +247,10 @@ def generate_invoice_xml(invoice: dict, details: list, empresa: dict) -> str:
     <cbc:UUID schemeID="2" schemeName="CUFE-SHA384">{cufe}</cbc:UUID>
     <cbc:IssueDate>{issue_date}</cbc:IssueDate>
     <cbc:IssueTime>{issue_time}</cbc:IssueTime>
-    <cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode>
+    <cbc:InvoiceTypeCode>{tipo_dian}</cbc:InvoiceTypeCode>
     <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
     <cbc:LineCountNumeric>{len(details)}</cbc:LineCountNumeric>
+{referencia_xml}
 
     <cac:AccountingSupplierParty>
         <cbc:AdditionalAccountID>1</cbc:AdditionalAccountID>

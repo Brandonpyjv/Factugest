@@ -135,20 +135,22 @@ def registrar_movimiento(cod_producto, tipo, motivo, cantidad, cod_usuario=None,
 
 def registrar_movimientos_documento(lineas, tipo, motivo, cod_factura=None,
                                     cod_usuario=None, observaciones=None,
-                                    permitir_negativo=False, fecha=None):
+                                    permitir_negativo=False, fecha=None, cursor=None):
     """Aplica en bloque los movimientos de un documento (factura, NC…).
 
     `lineas` es una lista de dicts con al menos `cod_producto` y `cantidad`.
     O se registran todas o no se registra ninguna: si una línea no tiene stock
     suficiente, la factura completa debe fallar antes de emitirse.
+
+    Con `cursor` los movimientos se aplican dentro de la transacción de quien
+    emite el documento, para que un fallo posterior también los deshaga junto
+    con la factura y el consecutivo. Sin él abre su propia transacción.
     """
-    db = create_connection()
-    cursor = db.cursor(dictionary=True)
-    aplicados = []
-    try:
+    def _aplicar_todos(cur):
+        aplicados = []
         for linea in lineas:
             mov = _aplicar_movimiento(
-                cursor,
+                cur,
                 linea["cod_producto"], tipo, motivo, abs(int(linea["cantidad"])),
                 cod_usuario=cod_usuario, cod_factura=cod_factura,
                 observaciones=observaciones,
@@ -157,13 +159,22 @@ def registrar_movimientos_documento(lineas, tipo, motivo, cod_factura=None,
             )
             if mov:
                 aplicados.append(mov)
+        return aplicados
+
+    if cursor is not None:
+        return _aplicar_todos(cursor)
+
+    db = create_connection()
+    propio = db.cursor(dictionary=True)
+    try:
+        aplicados = _aplicar_todos(propio)
         db.commit()
         return aplicados
     except Exception:
         db.rollback()
         raise
     finally:
-        cursor.close()
+        propio.close()
         db.close()
 
 

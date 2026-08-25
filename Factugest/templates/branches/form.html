@@ -1,4 +1,9 @@
 {% extends "layout.html" %}
+{% import "_form.html" as f %}
+
+{# `valores` llega cuando la validacion rechazo el envio: se prefiere sobre el
+   registro guardado para no borrar lo que la persona acababa de escribir. #}
+{% set v = valores or branch or {} %}
 
 {% block title %}{{ 'Editar Empresa' if branch else 'Nueva Empresa' }} | Factugest{% endblock %}
 
@@ -20,45 +25,46 @@
                     <h6 class="m-0 fw-bold text-primary">Datos de la Empresa</h6>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ url_for('update_branch', branch_id=branch.cod_empresa) if branch else url_for('create_branch') }}" method="POST">
+                    {{ f.alerta(errores) }}
+                    <form action="{{ url_for('update_branch', branch_id=branch.cod_empresa) if branch else url_for('create_branch') }}" method="POST" class="needs-validation" novalidate>
                         <div class="row g-3">
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Nombre de la Empresa *</label>
-                                <input type="text" name="nombre" class="form-control bg-light border-0" required
-                                       value="{{ branch.nombre if branch else '' }}"
-                                       placeholder="Ej: Mi Empresa S.A.S.">
+                                <input type="text" name="nombre" class="form-control bg-light border-0{{ f.invalido(errores, 'nombre') }}\" required
+                                       value="{{ v.nombre or '' }}"
+                                       placeholder="Ej: Mi Empresa S.A.S." minlength="2" maxlength="255">
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-secondary">NIT *</label>
-                                <input type="text" name="nit" class="form-control bg-light border-0 font-monospace" required
-                                       value="{{ branch.nit if branch else '' }}"
-                                       placeholder="900123456">
+                                <input type="text" name="nit" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'nit') }}\" required
+                                       value="{{ v.nit or '' }}"
+                                       placeholder="900123456" pattern="[0-9]{8,10}" inputmode="numeric">
                             </div>
 
                             <div class="col-md-1">
                                 <label class="form-label small fw-bold text-secondary">DV</label>
-                                <input type="text" name="dv" class="form-control bg-light border-0 font-monospace text-center"
+                                <input type="text" name="dv" class="form-control bg-light border-0 font-monospace text-center{{ f.invalido(errores, 'dv') }}\"
                                        maxlength="1"
-                                       value="{{ branch.dv if branch and branch.dv else '' }}"
-                                       placeholder="0">
+                                       value="{{ v.dv or '' }}"
+                                       placeholder="0" pattern="[0-9]" inputmode="numeric">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-secondary">Tipo Documento</label>
-                                <select name="tipo_documento" class="form-select bg-light border-0">
-                                    <option value="NIT" {{ 'selected' if not branch or branch.tipo_documento == 'NIT' }}>NIT</option>
-                                    <option value="CC" {{ 'selected' if branch and branch.tipo_documento == 'CC' }}>Cédula de Ciudadanía</option>
-                                    <option value="CE" {{ 'selected' if branch and branch.tipo_documento == 'CE' }}>Cédula de Extranjería</option>
-                                    <option value="PASAPORTE" {{ 'selected' if branch and branch.tipo_documento == 'PASAPORTE' }}>Pasaporte</option>
+                                <select name="tipo_documento" class="form-select bg-light border-0{{ f.invalido(errores, 'tipo_documento') }}\">
+                                    <option value="NIT" {{ 'selected' if (v.tipo_documento or 'NIT') == 'NIT' }}>NIT</option>
+                                    <option value="CC" {{ 'selected' if v.tipo_documento == 'CC' }}>Cédula de Ciudadanía</option>
+                                    <option value="CE" {{ 'selected' if v.tipo_documento == 'CE' }}>Cédula de Extranjería</option>
+                                    <option value="PASAPORTE" {{ 'selected' if v.tipo_documento == 'PASAPORTE' }}>Pasaporte</option>
                                 </select>
                             </div>
 
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Dirección</label>
-                                <input type="text" name="direccion" class="form-control bg-light border-0"
-                                       value="{{ branch.direccion if branch else '' }}"
-                                       placeholder="Cll 28 # 9-47">
+                                <input type="text" name="direccion" class="form-control bg-light border-0{{ f.invalido(errores, 'direccion') }}\"
+                                       value="{{ v.direccion or '' }}"
+                                       placeholder="Cll 28 # 9-47" maxlength="255">
                             </div>
 
                             <!-- Departamento + Municipio Colombia -->
@@ -77,11 +83,11 @@
 
                             <div class="col-md-7">
                                 <label class="form-label small fw-bold text-secondary">Ciudad / Municipio *</label>
-                                <select id="selectMunicipio" name="cod_municipio" class="form-select bg-light border-0" required>
+                                <select id="selectMunicipio" name="cod_municipio" class="form-select bg-light border-0{{ f.invalido(errores, 'cod_municipio') }}\" required>
                                     <option value="">— Seleccione departamento primero —</option>
                                     {% for m in municipios %}
                                     <option value="{{ m.cod_municipio }}"
-                                        {{ 'selected' if branch and branch.cod_municipio == m.cod_municipio }}>
+                                        {{ 'selected' if v.cod_municipio == m.cod_municipio }}>
                                         {{ m.nombre }}
                                     </option>
                                     {% endfor %}
@@ -90,53 +96,53 @@
 
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-secondary">Teléfono</label>
-                                <input type="text" name="telefono" class="form-control bg-light border-0"
-                                       value="{{ branch.telefono if branch else '' }}"
-                                       placeholder="3001234567">
+                                <input type="text" name="telefono" class="form-control bg-light border-0{{ f.invalido(errores, 'telefono') }}\"
+                                       value="{{ v.telefono or '' }}"
+                                       placeholder="3001234567" maxlength="40" pattern="[0-9 +()\-]{7,20}">
                             </div>
 
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Correo Electrónico</label>
-                                <input type="email" name="correo" class="form-control bg-light border-0"
-                                       value="{{ branch.correo if branch else '' }}"
-                                       placeholder="empresa@dominio.com">
+                                <input type="email" name="correo" class="form-control bg-light border-0{{ f.invalido(errores, 'correo') }}\"
+                                       value="{{ v.correo or '' }}"
+                                       placeholder="empresa@dominio.com" maxlength="150">
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary">Régimen Tributario *</label>
-                                <select name="regimen_tributario" class="form-select bg-light border-0" required>
-                                    <option value="RESPONSABLE_IVA" {{ 'selected' if not branch or branch.regimen_tributario == 'RESPONSABLE_IVA' }}>Responsable de IVA</option>
-                                    <option value="NO_RESPONSABLE_IVA" {{ 'selected' if branch and branch.regimen_tributario == 'NO_RESPONSABLE_IVA' }}>No Responsable de IVA</option>
-                                    <option value="GRAN_CONTRIBUYENTE" {{ 'selected' if branch and branch.regimen_tributario == 'GRAN_CONTRIBUYENTE' }}>Gran Contribuyente</option>
-                                    <option value="AUTORETENEDOR" {{ 'selected' if branch and branch.regimen_tributario == 'AUTORETENEDOR' }}>Autoretenedor</option>
-                                    <option value="REGIMEN_SIMPLE" {{ 'selected' if branch and branch.regimen_tributario == 'REGIMEN_SIMPLE' }}>Régimen Simple de Tributación</option>
+                                <select name="regimen_tributario" class="form-select bg-light border-0{{ f.invalido(errores, 'regimen_tributario') }}\" required>
+                                    <option value="RESPONSABLE_IVA" {{ 'selected' if (v.regimen_tributario or 'RESPONSABLE_IVA') == 'RESPONSABLE_IVA' }}>Responsable de IVA</option>
+                                    <option value="NO_RESPONSABLE_IVA" {{ 'selected' if v.regimen_tributario == 'NO_RESPONSABLE_IVA' }}>No Responsable de IVA</option>
+                                    <option value="GRAN_CONTRIBUYENTE" {{ 'selected' if v.regimen_tributario == 'GRAN_CONTRIBUYENTE' }}>Gran Contribuyente</option>
+                                    <option value="AUTORETENEDOR" {{ 'selected' if v.regimen_tributario == 'AUTORETENEDOR' }}>Autoretenedor</option>
+                                    <option value="REGIMEN_SIMPLE" {{ 'selected' if v.regimen_tributario == 'REGIMEN_SIMPLE' }}>Régimen Simple de Tributación</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary">Actividad Económica (CIIU)</label>
-                                <input type="text" name="actividad_economica" class="form-control bg-light border-0 font-monospace"
-                                       value="{{ branch.actividad_economica if branch and branch.actividad_economica else '' }}"
-                                       placeholder="Ej: 4711" maxlength="10">
+                                <input type="text" name="actividad_economica" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'actividad_economica') }}\"
+                                       value="{{ v.actividad_economica or '' }}"
+                                       placeholder="Ej: 4711" maxlength="10" pattern="[0-9]{4}" inputmode="numeric">
                             </div>
 
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold text-secondary">Sitio Web</label>
-                                <input type="text" name="website" class="form-control bg-light border-0"
-                                       value="{{ branch.website if branch and branch.website else '' }}"
-                                       placeholder="www.miempresa.com">
+                                <input type="text" name="website" class="form-control bg-light border-0{{ f.invalido(errores, 'website') }}\"
+                                       value="{{ v.website or '' }}"
+                                       placeholder="www.miempresa.com" maxlength="255">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-secondary">Tarifa ICA (%)</label>
-                                <input type="text" name="tarifa_ica" class="form-control bg-light border-0 font-monospace"
-                                       value="{{ branch.tarifa_ica if branch and branch.tarifa_ica else '' }}"
-                                       placeholder="Ej: 0.414">
+                                <input type="text" name="tarifa_ica" class="form-control bg-light border-0 font-monospace{{ f.invalido(errores, 'tarifa_ica') }}\"
+                                       value="{{ v.tarifa_ica or '' }}"
+                                       placeholder="Ej: 0.414" pattern="[0-9]+([.,][0-9]+)?" inputmode="decimal">
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary">Autoretenedor</label>
-                                <select name="autoretenedor" class="form-select bg-light border-0">
+                                <select name="autoretenedor" class="form-select bg-light border-0{{ f.invalido(errores, 'autoretenedor') }}\">
                                     <option value="0" {{ 'selected' if not branch or not branch.autoretenedor }}>No</option>
                                     <option value="1" {{ 'selected' if branch and branch.autoretenedor }}>Sí</option>
                                 </select>
@@ -144,7 +150,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary">Gran Contribuyente</label>
-                                <select name="gran_contribuyente" class="form-select bg-light border-0">
+                                <select name="gran_contribuyente" class="form-select bg-light border-0{{ f.invalido(errores, 'gran_contribuyente') }}\">
                                     <option value="0" {{ 'selected' if not branch or not branch.gran_contribuyente }}>No</option>
                                     <option value="1" {{ 'selected' if branch and branch.gran_contribuyente }}>Sí</option>
                                 </select>
@@ -157,43 +163,43 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-secondary">Prefijo Factura</label>
-                                    <input type="text" name="prefijo_factura" class="form-control bg-white border font-monospace"
-                                           value="{{ branch.prefijo_factura if branch and branch.prefijo_factura else 'FV' }}"
-                                           placeholder="FV" maxlength="10">
+                                    <input type="text" name="prefijo_factura" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'prefijo_factura') }}\"
+                                           value="{{ v.prefijo_factura or 'FV' }}"
+                                           placeholder="FV" maxlength="10" pattern="[A-Za-z0-9]+">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-secondary">Consecutivo Actual</label>
-                                    <input type="number" name="consecutivo_actual" class="form-control bg-white border font-monospace"
-                                           value="{{ branch.consecutivo_actual if branch and branch.consecutivo_actual else 1 }}"
-                                           min="1">
+                                    <input type="number" name="consecutivo_actual" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'consecutivo_actual') }}\"
+                                           value="{{ v.consecutivo_actual or 1 }}"
+                                           min="1" step="1">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-secondary">N° Resolución DIAN</label>
-                                    <input type="text" name="resolucion_dian" class="form-control bg-white border font-monospace"
-                                           value="{{ branch.resolucion_dian if branch and branch.resolucion_dian else '' }}"
-                                           placeholder="18760000001">
+                                    <input type="text" name="resolucion_dian" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'resolucion_dian') }}\"
+                                           value="{{ v.resolucion_dian or '' }}"
+                                           placeholder="18760000001" maxlength="50">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Desde (rango #)</label>
-                                    <input type="number" name="resolucion_desde" class="form-control bg-white border font-monospace"
-                                           value="{{ branch.resolucion_desde if branch and branch.resolucion_desde else '' }}"
-                                           placeholder="1">
+                                    <input type="number" name="resolucion_desde" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'resolucion_desde') }}\"
+                                           value="{{ v.resolucion_desde or '' }}"
+                                           placeholder="1" min="1" step="1">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Hasta (rango #)</label>
-                                    <input type="number" name="resolucion_hasta" class="form-control bg-white border font-monospace"
-                                           value="{{ branch.resolucion_hasta if branch and branch.resolucion_hasta else '' }}"
-                                           placeholder="5000">
+                                    <input type="number" name="resolucion_hasta" class="form-control bg-white border font-monospace{{ f.invalido(errores, 'resolucion_hasta') }}\"
+                                           value="{{ v.resolucion_hasta or '' }}"
+                                           placeholder="5000" min="1" step="1">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Fecha Desde</label>
-                                    <input type="date" name="resolucion_fecha_desde" class="form-control bg-white border"
-                                           value="{{ branch.resolucion_fecha_desde.strftime('%Y-%m-%d') if branch and branch.resolucion_fecha_desde else '' }}">
+                                    <input type="date" name="resolucion_fecha_desde" class="form-control bg-white border{{ f.invalido(errores, 'resolucion_fecha_desde') }}\"
+                                           value="{{ fecha_iso(v.resolucion_fecha_desde) }}">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small fw-bold text-secondary">Fecha Hasta</label>
-                                    <input type="date" name="resolucion_fecha_hasta" class="form-control bg-white border"
-                                           value="{{ branch.resolucion_fecha_hasta.strftime('%Y-%m-%d') if branch and branch.resolucion_fecha_hasta else '' }}">
+                                    <input type="date" name="resolucion_fecha_hasta" class="form-control bg-white border{{ f.invalido(errores, 'resolucion_fecha_hasta') }}\"
+                                           value="{{ fecha_iso(v.resolucion_fecha_hasta) }}">
                                 </div>
                             </div>
                         </div>

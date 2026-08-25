@@ -6,7 +6,9 @@ from services.invoice_service import (get_all_invoices_detailed, get_invoice_by_
                                        get_invoice_by_numero_factura, get_invoice_details,
                                        create_invoice, create_invoice_detail,
                                        update_invoice_status, delete_invoice,
-                                       get_notas_by_referencia)
+                                       get_notas_by_referencia, validar_factura,
+                                       validar_nota_credito, validar_nota_debito)
+from services.calculo_documento import calcular_documento
 from services.branches import get_all_branches, get_branch_by_id
 from services.payment_methods_service import get_all_payment_methods
 from services.invoice_payments_service import get_all_invoice_payments
@@ -19,19 +21,54 @@ from services.inventory_service import (verificar_disponibilidad,
                                          revertir_movimientos_de_factura,
                                          documento_afecto_inventario,
                                          StockInsuficienteError)
+from services.numeracion_service import reservar_numero, RangoResolucionAgotadoError
+from services.documento_canonico import emisor_desde_factura
+from services.validaciones import abreviatura_documento
+from services import listados
+from services import auditoria_service as auditoria
 from templates_config import templates
-from database import get_one, get_many, execute_update
+from database import get_one, get_many, execute_update, transaction
 
 router = APIRouter(prefix="/invoice")
 
 
 @router.get("", name="invoice")
-def invoice(request: Request):
-    data = get_all_invoices_detailed()
-    return templates.TemplateResponse(request, "invoice/index.html", {"all_invoices": data})
+def invoice(request: Request, q: str = "", tipo: str = "", estado: str = "",
+            desde: str = "", hasta: str = "", pagina: int = 1):
+    todas = get_all_invoices_detailed()
+
+    filas = listados.buscar(todas, q, ("numero_factura", "cliente", "cliente_doc",
+                                       "observaciones"))
+    filas = listados.igual_a(filas, "tipo_factura", tipo)
+    filas = listados.igual_a(filas, "estado_pago", estado)
+    filas = listados.entre_fechas(filas, "fecha", desde, hasta)
+
+    pagina_filas, meta = listados.paginar(filas, pagina)
+    filtros = {"q": q, "tipo": tipo, "estado": estado, "desde": desde, "hasta": hasta}
+
+    # El resumen mira lo filtrado, no el total histórico: si se acota a un mes, las
+    # cifras de arriba tienen que hablar de ese mes.
+    facturado = sum(float(f["total"] or 0) for f in filas if f["tipo_factura"] == "FV")
+    por_cobrar = sum(float(f["total"] or 0) for f in filas
+                     if (f.get("estado_pago") or "").lower() in ("pending", "partially paid",
+                                                                 "overdue"))
+    return templates.TemplateResponse(request, "invoice/index.html", {
+        "all_invoices": pagina_filas,
+        "meta": meta,
+        "filtros": filtros,
+        "consulta": listados.query(filtros),
+        "estados": sorted({f["estado_pago"] for f in todas if f.get("estado_pago")}),
+        "resumen": {
+            "documentos": len(filas),
+            "facturado": facturado,
+            "por_cobrar": por_cobrar,
+            "notas": sum(1 for f in filas if f["tipo_factura"] in ("NC", "ND")),
+        },
+    })
 
 
-def _render_invoice_form(request: Request, error: str = None):
+def _render_invoice_form(request: Request, error: str = None, status_code: int = 200,
+                         plantilla: str = "invoice/form.html"):
     session_user = request.session.get("user", {})
     cod_empresa = session_user.get("cod_empresa")
 
@@ -53,93 +90,117 @@ def _render_invoice_form(request: Request, error: str = None):
         "SELECT cod_descuento, descripcion, porcentaje FROM descuentos "
         "WHERE aplica_a_factura = 1 ORDER BY descripcion"
     )
-    return templates.TemplateResponse(request, "invoice/form.html", {
+    return templates.TemplateResponse(request, plantilla, {
         "empresa": empresa,
         "metodos_pago": get_all_payment_methods(),
         "pagos_factura": get_all_invoice_payments(),
         "invoice_discounts": invoice_discounts,
         "invoice": None,
         "error": error,
-    })
+    }, status_code=status_code)
+
+
+# Las dos vistas conviven mientras se compara la nueva con la anterior. Comparten
+# el `POST`, la validación y el guardado: lo único distinto es la pantalla, así que
+# probar la nueva no puede cambiar cómo se emite una factura.
+VISTAS = {"nueva": "invoice/form_nueva.html", "anterior": "invoice/form.html"}
 
 
 @router.get("/new", name="new_invoice")
 def new_invoice(request: Request):
+    """La vista anterior. Se conserva hasta que la nueva quede aprobada."""
     return _render_invoice_form(request)
+
+
+@router.get("/nueva", name="new_invoice_nueva")
+def new_invoice_nueva(request: Request):
+    """La vista nueva: el mismo formulario, organizado como un paso a paso."""
+    return _render_invoice_form(request, plantilla=VISTAS["nueva"])
 
 
 @router.post("/new", name="create_invoice")
 async def create_invoice_post(
     request: Request,
-    cod_cliente: int = Form(...),
-    cod_metodo_pago: int = Form(...),
-    cod_pago: int = Form(...),
+    # Ninguno es obligatorio *para FastAPI*, y es a propósito: si lo fueran, una
+    # factura enviada sin cliente o sin líneas se rechazaría antes de llegar a
+    # `validar_factura` y el cajero vería un JSON crudo en lugar de su formulario
+    # con el error señalado. La obligatoriedad la impone el validador, que sabe
+    # decirlo en español.
+    cod_cliente: str = Form(""),
+    cod_metodo_pago: str = Form(""),
+    cod_pago: str = Form(""),
     tipo_factura: str = Form("FV"),
     observaciones: str = Form(""),
-    cod_producto: List[int] = Form(...),
-    precio_unitario: List[float] = Form(...),
-    cantidad: List[int] = Form(...),
-    descuento_porcentaje: List[float] = Form(None),
+    cod_producto: Optional[List[str]] = Form(None),
+    # El formulario también envía `precio_unitario`, pero no se declara a
+    # propósito: el precio sale de la base. Ver validar_factura.
+    cantidad: Optional[List[str]] = Form(None),
+    descuento_porcentaje: Optional[List[str]] = Form(None),
     descuento_descripcion: Optional[List[str]] = Form(None),
-    cod_descuento_factura: Optional[int] = Form(None),
-    valor_descuento_factura: float = Form(0.0),
-    plazo_pago: int = Form(0),
+    cod_descuento_factura: Optional[str] = Form(None),
+    valor_descuento_factura: str = Form("0"),
+    plazo_pago: str = Form("0"),
+    # Desde qué pantalla se envió, para devolver los errores a esa misma y no a
+    # la otra. No influye en nada más.
+    vista: str = Form("anterior"),
 ):
+    plantilla = VISTAS.get(vista, VISTAS["anterior"])
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Los arreglos de la tabla de productos vienen en paralelo y tienen que
+    # cuadrar entre sí: un largo distinto significa que la petición no la armó el
+    # formulario, y leer por índice reventaría con un IndexError.
+    productos_enviados = cod_producto or []
+    cantidades = cantidad or []
+    descuentos = descuento_porcentaje or []
+    descripciones = descuento_descripcion or []
+    if len(cantidades) != len(productos_enviados):
+        return _render_invoice_form(
+            request, error="Los datos de los productos llegaron incompletos.",
+            status_code=422, plantilla=plantilla)
+
+    lineas_enviadas = [
+        {
+            "cod_producto": productos_enviados[i],
+            "cantidad": cantidades[i],
+            "descuento_porcentaje": descuentos[i] if i < len(descuentos) else 0,
+            "descuento_descripcion": descripciones[i] if i < len(descripciones) else "",
+        }
+        for i in range(len(productos_enviados))
+    ]
+
+    v = validar_factura({
+        "cod_cliente": cod_cliente, "cod_metodo_pago": cod_metodo_pago,
+        "cod_pago": cod_pago, "tipo_factura": tipo_factura,
+        "observaciones": observaciones, "plazo_pago": plazo_pago,
+        "cod_descuento_factura": cod_descuento_factura,
+        "valor_descuento_factura": valor_descuento_factura,
+        "lineas": lineas_enviadas,
+    })
+    if not v.valido:
+        return _render_invoice_form(request, error=v.resumen(), status_code=422,
+                                    plantilla=plantilla)
+
+    d = v.datos
+    cod_cliente = d["cod_cliente"]
+    cod_metodo_pago = d["cod_metodo_pago"]
+    cod_pago = d["cod_pago"]
+    tipo_factura = d["tipo_factura"]
+    observaciones = d["observaciones"]
+    cod_descuento_factura = d["cod_descuento_factura"]
 
     # El vencimiento se deriva del plazo pactado, no se escribe a mano: así el
     # PDF, el XML y la cartera cuentan siempre la misma historia. 0 días = contado.
-    plazo_pago = max(0, min(int(plazo_pago), 365))
+    plazo_pago = d["plazo_pago"]
     forma_pago = "CONTADO" if plazo_pago == 0 else "CREDITO"
     fecha_vencimiento = (date_type.today() + timedelta(days=plazo_pago)).strftime("%Y-%m-%d")
 
-    subtotal_bruto = 0.0
-    total_descuentos = 0.0
-    total_impuestos = 0.0
-    lineas = []
-
-    desc_list = descuento_porcentaje if descuento_porcentaje else [0.0] * len(cod_producto)
-    desc_desc_list = descuento_descripcion if descuento_descripcion else [''] * len(cod_producto)
-
-    for i in range(len(cod_producto)):
-        prod = get_one(
-            "SELECT p.precio_unitario, i.porcentaje AS tax_pct FROM productos p "
-            "LEFT JOIN impuestos i ON p.cod_impuesto = i.cod_impuesto WHERE p.cod_producto = %s",
-            (cod_producto[i],)
-        )
-        tax_pct = float(prod["tax_pct"] or 0) if prod else 0
-        precio = float(precio_unitario[i])
-        cant = int(cantidad[i])
-        desc_pct = float(desc_list[i] if i < len(desc_list) else 0) or 0.0
-        desc_desc = str(desc_desc_list[i] if i < len(desc_desc_list) else '') or ''
-
-        valor_bruto = precio * cant
-        desc_valor = round(valor_bruto * desc_pct / 100, 2)
-        base_imponible = valor_bruto - desc_valor
-        imp_valor = round(base_imponible * tax_pct / 100, 2)
-
-        subtotal_bruto += valor_bruto
-        total_descuentos += desc_valor
-        total_impuestos += imp_valor
-
-        lineas.append({
-            "cod_producto":          cod_producto[i],
-            "cantidad":              cant,
-            "precio_unitario":       precio,
-            "subtotal":              base_imponible,
-            "descuento_porcentaje":  desc_pct,
-            "descuento_valor":       desc_valor,
-            "descuento_descripcion": desc_desc,
-            "impuesto_porcentaje":   tax_pct,
-            "impuesto_valor":        imp_valor,
-        })
-
-    # Prorratear IVA por descuento de factura: el descuento reduce también la base imponible
-    base_neta_productos = subtotal_bruto - total_descuentos
-    if base_neta_productos > 0 and valor_descuento_factura > 0:
-        ratio_descuento_factura = valor_descuento_factura / base_neta_productos
-        ajuste_iva = round(total_impuestos * ratio_descuento_factura, 2)
-        total_impuestos = round(total_impuestos - ajuste_iva, 2)
+    calculo = calcular_documento(d["lineas"], d["valor_descuento_factura"])
+    lineas           = calculo["lineas"]
+    total_descuentos = calculo["total_descuentos"]
+    subtotal_neto    = calculo["subtotal"]
+    total_impuestos  = calculo["total_impuestos"]
+    total            = calculo["total"]
 
     # Obtener descripción del descuento de factura
     descripcion_descuento_factura = ''
@@ -149,10 +210,6 @@ async def create_invoice_post(
         if row_desc:
             descripcion_descuento_factura = row_desc['descripcion']
 
-    total_descuentos = round(total_descuentos + valor_descuento_factura, 2)
-    subtotal_neto = round(subtotal_bruto - total_descuentos, 2)
-    total = round(subtotal_neto + total_impuestos, 2)
-
     # Validar inventario antes de consumir un consecutivo autorizado: una factura
     # rechazada por falta de stock no debe quemar un número de la resolución DIAN.
     faltantes = verificar_disponibilidad(lineas)
@@ -161,80 +218,80 @@ async def create_invoice_post(
             f"«{f['producto']}»: disponible {f['disponible']}, solicitado {f['solicitado']}"
             for f in faltantes
         )
-        return _render_invoice_form(request, error=f"Stock insuficiente — {detalle}")
+        return _render_invoice_form(request, error=f"Stock insuficiente — {detalle}",
+                                    status_code=422, plantilla=plantilla)
 
     session_user = request.session.get("user", {})
     cod_usuario = session_user.get("cod_usuario", 1)
     cod_empresa = session_user.get("cod_empresa", 1)
 
-    # Obtener empresa para generar número de factura y CUFE
     empresa = get_branch_by_id(cod_empresa) or {}
-    prefijo      = empresa.get('prefijo_factura', 'FV') or 'FV'
-    consecutivo  = int(empresa.get('consecutivo_actual') or 1)
-    numero_factura = f"{prefijo}{consecutivo}"
-
-    # Datos cliente para CUFE
     cliente = get_one("SELECT document_number FROM customers WHERE customer_id = %s", (cod_cliente,)) or {}
 
-    cufe_data = {
-        'numero_factura': numero_factura,
-        'fecha': fecha,
-        'subtotal': subtotal_neto,
-        'total_impuestos': round(total_impuestos, 2),
-        'total': total,
-        'document_number': cliente.get('document_number', ''),
-    }
-    cufe = generate_cufe(cufe_data, empresa)
-
-    invoice_id = create_invoice(
-        cod_cliente=cod_cliente, cod_usuario=cod_usuario, cod_empresa=cod_empresa,
-        cod_metodo_pago=cod_metodo_pago, cod_pago=cod_pago, fecha=fecha,
-        total=total, subtotal=subtotal_neto,
-        total_descuentos=round(total_descuentos, 2),
-        total_impuestos=round(total_impuestos, 2),
-        tipo_factura=tipo_factura,
-        observaciones=observaciones,
-        fecha_vencimiento=fecha_vencimiento or None,
-        cufe=cufe,
-        numero_factura=numero_factura,
-        forma_pago=forma_pago,
-        cod_descuento_factura=cod_descuento_factura,
-        descripcion_descuento_factura=descripcion_descuento_factura,
-    )
-
-    for linea in lineas:
-        create_invoice_detail(
-            cod_factura=invoice_id,
-            cod_producto=linea["cod_producto"],
-            cantidad=linea["cantidad"],
-            precio_unitario=linea["precio_unitario"],
-            subtotal=linea["subtotal"],
-            descuento_porcentaje=linea["descuento_porcentaje"],
-            descuento_valor=linea["descuento_valor"],
-            descuento_descripcion=linea["descuento_descripcion"],
-            impuesto_porcentaje=linea["impuesto_porcentaje"],
-            impuesto_valor=linea["impuesto_valor"],
-        )
-
-    # Descontar inventario. Entre la validación de arriba y este punto otra venta
-    # pudo consumir el saldo, así que si falla se deshace la factura completa y el
-    # consecutivo queda libre para el siguiente intento.
+    # Reservar el número, guardar la factura y descontar el inventario son una sola
+    # operación: si el stock se agotó entre la validación de arriba y este punto, se
+    # revierte todo y el consecutivo de la resolución DIAN queda libre.
     try:
-        registrar_movimientos_documento(
-            lineas, tipo="SALIDA", motivo="VENTA",
-            cod_factura=invoice_id, cod_usuario=cod_usuario,
-            observaciones=f"Venta {numero_factura}",
-        )
+        with transaction() as cur:
+            numeracion = reservar_numero(cod_empresa, tipo_factura, cursor=cur)
+            numero_factura = numeracion["numero"]
+
+            cufe = generate_cufe({
+                'numero_factura': numero_factura,
+                'fecha': fecha,
+                'subtotal': subtotal_neto,
+                'total_impuestos': total_impuestos,
+                'total': total,
+                'document_number': cliente.get('document_number', ''),
+            }, empresa)
+
+            invoice_id = create_invoice(
+                cod_cliente=cod_cliente, cod_usuario=cod_usuario, cod_empresa=cod_empresa,
+                cod_metodo_pago=cod_metodo_pago, cod_pago=cod_pago, fecha=fecha,
+                total=total, subtotal=subtotal_neto,
+                total_descuentos=total_descuentos,
+                total_impuestos=total_impuestos,
+                tipo_factura=tipo_factura,
+                observaciones=observaciones,
+                fecha_vencimiento=fecha_vencimiento or None,
+                cufe=cufe,
+                numero_factura=numero_factura,
+                forma_pago=forma_pago,
+                cod_descuento_factura=cod_descuento_factura,
+                descripcion_descuento_factura=descripcion_descuento_factura,
+                cursor=cur,
+            )
+
+            for linea in lineas:
+                create_invoice_detail(
+                    cod_factura=invoice_id,
+                    cod_producto=linea["cod_producto"],
+                    cantidad=linea["cantidad"],
+                    precio_unitario=linea["precio_unitario"],
+                    subtotal=linea["subtotal"],
+                    descuento_porcentaje=linea["descuento_porcentaje"],
+                    descuento_valor=linea["descuento_valor"],
+                    descuento_descripcion=linea["descuento_descripcion"],
+                    impuesto_porcentaje=linea["impuesto_porcentaje"],
+                    impuesto_valor=linea["impuesto_valor"],
+                    cursor=cur,
+                )
+
+            registrar_movimientos_documento(
+                lineas, tipo="SALIDA", motivo="VENTA",
+                cod_factura=invoice_id, cod_usuario=cod_usuario,
+                observaciones=f"Venta {numero_factura}",
+                cursor=cur,
+            )
     except StockInsuficienteError as e:
-        delete_invoice(invoice_id)
-        return _render_invoice_form(request, error=f"Stock insuficiente — {e}")
+        return _render_invoice_form(request, error=f"Stock insuficiente — {e}",
+                                    status_code=422)
+    except RangoResolucionAgotadoError as e:
+        return _render_invoice_form(request, error=str(e), status_code=422)
 
-    # Avanzar consecutivo de la empresa
-    execute_update(
-        "UPDATE empresas SET consecutivo_actual = %s WHERE cod_empresa = %s",
-        (consecutivo + 1, cod_empresa)
-    )
-
+    auditoria.registrar(request, "EMITIO", "factura", numero_factura,
+                        f"Emitió {numero_factura} a {cliente.get('full_name') or 'un cliente'} "
+                        f"por ${total:,.0f}")
     return RedirectResponse(url=f"/invoice/{numero_factura}", status_code=303)
 
 
@@ -287,10 +344,7 @@ def invoice_xml_download(invoice_id: int):
     if not inv:
         return RedirectResponse(url="/invoice", status_code=302)
     details  = get_invoice_details(invoice_id)
-    empresa  = {k.replace('empresa_', ''): v for k, v in inv.items() if k.startswith('empresa_')}
-    empresa['nit']    = inv.get('empresa_nit', '')
-    empresa['nombre'] = inv.get('empresa_nombre', '')
-    xml_str  = generate_invoice_xml(inv, details, empresa)
+    xml_str  = generate_invoice_xml(inv, details, emisor_desde_factura(inv))
     filename = f"{inv.get('numero_factura', invoice_id)}.xml"
     return Response(
         content=xml_str.encode('utf-8'),
@@ -328,12 +382,27 @@ async def create_nota_credito_post(
     invoice_id: int,
     motivo: str = Form(...),
     tipo_nc: str = Form("total"),
-    cod_producto: Optional[List[int]] = Form(None),
-    cantidad: Optional[List[int]] = Form(None),
+    cod_producto: Optional[List[str]] = Form(None),
+    cantidad: Optional[List[str]] = Form(None),
 ):
     inv = get_invoice_by_id(invoice_id)
     if not inv:
         return RedirectResponse(url="/invoice", status_code=302)
+
+    lineas_originales = get_invoice_details(invoice_id)
+    v = validar_nota_credito({"motivo": motivo, "tipo_nc": tipo_nc,
+                              "cod_producto": cod_producto, "cantidad": cantidad},
+                             lineas_originales)
+    if not v.valido:
+        return templates.TemplateResponse(request, "invoice/nota_credito_form.html", {
+            "invoice": inv,
+            "details": lineas_originales,
+            "pagos_factura": get_all_invoice_payments(),
+            "error": v.resumen(),
+        }, status_code=422)
+
+    motivo = v.datos["motivo"]
+    tipo_nc = v.datos["tipo_nc"]
 
     session_user = request.session.get("user", {})
     cod_usuario  = session_user.get("cod_usuario", 1)
@@ -366,7 +435,7 @@ async def create_nota_credito_post(
         lineas_orig = get_invoice_details(invoice_id)
         lineas_nc   = []
         total_nc = subtotal_nc = total_desc_nc = total_imp_nc = 0.0
-        qty_map = {cod_producto[i]: int(cantidad[i]) for i in range(len(cod_producto or []))}
+        qty_map = v.datos["devueltas"]
         for d in lineas_orig:
             nc_qty = qty_map.get(d['cod_producto'], 0)
             if nc_qty <= 0:
@@ -421,6 +490,8 @@ async def create_nota_credito_post(
             descuento_descripcion=d.get('descripcion_descuento', ''),
             impuesto_porcentaje=float(d.get('impuesto_porcentaje') or 0),
             impuesto_valor=d['impuesto_valor'],
+            # Se conserva por si la línea original era un concepto y no un producto.
+            descripcion=d.get('descripcion'),
         )
 
     # Reingresar al inventario lo devuelto, solo si la factura original llegó a
@@ -438,6 +509,10 @@ async def create_nota_credito_post(
         "UPDATE empresas SET consecutivo_nc = %s WHERE cod_empresa = %s",
         (consec_nc + 1, cod_empresa)
     )
+    auditoria.registrar(
+        request, "ANULO", "factura", inv.get("numero_factura"),
+        f"Emitió la nota crédito {numero_nc} sobre {inv.get('numero_factura')} "
+        f"({'anulación total' if tipo_nc == 'total' else 'devolución parcial'}): {motivo}")
     return RedirectResponse(url=f"/invoice/{numero_nc}", status_code=303)
 
 
@@ -459,12 +534,25 @@ async def create_nota_debito_post(
     request: Request,
     invoice_id: int,
     motivo: str = Form(...),
-    valor_ajuste: float = Form(...),
+    valor_ajuste: str = Form(...),
     incluye_iva: str = Form("si"),
 ):
     inv = get_invoice_by_id(invoice_id)
     if not inv:
         return RedirectResponse(url="/invoice", status_code=302)
+
+    v = validar_nota_debito({"motivo": motivo, "valor_ajuste": valor_ajuste,
+                             "incluye_iva": incluye_iva})
+    if not v.valido:
+        return templates.TemplateResponse(request, "invoice/nota_debito_form.html", {
+            "invoice": inv,
+            "pagos_factura": get_all_invoice_payments(),
+            "error": v.resumen(),
+        }, status_code=422)
+
+    motivo = v.datos["motivo"]
+    valor_ajuste = v.datos["valor_ajuste"]
+    incluye_iva = v.datos["incluye_iva"]
 
     session_user = request.session.get("user", {})
     cod_usuario  = session_user.get("cod_usuario", 1)
@@ -509,6 +597,16 @@ async def create_nota_debito_post(
         forma_pago=inv.get('forma_pago', 'CONTADO'),
     )
 
+    # La nota débito también lleva su línea. Sin ella el XML sale sin InvoiceLine
+    # y la DIAN lo rechaza; el ajuste es un concepto —un flete, un interés—, así
+    # que la línea va sin producto y con el motivo como descripción.
+    tasa_nd = round(imp_nd / subtotal_nd * 100, 2) if subtotal_nd else 0
+    create_invoice_detail(
+        cod_factura=nd_id, cod_producto=None, descripcion=motivo[:300],
+        cantidad=1, precio_unitario=subtotal_nd, subtotal=subtotal_nd,
+        impuesto_porcentaje=tasa_nd, impuesto_valor=imp_nd,
+    )
+
     execute_update(
         "UPDATE facturas SET cod_factura_referencia = %s, motivo_nota = %s WHERE cod_factura = %s",
         (invoice_id, motivo, nd_id)
@@ -517,6 +615,9 @@ async def create_nota_debito_post(
         "UPDATE empresas SET consecutivo_nd = %s WHERE cod_empresa = %s",
         (consec_nd + 1, cod_empresa)
     )
+    auditoria.registrar(request, "EMITIO", "factura", numero_nd,
+                        f"Emitió la nota débito {numero_nd} sobre "
+                        f"{inv.get('numero_factura')} por ${total_nd:,.0f}: {motivo}")
     return RedirectResponse(url=f"/invoice/{numero_nd}", status_code=303)
 
 
@@ -529,6 +630,9 @@ def api_customers_search(q: str = ""):
         "WHERE full_name LIKE %s OR document_number LIKE %s ORDER BY full_name LIMIT 10",
         (f"%{q}%", f"%{q}%"),
     )
+    # El buscador muestra «CC 1090…», no el código DIAN que guarda la columna.
+    for r in results:
+        r["document_type_label"] = abreviatura_documento(r["document_type"])
     return JSONResponse(content=results)
 
 

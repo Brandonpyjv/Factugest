@@ -115,6 +115,7 @@
         @keyframes alertIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         .alert-error   { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
         .alert-success { background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; }
+        .alert-warning { background: #fffaf0; border: 1px solid #feebc8; color: #9a5a0c; }
 
         .btn-login {
             width: 100%; padding: 14px;
@@ -172,6 +173,14 @@
         <div class="alert-box alert-success">
             <i class="bi bi-check-circle-fill fs-5"></i>
             <div><strong>Sesión cerrada.</strong> Ingresa tus credenciales para volver a entrar.</div>
+        </div>
+        {% endif %}
+
+        {% if expirada %}
+        <div class="alert-box alert-warning">
+            <i class="bi bi-clock-history fs-5"></i>
+            <div><strong>Tu sesión se cerró por inactividad.</strong>
+                 Vuelve a entrar para seguir trabajando.</div>
         </div>
         {% endif %}
 

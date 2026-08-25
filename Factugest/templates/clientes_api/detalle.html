@@ -1,0 +1,236 @@
+{% extends "layout.html" %}
+{% import "_badges.html" as b %}
+
+{% block title %}{{ cliente.nombre }} | Clientes API{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <a href="{{ url_for('clientes_api') }}" class="text-decoration-none small text-muted">
+                <i class="bi bi-arrow-left"></i> Clientes API
+            </a>
+            <h1 class="h3 mb-1 mt-1 text-gray-800 fw-bold">{{ cliente.nombre }}</h1>
+            <p class="text-muted mb-0 small">
+                Emite como <strong>{{ cliente.empresa_nombre }}</strong> (NIT {{ cliente.empresa_nit }})
+                {%- if cliente.cliente_nombre %} · se le factura a {{ cliente.cliente_nombre }}{% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('documentos') }}?cliente={{ cliente.cod_cliente_api }}"
+               class="btn btn-light border px-3 py-2" style="border-radius:8px;font-weight:600;">
+                <i class="bi bi-file-earmark-text me-1"></i> Sus documentos
+            </a>
+            <a href="{{ url_for('editar_cliente_api', cod_cliente_api=cliente.cod_cliente_api) }}"
+               class="btn btn-primary px-3 py-2 shadow-sm" style="border-radius:8px;font-weight:600;">
+                <i class="bi bi-pencil me-1"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    {% if llave_nueva %}
+    <div class="alert alert-success border-0 shadow-sm mb-4" style="border-radius:12px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-key-fill fs-3"></i>
+            <div class="flex-grow-1">
+                <div class="fw-bold mb-1">Esta llave no se vuelve a mostrar</div>
+                <p class="small mb-2">
+                    Guárdala ahora y entrégasela al cliente. De ella solo conservamos el hash,
+                    así que si se pierde hay que rotarla y actualizar el sistema del cliente.
+                </p>
+                <div class="input-group">
+                    <input type="text" readonly id="llave" value="{{ llave_nueva }}"
+                           class="form-control font-monospace bg-white">
+                    <button class="btn btn-outline-success" type="button" onclick="copiarLlave()">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+                <div class="card-header bg-white border-bottom border-light py-3">
+                    <h6 class="m-0 fw-bold text-primary">
+                        <i class="bi bi-speedometer2 me-2"></i>Consumo de {{ periodo }}
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    {% if consumo %}
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <div>
+                            <span class="display-6 fw-bold text-dark">{{ "{:,}".format(consumo.emitidos) }}</span>
+                            <span class="text-muted">
+                                {% if consumo.limite_mensual %}
+                                de {{ "{:,}".format(consumo.limite_mensual) }} documentos
+                                {% else %}documentos · plan sin tope{% endif %}
+                            </span>
+                        </div>
+                        {% if consumo.excedente %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">
+                            {{ consumo.excedente }} por encima del cupo
+                        </span>
+                        {% elif consumo.semaforo == 'ALERTA' %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">
+                            {{ consumo.porcentaje }} % del cupo
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if consumo.limite_mensual %}
+                    <div class="progress" style="height:10px;border-radius:6px;">
+                        <div class="progress-bar {{ 'bg-danger' if consumo.semaforo == 'EXCEDIDO' else ('bg-warning' if consumo.semaforo == 'ALERTA' else 'bg-success') }}"
+                             style="width:{{ [consumo.porcentaje or 0, 100]|min }}%;"></div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+
+                    <div class="table-responsive mt-4">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr class="text-uppercase small text-muted">
+                                    <th>Mes</th>
+                                    <th class="text-end">Emitidos</th>
+                                    <th class="text-end">Aceptados</th>
+                                    <th class="text-end">Rechazados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in serie %}
+                                <tr>
+                                    <td class="font-monospace">{{ s.periodo }}</td>
+                                    <td class="text-end fw-bold">{{ "{:,}".format(s.emitidos) }}</td>
+                                    <td class="text-end text-success">{{ "{:,}".format(s.aceptados|int) }}</td>
+                                    <td class="text-end {{ 'text-danger' if s.rechazados else 'text-muted' }}">
+                                        {{ "{:,}".format(s.rechazados|int) }}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="4" class="text-center text-muted py-4">Todavía no ha emitido nada.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+                <div class="card-header bg-white border-bottom border-light py-3">
+                    <h6 class="m-0 fw-bold text-primary"><i class="bi bi-shield-lock me-2"></i>Llave y estado</h6>
+                </div>
+                <div class="card-body p-4 d-flex flex-column gap-3">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold">Prefijo</div>
+                        <div class="font-monospace">{{ cliente.api_key_prefijo }}<span class="text-muted">.••••••••</span></div>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold">Plan</div>
+                        <div>{{ cliente.plan|title }} ·
+                            {{ "{:,} doc/mes".format(cliente.limite_mensual) if cliente.limite_mensual else 'sin tope' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold">Último uso</div>
+                        <div>{{ cliente.ultimo_uso.strftime('%d/%m/%Y %H:%M') if cliente.ultimo_uso else 'Nunca ha llamado' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold">Documentos emitidos</div>
+                        <div>{{ "{:,}".format(documentos_total) }}</div>
+                    </div>
+
+                    <hr class="my-1">
+
+                    <form method="POST"
+                          action="{{ url_for('cambiar_estado_cliente_api', cod_cliente_api=cliente.cod_cliente_api) }}"
+                          class="d-flex gap-2">
+                        <select name="estado" class="form-select form-select-sm">
+                            {% for e in estados %}
+                            <option value="{{ e }}" {{ 'selected' if cliente.estado == e }}>{{ e|title }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary text-nowrap">Aplicar</button>
+                    </form>
+                    <div class="form-text mt-0">
+                        Suspendido y revocado devuelven <span class="font-monospace">403</span>; una llave
+                        que no existe devuelve <span class="font-monospace">401</span>. Son cosas distintas
+                        y el integrador necesita distinguirlas.
+                    </div>
+
+                    <form method="POST"
+                          action="{{ url_for('rotar_llave_cliente_api', cod_cliente_api=cliente.cod_cliente_api) }}"
+                          onsubmit="return confirm('La llave actual dejará de funcionar de inmediato. ¿Rotarla?');">
+                        <button class="btn btn-sm btn-outline-warning w-100">
+                            <i class="bi bi-arrow-repeat me-1"></i> Rotar llave
+                        </button>
+                    </form>
+
+                    {% if not documentos_total %}
+                    <form method="POST"
+                          action="{{ url_for('eliminar_cliente_api', cod_cliente_api=cliente.cod_cliente_api) }}"
+                          onsubmit="return confirm('Este cliente nunca emitió. ¿Eliminarlo?');">
+                        <button class="btn btn-sm btn-outline-danger w-100">
+                            <i class="bi bi-trash me-1"></i> Eliminar
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden;">
+        <div class="card-header bg-white border-bottom border-light py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-primary"><i class="bi bi-clock-history me-2"></i>Últimos documentos</h6>
+            <a href="{{ url_for('documentos') }}?cliente={{ cliente.cod_cliente_api }}" class="small">Ver todos</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="tabla-encabezado">
+                            <th class="ps-4">Número</th>
+                            <th>Fecha</th>
+                            <th>Comprador</th>
+                            <th class="text-end">Total</th>
+                            <th>Estado</th>
+                            <th class="pe-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for d in ultimos %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ d.numero }}</td>
+                            <td class="text-muted small">{{ d.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ d.receptor_nombre }}</td>
+                            <td class="text-end fw-bold">${{ "{:,.0f}".format(d.total) }}</td>
+                            <td>{{ b.estado_documento(d.estado) }}</td>
+                            <td class="pe-4 text-end">
+                                <a href="{{ url_for('ver_documento', id_publico=d.id_publico) }}"
+                                   class="btn btn-sm btn-light border text-primary"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Sin documentos.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copiarLlave() {
+        const campo = document.getElementById('llave');
+        campo.select();
+        navigator.clipboard.writeText(campo.value);
+    }
+</script>
+{% endblock %}

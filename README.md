@@ -1,6 +1,15 @@
 # Factugest — Sistema de Facturación Electrónica 🇨🇴
 
-Sistema de facturación electrónica para Colombia. Este documento explica los cambios realizados en la migración de **Flask → FastAPI**, cómo levantar el proyecto y las diferencias clave que el equipo debe conocer para adaptarse.
+Sistema de facturación electrónica para Colombia. Este documento explica cómo levantar el proyecto y los cambios de la migración de **Flask → FastAPI**.
+
+> **¿Buscas cómo funciona el sistema?** Está en la **Guía técnica «Anatomía de FactuGest»**:
+> arquitectura, el recorrido de una factura paso a paso, el modelo de datos, por qué se
+> eligió cada herramienta y las preguntas de sustentación con su respuesta.
+> Reemplaza al antiguo `DOCUMENTACION.md`, que describía el sistema antes del inventario,
+> los reportes, las validaciones y la API, y a estas alturas engañaba más de lo que ayudaba.
+>
+> Para el estado del trabajo y lo que falta, el **Cuaderno de Ruta**.
+> Para las reglas que hay que respetar al programar, `CLAUDE.md`.
 
 ---
 
@@ -21,10 +30,17 @@ Sistema de facturación electrónica para Colombia. Este documento explica los c
 
 - Python 3.10 o superior — [descargar en python.org](https://www.python.org/downloads/)
 - XAMPP (incluye MySQL y phpMyAdmin) — [descargar en apachefriends.org](https://www.apachefriends.org/es/index.html)
+- Git — [descargar en git-scm.com](https://git-scm.com/downloads)
 
 ---
 
 ## Instalación
+
+El orden importa: **importar el SQL → migrar → sembrar**. El archivo `base\factugest.sql`
+es un baseline liviano —estructura y catálogos— que se quedó en la migración `003`; las
+migraciones de la `004` a la `013` las aplica `migrate.py`, y la operación de demostración
+(clientes, documentos, facturas) la genera `seed_proveedor.py`. Saltarse un paso deja la
+base a medias y el panel arranca con errores de columnas que no existen.
 
 ### Paso 1 — Clonar el repositorio
 
@@ -33,51 +49,137 @@ git clone <url-del-repositorio>
 cd "Factugest Python\Factugest\Factugest"
 ```
 
-### Paso 2 — Importar la base de datos en phpMyAdmin
+Todos los comandos de aquí en adelante se corren desde esa carpeta `Factugest\`, la que
+contiene `main.py`.
 
-1. Abre XAMPP y arranca los servicios **Apache** y **MySQL**
-2. Entra a **phpMyAdmin** desde `http://localhost/phpmyadmin`
-3. Crea una base de datos nueva llamada `factugest`
-4. Selecciona la base de datos `factugest` en el panel izquierdo
-5. Ve a la pestaña **Importar**
-6. Haz click en **Seleccionar archivo** y elige el archivo `base\factugest.sql` del proyecto
-7. Click en **Importar** al final de la página
+### Paso 2 — Crear la base de datos vacía
 
-> Si haces cambios en la estructura de la base de datos (crear/modificar/eliminar tablas o columnas), debes exportarla desde phpMyAdmin y reemplazar el archivo `base\factugest.sql` para que los demás del equipo tengan el esquema actualizado.
+1. Abre XAMPP y arranca **Apache** y **MySQL**
+2. Entra a **phpMyAdmin** en `http://localhost/phpmyadmin`
+3. Pestaña **Bases de datos** → crea una llamada `factugest` con cotejamiento
+   `utf8mb4_general_ci`
 
-### Paso 3 — Crear el entorno virtual
+> El `.sql` no trae `CREATE DATABASE`: espera encontrar la base ya creada y seleccionada.
 
-Abre PowerShell en la carpeta `Factugest\` (donde está `main.py`) y ejecuta:
+### Paso 3 — Importar el baseline
+
+1. Selecciona `factugest` en el panel izquierdo
+2. Pestaña **Importar** → **Seleccionar archivo** → `base\factugest.sql`
+3. **Importar**
+
+Si phpMyAdmin se queja por el tamaño del archivo, desde la consola de XAMPP:
+
+```powershell
+C:\xampp\mysql\bin\mysql -u root factugest < "base\factugest.sql"
+```
+
+> ⚠️ **Nunca reemplaces `base\factugest.sql` con un export de tu base local.** Le meterías
+> los miles de documentos sembrados y borrarías catálogos que tú no tengas. Un cambio de
+> esquema se agrega como migración en `migrate.py`; solo entonces se empalma el bloque
+> nuevo de estructura en el dump.
+
+### Paso 4 — Crear el entorno virtual e instalar dependencias
 
 ```powershell
 python -m venv .venv
-```
-
-### Paso 4 — Activar el entorno virtual
-
-```powershell
 .venv\Scripts\activate
-```
-
-Sabrás que está activo porque el prompt mostrará `(.venv)` al inicio.
-
-### Paso 5 — Instalar todas las dependencias
-
-```powershell
 pip install -r requirements.txt
 ```
 
-> No instales los paquetes uno por uno — usa siempre este comando para instalar todo de una vez.
+Sabrás que el entorno está activo porque el prompt muestra `(.venv)` al inicio. No instales
+los paquetes uno por uno — este comando los instala todos con las versiones probadas.
 
-### Paso 6 — Configurar el intérprete en PyCharm (opcional)
+### Paso 5 — Crear el archivo `.env`
 
-Si usas PyCharm:
+`.env` no está en el repositorio (lleva secretos): cada quien crea el suyo copiando la
+plantilla, que sí está y documenta cada variable.
 
-1. Ve a `File → Settings → Project: Factugest → Python Interpreter`
-2. Click en el engranaje ⚙ → **Add New Interpreter → Add Local Interpreter**
-3. Selecciona **Virtualenv Environment → Existing**
-4. En **Location** apunta al `.venv` dentro del proyecto: `C:\ruta\al\proyecto\Factugest\.venv`
-5. Click **OK**
+```powershell
+copy .env.example .env
+```
+
+Lo mínimo para arrancar en local con XAMPP:
+
+| Variable | Valor en local |
+|---|---|
+| `DB_HOST` / `DB_USER` / `DB_NAME` | `localhost` / `root` / `factugest` |
+| `DB_PASSWORD` | vacío (XAMPP trae `root` sin contraseña) |
+| `SESSION_SECRET` | cualquier cadena larga, distinta en cada máquina |
+| `DIAN_PROVEEDOR` | `simulado` |
+| `FACTUGEST_API_KEY` | se llena en el paso 7 |
+
+### Paso 6 — Aplicar las migraciones
+
+```powershell
+python migrate.py
+```
+
+Aplica de la `004` a la `013` —tipos de documento DIAN, líneas de concepto, QR, facturación
+de planes, auditoría, logo y color por empresa, concepto del descuento— y las anota en
+`schema_migrations`. Es idempotente: correrlo de nuevo imprime `[=] ya aplicada` y no toca
+nada. Cada vez que alguien suba una migración nueva, basta con volver a correrlo.
+
+### Paso 7 — Sembrar los datos de demostración
+
+```powershell
+python seed_proveedor.py
+```
+
+Crea la empresa emisora FactuGest S.A.S., el catálogo de planes, catorce empresas
+suscritas, tres meses de documentos emitidos por cuenta de terceros y seis meses de
+mensualidades. Sin esto el tablero abre vacío.
+
+Al terminar imprime **las llaves de API una sola vez**. Copia la del autoservicio al `.env`:
+
+```
+FACTUGEST_API_KEY=fg_live_xxxxxxxx.<secreto>
+```
+
+Es la llave con la que FactuGest se factura a sí mismo la mensualidad de cada cliente; sin
+ella, el botón de cobrar en `/consumo` falla. Si se pierde, se rota desde el panel en
+**Plataforma › Clientes API**.
+
+Para volver al estado anterior: `python seed_proveedor.py --limpiar` deshace exactamente lo
+que sembró. **No usar en producción.**
+
+### Paso 8 — Arrancar y entrar
+
+```powershell
+python main.py
+```
+
+En `http://127.0.0.1:8000`. Los usuarios del panel vienen en el baseline
+(`administrador@factugest.com` y los del equipo); las contraseñas están hasheadas con
+bcrypt, así que pídeselas a quien administra el repositorio.
+
+### Paso 9 — Configurar el intérprete en PyCharm (opcional)
+
+1. `File → Settings → Project: Factugest → Python Interpreter`
+2. Engranaje ⚙ → **Add New Interpreter → Add Local Interpreter**
+3. **Virtualenv Environment → Existing**
+4. En **Location**, el `.venv` dentro del proyecto: `C:\ruta\al\proyecto\Factugest\.venv`
+5. **OK**
+
+### Si algo falla
+
+| Síntoma | Causa |
+|---|---|
+| `Unknown database 'factugest'` | Falta el paso 2, o `DB_NAME` del `.env` no coincide |
+| `Access denied for user 'root'` | `DB_PASSWORD` en el `.env` no corresponde con el MySQL de XAMPP |
+| `Unknown column` al abrir una pantalla | Falta correr `python migrate.py` |
+| El tablero abre en ceros | Falta correr `python seed_proveedor.py` |
+| `Ya hay datos sembrados` | El manifiesto existe: `--limpiar` primero |
+| Cobrar la mensualidad falla | `FACTUGEST_API_KEY` vacía en el `.env`, o el servidor apagado |
+
+### Para correr las pruebas
+
+```powershell
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+No necesitan base de datos: cubren la aritmética tributaria, el documento canónico y el
+membrete del PDF.
 
 ---
 

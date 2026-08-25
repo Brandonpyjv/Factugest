@@ -29,7 +29,7 @@
                     <h6 class="m-0 fw-bold text-primary">Datos del Movimiento</h6>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ url_for('inventory_movimiento_create') }}" method="POST">
+                    <form action="{{ url_for('inventory_movimiento_create') }}" method="POST" class="needs-validation" novalidate>
                         <div class="row g-3">
 
                             <div class="col-12">
@@ -65,13 +65,13 @@
                             <div class="col-md-6" id="bloqueCantidad">
                                 <label class="form-label small fw-bold text-secondary">Cantidad *</label>
                                 <input type="number" name="cantidad" id="cantidad"
-                                       class="form-control bg-light border-0" min="1" value="1">
+                                       class="form-control bg-light border-0" min="1" value="1" step="1">
                             </div>
 
                             <div class="col-md-6" id="bloqueNuevoStock" style="display:none;">
                                 <label class="form-label small fw-bold text-secondary">Stock Contado *</label>
                                 <input type="number" name="nuevo_stock" id="nuevoStock"
-                                       class="form-control bg-light border-0" min="0" value="0">
+                                       class="form-control bg-light border-0" min="0" value="0" step="1">
                                 <div class="form-text small">
                                     Saldo actual en sistema: <span class="fw-bold" id="stockActual">—</span>.
                                     La diferencia queda registrada como ajuste.
@@ -81,7 +81,7 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-secondary">Observaciones</label>
                                 <input type="text" name="observaciones" class="form-control bg-light border-0"
-                                       placeholder="Ej: factura de compra 4521, conteo mensual, producto dañado...">
+                                       placeholder="Ej: factura de compra 4521, conteo mensual, producto dañado..." maxlength="255">
                             </div>
                         </div>
 

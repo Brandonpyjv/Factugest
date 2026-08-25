@@ -222,16 +222,27 @@ def get_cartera_detalle(cod_empresa=None, solo_vencida=False, limite=50):
 
 # ── Series y rankings ───────────────────────────────────────────────────────
 
-def get_serie_ventas(desde, hasta, cod_empresa=None, granularidad=None):
-    """Evolución de la venta neta. Agrupa por día en rangos cortos y por mes en
-    rangos largos, para que la gráfica no quede ilegible."""
-    if granularidad is None:
-        dias = (date.fromisoformat(str(hasta)) - date.fromisoformat(str(desde))).days
-        granularidad = "dia" if dias <= 92 else "mes"
+# Sin DATE_FORMAT a propósito: ver la nota del encabezado del módulo. La semana
+# empieza en lunes (WEEKDAY devuelve 0 el lunes), que es como se lee un periodo
+# comercial en Colombia.
+_AGRUPADOR_SERIE = {
+    "dia":    "DATE(f.fecha)",
+    "semana": "DATE(f.fecha - INTERVAL WEEKDAY(f.fecha) DAY)",
+    "mes":    "DATE(f.fecha - INTERVAL (DAY(f.fecha) - 1) DAY)",
+}
 
-    # Sin DATE_FORMAT a propósito: ver la nota del encabezado del módulo.
-    periodo = ("DATE(f.fecha)" if granularidad == "dia"
-               else "DATE(f.fecha - INTERVAL (DAY(f.fecha) - 1) DAY)")
+
+def get_serie_ventas(desde, hasta, cod_empresa=None, granularidad=None):
+    """Evolución de la venta neta, agrupada por día, semana o mes.
+
+    Sin granularidad explícita se elige por el largo del rango, para que la
+    gráfica no quede ni plana ni ilegible.
+    """
+    if granularidad not in _AGRUPADOR_SERIE:
+        dias = (date.fromisoformat(str(hasta)) - date.fromisoformat(str(desde))).days
+        granularidad = "dia" if dias <= 21 else "semana" if dias <= 120 else "mes"
+
+    periodo = _AGRUPADOR_SERIE[granularidad]
 
     where, params = _filtro(desde, hasta, cod_empresa)
     filas = get_many(f"""

@@ -76,13 +76,20 @@ def movimiento_create(
     cod_usuario = request.session.get("user", {}).get("cod_usuario")
 
     def con_error(mensaje):
+        # 422 y no 200: quien llame la ruta desde fuera necesita saber que el
+        # movimiento se rechazó, no recibir la página como si hubiera funcionado.
         return templates.TemplateResponse(request, "inventory/form.html", {
             "productos":        get_inventario_detallado(),
             "motivos_por_tipo": _MOTIVOS_POR_TIPO,
             "motivos":          MOTIVOS,
             "seleccionado":     cod_producto,
             "error":            mensaje,
-        })
+        }, status_code=422)
+
+    if tipo not in ("AJUSTE", *_MOTIVOS_POR_TIPO):
+        return con_error(f"«{tipo}» no es un tipo de movimiento válido.")
+    if not get_product_by_id(cod_producto):
+        return con_error("El producto seleccionado no existe.")
 
     try:
         if tipo == "AJUSTE":

@@ -17,7 +17,13 @@
 
     <div class="row justify-content-center">
         <div class="col-xl-7">
-            <form action="/invoice/{{ invoice.cod_factura }}/nd" method="POST">
+            {% if error %}
+                    <div class="alert alert-danger border-0 d-flex align-items-start gap-2" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                        <div>{{ error }}</div>
+                    </div>
+                    {% endif %}
+                    <form action="/invoice/{{ invoice.cod_factura }}/nd" method="POST" class="needs-validation" novalidate>
 
                 <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
                     <div class="card-header bg-white py-3 border-bottom border-light">
@@ -26,7 +32,7 @@
                     <div class="card-body p-4">
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Motivo *</label>
-                            <textarea name="motivo" class="form-control bg-light border-0" rows="2" required
+                            <textarea name="motivo" class="form-control bg-light border-0" rows="2" required minlength="5" maxlength="1000"
                                       placeholder="Ej: Ajuste de precio, fletes no incluidos, intereses de mora..."></textarea>
                         </div>
                         <div class="row g-3">

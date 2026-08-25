@@ -41,8 +41,45 @@ CREATE TABLE `clientes` (
 
 LOCK TABLES `clientes` WRITE;
 /*!40000 ALTER TABLE `clientes` DISABLE KEYS */;
-INSERT INTO `clientes` VALUES (2,'juan perez','V','12345678','0412-1234567','juan@email.com','caracas, venezuela'),(3,'María García','V','87654321','0414-7654321','maria@email.com','Valencia, Venezuela'),(6,'Diana','J','1005066451','3107093720','diana@gmail.com','av10a');
+
 /*!40000 ALTER TABLE `clientes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `clientes_api`
+--
+
+DROP TABLE IF EXISTS `clientes_api`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `clientes_api` (
+  `cod_cliente_api` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(150) NOT NULL COMMENT 'Nombre del negocio o sistema integrado',
+  `cod_cliente` int(11) DEFAULT NULL COMMENT 'customers: a quien le facturamos el plan',
+  `cod_empresa` int(11) NOT NULL COMMENT 'empresas: con que NIT y resolucion emite',
+  `api_key_prefijo` varchar(20) NOT NULL COMMENT 'Parte visible de la llave; permite ubicar la fila sin revelarla',
+  `api_key_hash` varchar(255) NOT NULL COMMENT 'Hash de la llave completa; la llave se muestra una sola vez',
+  `plan` varchar(20) NOT NULL DEFAULT 'BASICO',
+  `limite_mensual` int(11) DEFAULT NULL COMMENT 'Documentos por mes; NULL = sin limite',
+  `estado` varchar(20) NOT NULL DEFAULT 'ACTIVO' COMMENT 'ACTIVO | SUSPENDIDO | REVOCADO',
+  `creado_en` datetime NOT NULL,
+  `ultimo_uso` datetime DEFAULT NULL,
+  PRIMARY KEY (`cod_cliente_api`),
+  UNIQUE KEY `uq_api_key_prefijo` (`api_key_prefijo`),
+  KEY `idx_cliente_api_empresa` (`cod_empresa`),
+  KEY `idx_cliente_api_cliente` (`cod_cliente`),
+  CONSTRAINT `fk_cliente_api_cliente` FOREIGN KEY (`cod_cliente`) REFERENCES `customers` (`customer_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cliente_api_empresa` FOREIGN KEY (`cod_empresa`) REFERENCES `empresas` (`cod_empresa`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `clientes_api`
+--
+
+LOCK TABLES `clientes_api` WRITE;
+/*!40000 ALTER TABLE `clientes_api` DISABLE KEYS */;
+/*!40000 ALTER TABLE `clientes_api` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -103,7 +140,8 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` VALUES (1,'Consumidor Final','C','222222222222','','','','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(2,'Maria Fernanda Ruiz','C','1015432109','3209876543','mafe.ruiz@outlook.com','Libertadores Ave # 11-45','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(3,'Juan Sebastian Gomez','E','E87654321','3156789012','juan.gomez@gmail.com','La Playa Neighborhood, House 4','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(4,'Diana Marcela Rojas','C','1093456789','3004567890','diana.rojas@servicios.co','7N St # 3-12, Los Patios','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(5,'Ricardo Jose Torres','C','1116789456','3112345678','ricardo.torres@empresa.com','0 Avenue # 15-30','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(6,'Elena Patricia Meza','C','1012345987','3189012345','elena.meza@misena.edu.co','Siglo XXI Estate','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(7,'Oscar David Ortiz','E','E12345678','3145678234','oscar.ortiz@flete.net','Industrial Zone, Plot 5','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(8,'Sandra Milena Cano','C','1090123456','3216540987','sandra.cano@yahoo.es','24th St # 12-05, Villa del Rosario','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(9,'Luis Alberto Quintero','C','1115678234','3124567890','luis.quintero@tecnicos.com','5th Ave # 10-10','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1),(10,'Angela Maria Velez','C','1018907654','3012345678','angela.velez@estudio.edu','15th St # 4-50, Atalaya','Los Patios','Norte De Santander','Colombia','NATURAL','NO_RESPONSABLE_IVA','54405',1),(11,'Brandon Arley Restrepo Gelvez','C','1093789989','3044412657','brandon@gmail.com','Calle 37 # 3-41 La Sabana','Bogotá, D.C.','Bogotá, D.C.','Colombia','NATURAL','NO_RESPONSABLE_IVA','11001',1);
+INSERT INTO `customers` VALUES (1,'Consumidor Final','13','222222222222','','','','','','','NATURAL','NO_RESPONSABLE_IVA',NULL,1);
+
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -187,8 +225,139 @@ CREATE TABLE `detalle_factura` (
 
 LOCK TABLES `detalle_factura` WRITE;
 /*!40000 ALTER TABLE `detalle_factura` DISABLE KEYS */;
-INSERT INTO `detalle_factura` VALUES (1,12,21,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,13,21,4,95000,95000,0,0,19,18050,NULL),(1,14,22,3,650000,650000,0,0,19,123500,NULL),(1,15,23,3,650000,650000,0,0,19,123500,NULL),(1,16,24,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,17,24,4,95000,95000,0,0,19,18050,NULL),(1,18,25,8,55000,55000,0,0,19,10450,NULL),(1,19,26,4,95000,95000,0,0,19,18050,NULL),(1,20,27,3,650000,650000,0,0,19,123500,NULL),(1,21,28,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,22,29,3,650000,585000,10,65000,19,111150,'Seasonal Discount'),(1,23,30,4,95000,95000,0,0,19,18050,NULL);
+
 /*!40000 ALTER TABLE `detalle_factura` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `documento_eventos`
+--
+
+DROP TABLE IF EXISTS `documento_eventos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `documento_eventos` (
+  `cod_evento` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_documento` int(11) NOT NULL,
+  `tipo` varchar(30) NOT NULL COMMENT 'RECIBIDO | TRANSMITIDO | ACEPTADO | RECHAZADO | CORREO_ENVIADO | ERROR',
+  `proveedor` varchar(20) DEFAULT NULL,
+  `codigo` varchar(20) DEFAULT NULL COMMENT 'Codigo de respuesta del proveedor',
+  `mensaje` text DEFAULT NULL,
+  `payload` mediumtext DEFAULT NULL,
+  `fecha` datetime(6) NOT NULL,
+  PRIMARY KEY (`cod_evento`),
+  KEY `idx_evento_documento` (`cod_documento`),
+  KEY `idx_evento_fecha` (`fecha`),
+  CONSTRAINT `fk_evento_documento` FOREIGN KEY (`cod_documento`) REFERENCES `documentos` (`cod_documento`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documento_eventos`
+--
+
+LOCK TABLES `documento_eventos` WRITE;
+/*!40000 ALTER TABLE `documento_eventos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documento_eventos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `documento_lineas`
+--
+
+DROP TABLE IF EXISTS `documento_lineas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `documento_lineas` (
+  `cod_linea` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_documento` int(11) NOT NULL,
+  `orden` int(11) NOT NULL DEFAULT 1,
+  `codigo` varchar(60) DEFAULT NULL COMMENT 'SKU en el sistema del cliente',
+  `descripcion` varchar(300) NOT NULL,
+  `unidad_medida` varchar(10) DEFAULT '94',
+  `cantidad` decimal(14,3) NOT NULL,
+  `precio_unitario` decimal(14,2) NOT NULL,
+  `valor_bruto` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `descuento_porcentaje` decimal(6,3) NOT NULL DEFAULT 0.000,
+  `descuento_valor` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `descripcion_descuento` varchar(200) DEFAULT NULL,
+  `subtotal` decimal(14,2) NOT NULL DEFAULT 0.00 COMMENT 'Base gravable de la linea',
+  `impuesto_codigo_dian` varchar(5) DEFAULT '01',
+  `impuesto_porcentaje` decimal(6,3) NOT NULL DEFAULT 0.000,
+  `impuesto_valor` decimal(14,2) NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (`cod_linea`),
+  KEY `idx_linea_documento` (`cod_documento`),
+  CONSTRAINT `fk_linea_documento` FOREIGN KEY (`cod_documento`) REFERENCES `documentos` (`cod_documento`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documento_lineas`
+--
+
+LOCK TABLES `documento_lineas` WRITE;
+/*!40000 ALTER TABLE `documento_lineas` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documento_lineas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `documentos`
+--
+
+DROP TABLE IF EXISTS `documentos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `documentos` (
+  `cod_documento` int(11) NOT NULL AUTO_INCREMENT,
+  `id_publico` varchar(40) NOT NULL COMMENT 'Identificador que ve el cliente; no exponemos el autoincremental',
+  `cod_cliente_api` int(11) NOT NULL,
+  `cod_empresa` int(11) NOT NULL COMMENT 'Emisor con cuya resolucion se numero',
+  `cod_receptor` int(11) NOT NULL,
+  `tipo` varchar(5) NOT NULL DEFAULT 'FV' COMMENT 'FV | NC | ND',
+  `prefijo` varchar(10) DEFAULT NULL,
+  `consecutivo` bigint(20) DEFAULT NULL,
+  `numero` varchar(50) DEFAULT NULL,
+  `cufe` varchar(200) DEFAULT NULL,
+  `fecha_emision` datetime(6) NOT NULL,
+  `fecha_vencimiento` date DEFAULT NULL,
+  `forma_pago` varchar(20) NOT NULL DEFAULT 'CONTADO',
+  `subtotal_bruto` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `total_descuentos` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `subtotal` decimal(14,2) NOT NULL DEFAULT 0.00 COMMENT 'Base gravable neta',
+  `total_impuestos` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `total` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `estado` varchar(20) NOT NULL DEFAULT 'PENDIENTE' COMMENT 'PENDIENTE | ACEPTADO | RECHAZADO | ERROR',
+  `referencia_externa` varchar(80) DEFAULT NULL COMMENT 'Identificador de la venta en el sistema del cliente',
+  `cod_documento_referencia` int(11) DEFAULT NULL COMMENT 'La FV que origina una NC o ND',
+  `motivo_nota` text DEFAULT NULL,
+  `observaciones` text DEFAULT NULL,
+  `orden_compra` varchar(100) DEFAULT NULL,
+  `proveedor_dian` varchar(20) DEFAULT NULL COMMENT 'simulado | factus',
+  `xml` mediumtext DEFAULT NULL,
+  `creado_en` datetime NOT NULL,
+  PRIMARY KEY (`cod_documento`),
+  UNIQUE KEY `uq_documento_publico` (`id_publico`),
+  UNIQUE KEY `uq_referencia_del_cliente` (`cod_cliente_api`,`referencia_externa`),
+  UNIQUE KEY `uq_numero_del_emisor` (`cod_empresa`,`tipo`,`numero`),
+  KEY `idx_documento_cliente` (`cod_cliente_api`),
+  KEY `idx_documento_fecha` (`fecha_emision`),
+  KEY `idx_documento_estado` (`estado`),
+  KEY `idx_documento_referencia` (`cod_documento_referencia`),
+  KEY `fk_documento_receptor` (`cod_receptor`),
+  CONSTRAINT `fk_documento_cliente_api` FOREIGN KEY (`cod_cliente_api`) REFERENCES `clientes_api` (`cod_cliente_api`),
+  CONSTRAINT `fk_documento_empresa` FOREIGN KEY (`cod_empresa`) REFERENCES `empresas` (`cod_empresa`),
+  CONSTRAINT `fk_documento_receptor` FOREIGN KEY (`cod_receptor`) REFERENCES `receptores` (`cod_receptor`),
+  CONSTRAINT `fk_documento_referencia` FOREIGN KEY (`cod_documento_referencia`) REFERENCES `documentos` (`cod_documento`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documentos`
+--
+
+LOCK TABLES `documentos` WRITE;
+/*!40000 ALTER TABLE `documentos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documentos` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -237,7 +406,8 @@ CREATE TABLE `empresas` (
 
 LOCK TABLES `empresas` WRITE;
 /*!40000 ALTER TABLE `empresas` DISABLE KEYS */;
-INSERT INTO `empresas` VALUES (1,'Verdad y Reconciliacion','980256314','Cll 28 # 9-47','Cali','3206841435','verdadyreconciliacion@factugest.com',NULL,'RESPONSABLE_IVA',NULL,'NIT','76001',NULL,0.0000,0,0,'FV',NULL,NULL,NULL,NULL,NULL,1,1,1),(2,'Pillar of Autumn','987654321','Av Caracas # 2-56','San José De Cúcuta','3132156472','pillarofautumn@factugest.com',NULL,'RESPONSABLE_IVA',NULL,'NIT','54001',NULL,NULL,0,0,'PA','23456','2026-04-20','2026-07-20',NULL,NULL,6,1,1),(6,'Gran Caridad','890345555','AV 10  # 3-21','Bogotá, D.C.','312398888','grancaridad@factugest.com',NULL,'RESPONSABLE_IVA',NULL,'NIT','11001',NULL,NULL,0,0,'FV','1234575432','2026-04-16','2026-06-16',1,5000,6,1,1);
+INSERT INTO `empresas` VALUES (1,'FactuGest S.A.S.','901245678','Av. Gran Colombia # 12-45, oficina 402','San Jose De Cucuta','6075832100','facturacion@factugest.co','1','RESPONSABLE_IVA','6201','NIT','54001','factugest.co',0.0000,0,0,'FG','18764002451009','2026-01-01','2026-12-31',1,5000,1,1,1);
+
 /*!40000 ALTER TABLE `empresas` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -348,7 +518,7 @@ CREATE TABLE `facturas` (
 
 LOCK TABLES `facturas` WRITE;
 /*!40000 ALTER TABLE `facturas` DISABLE KEYS */;
-INSERT INTO `facturas` VALUES (21,'2026-04-17 00:08:37.000000',10,2,1,752556,6,1,'2026-04-17',632400,112600,120156,'FV',NULL,'4d8b571867ac8452312b4ca3c741b19a588cd69408cf4b9e6d9cfcf5d7506cd4cd809761cf88374c0732e113ccf26fce','FV1','CONTADO',NULL,NULL,55507,'Special VIP Discount',NULL,NULL),(22,'2026-04-20 18:58:00.000000',8,3,1,773500,2,1,'2026-04-20',650000,0,123500,'FV',NULL,'8f49b4d0311650e848f604b5161af714859cad305478f0d216b8c3e5cf9d8b7da90a10466a298aea532baeff254dc230','FV1','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL),(23,'2026-04-20 18:59:41.000000',8,3,1,773500,2,1,'2026-04-20',650000,0,123500,'FV',NULL,'cdc8bf5209c0105adcaf0d33cb59c2b27aca490f865143590592175b4eec8ad98172936e0e32865d318750a98676f5ef','PA2','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL),(24,'2026-04-20 19:13:20.000000',8,3,1,768740,2,1,'2026-04-20',646000,99000,122740,'FV',NULL,'93ee86e2453b5b4ae4f595e5d7fa666d93826a6225901045dcb0e117a0b1f866f79ca0a4c865d219b5d4353b749ce67f','PA3','CONTADO',NULL,NULL,55502,'Frequent Customer Promotion',NULL,NULL),(25,'2026-04-20 19:16:05.000000',8,3,1,65450,2,1,'2026-04-20',55000,0,10450,'FV',NULL,'df2a2eb61d73cdb336988d7571a7d790885412401742608f81009b6dc2d5963d5596133ac3a490a310b27de66907a03e','PA4','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL),(26,'2026-04-25 20:02:41.000000',8,3,1,113050,2,1,'2026-04-25',95000,0,18050,'FV','asdas','06cd2a2005aea6b428f35e2d56f2b25985463ffbf39a4b3de2fd33ffed74efeadfa23e65d0c17d2720bd929290f4e834','PA5','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL),(27,'2026-04-27 19:11:34.000000',10,2,1,773500,6,1,'2026-04-27',650000,0,123500,'FV',NULL,'33a9265186eebc425265d529cedebcfde658d026ba4db5360c7dfaa044f8855c57b2bed806bdb4c2d97f16f196baac09','FV2','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL),(28,'2026-04-27 19:36:29.000000',9,2,1,696150,6,1,'2026-04-27',585000,65000,111150,'FV',NULL,'a820c2a42531550df857fc8bd3b88428fcafe697c863ca2923b11a5f48ed030e207561d9952b711eae083abceb587810','FV3','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL),(29,'2026-05-07 10:49:51.000000',4,2,1,612612,6,1,'2026-05-07',514800,135200,97812,'FV',NULL,'4576811f5ea75a21264023de70face1a44d5e3ffda0673d3121efddaa3f8f2805b49ec3057c88591945ad0d50bdfa556','FV4','CONTADO',NULL,NULL,55505,'Card Promotion',NULL,NULL),(30,'2026-07-28 10:13:10.000000',4,2,1,113050,6,1,'2026-07-28',95000,0,18050,'FV',NULL,'d85f675471f49273756d75c186db55082fe20876d43dbb13b81e11c9b822f98bfa194bf5c93e440ce6591033d3dedff0','FV5','CONTADO',NULL,NULL,NULL,NULL,NULL,NULL);
+
 /*!40000 ALTER TABLE `facturas` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -403,7 +573,7 @@ CREATE TABLE `logs` (
 
 LOCK TABLES `logs` WRITE;
 /*!40000 ALTER TABLE `logs` DISABLE KEYS */;
-INSERT INTO `logs` VALUES (1,1,'2026-03-01 08:00:15.000000','LOGIN','User logged in'),(2,2,'2026-03-01 08:10:32.000000','VIEW','Accessed the main dashboard'),(1,3,'2026-03-01 08:15:10.000000','CREATE','Created a new record'),(3,4,'2026-03-01 09:02:55.000000','LOGIN','Successful login'),(2,5,'2026-03-01 09:15:45.000000','UPDATE','Updated information');
+
 /*!40000 ALTER TABLE `logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -468,7 +638,7 @@ CREATE TABLE `movimientos_inventario` (
 
 LOCK TABLES `movimientos_inventario` WRITE;
 /*!40000 ALTER TABLE `movimientos_inventario` DISABLE KEYS */;
-INSERT INTO `movimientos_inventario` VALUES (1,1,'ENTRADA','INICIAL',50,0,50,45000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(2,2,'ENTRADA','INICIAL',20,0,20,180000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(3,3,'ENTRADA','INICIAL',2,0,2,650000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(4,4,'ENTRADA','INICIAL',30,0,30,95000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(5,6,'ENTRADA','INICIAL',40,0,40,120000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(6,7,'ENTRADA','INICIAL',15,0,15,15000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(7,9,'ENTRADA','INICIAL',25,0,25,110000.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000'),(8,10,'ENTRADA','INICIAL',0,0,0,18500.00,NULL,NULL,'Saldo de apertura al implementar el kardex','2026-08-09 18:29:28.000000');
+
 /*!40000 ALTER TABLE `movimientos_inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -545,7 +715,7 @@ CREATE TABLE `producto_descuento` (
 
 LOCK TABLES `producto_descuento` WRITE;
 /*!40000 ALTER TABLE `producto_descuento` DISABLE KEYS */;
-INSERT INTO `producto_descuento` VALUES (1,55504),(2,55506),(3,55501),(6,55508);
+
 /*!40000 ALTER TABLE `producto_descuento` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -583,7 +753,8 @@ CREATE TABLE `productos` (
 
 LOCK TABLES `productos` WRITE;
 /*!40000 ALTER TABLE `productos` DISABLE KEYS */;
-INSERT INTO `productos` VALUES (1,'TEC-001','Logitech Wireless Mouse','Ergonomic black mouse, AA battery included',45000.00,50,10,1,1,'C62',NULL,1,'IP'),(2,'TEC-002','RGB Mechanical Keyboard','Gaming keyboard with blue switches, backlit',180000.00,20,5,1,1,'C62',NULL,1,'IP'),(3,'TEC-003','Samsung 24\" Monitor','LED IPS 75Hz display, HDMI/VGA',650000.00,2,3,1,1,'C62',NULL,1,'IP'),(4,'ACC-001','Laptop Backpack','Waterproof backpack for laptops up to 15.6\"',95000.00,30,5,1,1,'C62',NULL,1,'IP'),(5,'SER-001','Preventive Maintenance','PC cleaning and optimization technical service',80000.00,999,0,0,1,'WSD',NULL,1,'IP'),(6,'TEC-004','480GB SSD Solid State Drive','Kingston SATA III solid state drive',120000.00,40,8,1,1,'C62',NULL,1,'IP'),(7,'TEC-005','2 Meter HDMI Cable','Reinforced 4K high-speed cable',15000.00,15,20,1,1,'C62',NULL,1,'IP'),(8,'LIC-001','1 Year Antivirus License','Digital activation code sent via email',55000.00,999,0,0,1,'WSD',NULL,1,'IP'),(9,'TEC-006','8GB DDR4 RAM Memory','Laptop memory module 2666MHz',110000.00,25,5,1,1,'C62',NULL,1,'IP'),(10,'PAP-001','Letter Size Bond Paper Ream','White paper box 75g x 500 sheets',18500.00,0,0,1,1,'C62',NULL,0,'IP');
+INSERT INTO `productos` VALUES (1,'PLAN-BASICO','Plan Basico - 150 documentos/mes','Suscripcion mensual a la API de facturacion electronica. Incluye 150 documentos.',89000.00,0,0,0,1,'MON',NULL,1,'SV'),(2,'PLAN-PRO','Plan Pro - 400 documentos/mes','Suscripcion mensual a la API de facturacion electronica. Incluye 400 documentos.',189000.00,0,0,0,1,'MON',NULL,1,'SV'),(3,'PLAN-ILIMITADO','Plan Ilimitado - sin tope de documentos','Suscripcion mensual a la API de facturacion electronica sin limite de emision.',390000.00,0,0,0,1,'MON',NULL,1,'SV'),(4,'DOC-EXTRA','Documento adicional fuera del cupo','Documento electronico emitido por encima del cupo incluido en el plan.',250.00,0,0,0,1,'WSD',NULL,1,'SV'),(5,'IMPL-API','Implementacion e integracion','Conexion del sistema del cliente con la API: acompanamiento tecnico, pruebas en ambiente de habilitacion y puesta en produccion. Se cobra una vez.',450000.00,0,0,0,1,'WSD',NULL,1,'SV'),(6,'HABILITACION','Acompanamiento en la habilitacion ante la DIAN','Tramite de la resolucion de numeracion y del proceso de habilitacion como facturador electronico. Se cobra una vez.',250000.00,0,0,0,1,'WSD',NULL,1,'SV'),(7,'CAPACITACION','Capacitacion al equipo del cliente','Sesion de formacion para el personal que va a operar la facturacion. Por sesion.',180000.00,0,0,0,1,'WSD',NULL,1,'SV'),(8,'SOPORTE-PRIORITARIO','Soporte prioritario','Canal directo con tiempo de respuesta garantizado de 4 horas habiles. Se cobra mensual, aparte del plan.',120000.00,0,0,0,1,'MON',NULL,1,'SV');
+
 /*!40000 ALTER TABLE `productos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -607,8 +778,44 @@ CREATE TABLE `productos_descuentos` (
 
 LOCK TABLES `productos_descuentos` WRITE;
 /*!40000 ALTER TABLE `productos_descuentos` DISABLE KEYS */;
-INSERT INTO `productos_descuentos` VALUES (15,3),(20,1);
+
 /*!40000 ALTER TABLE `productos_descuentos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `receptores`
+--
+
+DROP TABLE IF EXISTS `receptores`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `receptores` (
+  `cod_receptor` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_cliente_api` int(11) NOT NULL,
+  `tipo_documento` varchar(4) NOT NULL COMMENT 'Codigo DIAN: 13 CC, 22 CE, 31 NIT, 41 Pasaporte',
+  `numero_documento` varchar(30) NOT NULL,
+  `dv` char(1) DEFAULT NULL,
+  `nombre` varchar(200) NOT NULL,
+  `tipo_persona` varchar(20) DEFAULT 'NATURAL',
+  `regimen_tributario` varchar(60) DEFAULT 'NO_RESPONSABLE_IVA',
+  `email` varchar(150) DEFAULT NULL,
+  `telefono` varchar(40) DEFAULT NULL,
+  `direccion` varchar(200) DEFAULT NULL,
+  `cod_municipio` char(5) DEFAULT NULL,
+  `creado_en` datetime NOT NULL,
+  PRIMARY KEY (`cod_receptor`),
+  UNIQUE KEY `uq_receptor_del_cliente` (`cod_cliente_api`,`tipo_documento`,`numero_documento`),
+  CONSTRAINT `fk_receptor_cliente_api` FOREIGN KEY (`cod_cliente_api`) REFERENCES `clientes_api` (`cod_cliente_api`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `receptores`
+--
+
+LOCK TABLES `receptores` WRITE;
+/*!40000 ALTER TABLE `receptores` DISABLE KEYS */;
+/*!40000 ALTER TABLE `receptores` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -632,7 +839,7 @@ CREATE TABLE `schema_migrations` (
 
 LOCK TABLES `schema_migrations` WRITE;
 /*!40000 ALTER TABLE `schema_migrations` DISABLE KEYS */;
-INSERT INTO `schema_migrations` VALUES ('001','Módulo de inventario: kardex de movimientos y flag controla_stock','2026-08-09 18:29:28'),('002','Foto de perfil de usuario','2026-08-09 19:55:12');
+INSERT INTO `schema_migrations` VALUES ('001','Módulo de inventario: kardex de movimientos y flag controla_stock','2026-08-09 18:29:28'),('002','Foto de perfil de usuario','2026-08-09 19:55:12'),('003','API middleware DIAN: clientes API, receptores, documentos, líneas y eventos','2026-08-18 09:12:00');
 /*!40000 ALTER TABLE `schema_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -665,7 +872,8 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'Administrator','administrador@factugest.com','$2b$12$Pg7Xv8AuOi7Zjmg2DIjM4OvAcoOFF3CLidz6VMAEUM7KAXNN8uPDm','ADMIN',NULL,6,1),(2,'Brandon','brandon@factugest.com','$2b$12$nrHaD3rYzV7S8CKrHM3FPevndd5fuFlIxTYIQsQ2VQuFKTf/SAf5m','ADMIN',NULL,6,1),(3,'Johan','johan@factugest.com','$2b$12$NqQnvTFgb4fR5Olhvd5W4uXue0rjco5O3fm7jf6ZonbOGCf.AMdyq','ADMIN',NULL,2,1),(4,'Wilmer','wilmer@factugest.com','$2b$12$JJPYM1JMt2bgk5xX121AdOEQiUzShPYT1iQfbqKGukNxv6MpwD7Di','ADMIN',NULL,1,1),(5,'Yuliana','yuliana@factugest.com','$2b$12$56M/ZdFU6v.L1CnTW9QyqeVWbmMYke9X18vaUL4I34Av5.7oXx/6u','CAJERO',NULL,6,1),(6,'Diana Pedraza','diana@factugest.com','$2b$12$xeLuVjKbtnBzCgYBiEZPf.QwVl7pPBKpRfBhnt0N6.8iZKqj1LvI.','SUPERVISOR',NULL,2,0),(7,'Valeria Padraza','valeria@factugest.com','$2b$12$JdVCOVXjFYTjevFGeFlileL.39oYNW0c0EAvUwSrxDMRz/.1BwMTa','JEFE_TIENDA',NULL,1,1),(8,'juan','juan@factugest.com','$2b$12$kJhBVgt/pQ9/6g8LNfkFQ.CrzVq3JnS8Hq38hK/6rcX2d3rr6S5n.','SUPERVISOR',NULL,1,1);
+INSERT INTO `usuarios` VALUES (1,'Administrator','administrador@factugest.com','$2b$12$Pg7Xv8AuOi7Zjmg2DIjM4OvAcoOFF3CLidz6VMAEUM7KAXNN8uPDm','ADMIN',NULL,1,1),(2,'Brandon','brandon@factugest.com','$2b$12$nrHaD3rYzV7S8CKrHM3FPevndd5fuFlIxTYIQsQ2VQuFKTf/SAf5m','ADMIN',NULL,1,1),(3,'Johan','johan@factugest.com','$2b$12$NqQnvTFgb4fR5Olhvd5W4uXue0rjco5O3fm7jf6ZonbOGCf.AMdyq','ADMIN',NULL,1,1),(4,'Wilmer','wilmer@factugest.com','$2b$12$JJPYM1JMt2bgk5xX121AdOEQiUzShPYT1iQfbqKGukNxv6MpwD7Di','ADMIN',NULL,1,1),(5,'Yuliana','yuliana@factugest.com','$2b$12$56M/ZdFU6v.L1CnTW9QyqeVWbmMYke9X18vaUL4I34Av5.7oXx/6u','CAJERO',NULL,1,1),(6,'Diana Pedraza','diana@factugest.com','$2b$12$xeLuVjKbtnBzCgYBiEZPf.QwVl7pPBKpRfBhnt0N6.8iZKqj1LvI.','SUPERVISOR',NULL,1,0),(7,'Valeria Padraza','valeria@factugest.com','$2b$12$JdVCOVXjFYTjevFGeFlileL.39oYNW0c0EAvUwSrxDMRz/.1BwMTa','JEFE_TIENDA',NULL,1,1),(8,'juan','juan@factugest.com','$2b$12$kJhBVgt/pQ9/6g8LNfkFQ.CrzVq3JnS8Hq38hK/6rcX2d3rr6S5n.','SUPERVISOR',NULL,1,1);
+
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 

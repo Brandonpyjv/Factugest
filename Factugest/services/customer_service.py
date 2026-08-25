@@ -1,4 +1,67 @@
 from database import execute_query, execute_update, get_one, get_many
+from services.validaciones import (REGIMENES_TRIBUTARIOS, TIPOS_PERSONA, Validador,
+                                   correo, nombre_persona, numero_documento, opcion,
+                                   razon_social, telefono, texto, tipo_documento)
+
+
+def validar_cliente(datos: dict, customer_id: int = None) -> Validador:
+    """Valida los datos de un cliente vengan de donde vengan.
+
+    Vive en el servicio y no en la ruta para que la API pueda usar exactamente
+    las mismas reglas cuando cree clientes. `customer_id` se pasa al editar, para
+    que el cliente no choque consigo mismo en la comprobación de duplicados.
+    """
+    v = Validador()
+
+    v.campo("tipo_persona", opcion, datos.get("tipo_persona"), TIPOS_PERSONA)
+    v.campo("regimen_tributario", opcion, datos.get("regimen_tributario"),
+            REGIMENES_TRIBUTARIOS)
+
+    # Una empresa puede llamarse «Comercial 3M S.A.S.»; una persona no lleva
+    # dígitos en el nombre. La regla depende de qué se está registrando.
+    if v.datos.get("tipo_persona") == "JURIDICA":
+        v.campo("full_name", razon_social, datos.get("full_name"))
+    else:
+        v.campo("full_name", nombre_persona, datos.get("full_name"))
+
+    v.campo("document_type", tipo_documento, datos.get("document_type"))
+    # Sin un tipo válido no hay con qué decidir si la identificación admite letras.
+    if "document_type" not in v.errores:
+        v.campo("document_number", numero_documento, datos.get("document_number"),
+                tipo=v.datos["document_type"])
+
+    # `document_number` tiene índice único. Sin esta comprobación, repetirlo lanza
+    # un error de integridad y la persona ve una pantalla de error del servidor en
+    # lugar de un mensaje que le explique que ese cliente ya está registrado.
+    if "document_number" in v.datos:
+        duplicado = get_one(
+            "SELECT customer_id, full_name, activo FROM customers WHERE document_number = %s",
+            (v.datos["document_number"],),
+        )
+        if duplicado and duplicado["customer_id"] != customer_id:
+            detalle = "" if duplicado["activo"] else " (inactivo)"
+            v.errores["document_number"] = (
+                f"Ya hay un cliente con ese documento: {duplicado['full_name']}{detalle}")
+
+    v.campo("phone", telefono, datos.get("phone"))
+    v.campo("email", correo, datos.get("email"))
+    v.campo("address", texto, datos.get("address"), maximo=255, requerido=False)
+    v.campo("pais", texto, datos.get("pais") or "Colombia", maximo=60)
+
+    cod_municipio = (datos.get("cod_municipio") or "").strip()
+    if cod_municipio:
+        # Se comprueba contra la tabla y no solo el formato: un código inventado
+        # rompería la llave foránea y el usuario vería un error del servidor en
+        # lugar de un mensaje que le sirva.
+        if not get_one("SELECT cod_municipio FROM municipios WHERE cod_municipio = %s",
+                       (cod_municipio,)):
+            v.errores["cod_municipio"] = "El municipio seleccionado no existe"
+        else:
+            v.datos["cod_municipio"] = cod_municipio
+    else:
+        v.datos["cod_municipio"] = None
+
+    return v
 
 
 def get_all_customers():
