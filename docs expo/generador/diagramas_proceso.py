@@ -366,3 +366,96 @@ def modelo_conceptual(destino):
     figura.savefig(destino, dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(figura)
     return destino
+
+
+# --- Cronograma -----------------------------------------------------------------
+# El cuadro de cuatro filas decía en qué meses ocurrió cada fase, pero no dejaba ver
+# lo único que un cronograma tiene que mostrar: que las fases se solapan y cuánto
+# dura cada una comparada con las demás. Los periodos son los mismos del cuadro, y
+# las actividades son las que ese cuadro enumeraba dentro de cada fase.
+
+MES_CERO = ("mar", 2025)          # primera columna del eje
+MESES_TOTAL = 17                  # de marzo de 2025 a julio de 2026
+REJILLA = "#D5DDE7"
+ABREVIATURAS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+
+# (fase, color, [(actividad, mes de inicio, duración en meses)])
+FASES = [
+    ("Análisis", "#A9C6E8", [
+        ("Levantamiento de requisitos", 0, 3),
+        ("Identificación de actores", 1, 2),
+        ("Análisis del problema", 2, 2)]),
+    ("Planeación", "#7BA6DA", [
+        ("Diseño de la solución y arquitectura", 4, 2),
+        ("Modelado de datos y casos de uso", 5, 2),
+        ("Conformación del backlog", 6, 2)]),
+    ("Ejecución", "#4C82C6", [
+        ("Ocho sprints de dos semanas", 8, 5),
+        ("Integración de módulos", 12, 2),
+        ("Pruebas técnicas", 13, 2)]),
+    ("Evaluación", "#1F5FA8", [
+        ("Pruebas finales y corrección", 15, 1),
+        ("Sustentación", 16, 1)]),
+]
+
+
+def cronograma_gantt(destino):
+    """Diagrama de Gantt de las cuatro fases, con sus actividades mes a mes."""
+    filas = sum(len(a) for _, _, a in FASES)
+    figura, ejes = plt.subplots(figsize=(13.0, 5.6))
+    ejes.set_xlim(-0.02, MESES_TOTAL + 1.3)
+    ejes.set_ylim(-1.3, filas - 0.25)
+    ejes.invert_yaxis()
+    ejes.axis("off")
+
+    # Rejilla de meses por debajo de las barras; sin ella no se puede leer dónde
+    # empieza una actividad sin seguir la línea con el dedo hasta el eje.
+    for mes in range(MESES_TOTAL + 1):
+        grueso = mes == 10          # cambio de año, entre diciembre y enero
+        ejes.plot([mes, mes], [-0.75, filas - 0.35], color=BORDE if grueso else REJILLA,
+                  linewidth=1.1 if grueso else 0.7, zorder=0)
+
+    for mes in range(MESES_TOTAL):
+        indice = (ABREVIATURAS.index(MES_CERO[0].capitalize()) + mes) % 12
+        ejes.text(mes + 0.5, -0.55, ABREVIATURAS[indice], ha="center", va="center",
+                  fontsize=8.6, color=GRIS)
+    ejes.text(5.0, -0.98, "2025", ha="center", va="center", fontsize=9.4, color=TINTA,
+              weight="bold")
+    ejes.text(13.5, -0.98, "2026", ha="center", va="center", fontsize=9.4, color=TINTA,
+              weight="bold")
+
+    fila = 0
+    for nombre, color, actividades in FASES:
+        primera, ultima = fila, fila + len(actividades) - 1
+        # Banda de la fase en el canal izquierdo: agrupa sus actividades sin gastar
+        # una fila de barra en repetir lo que la agrupación ya dice.
+        ejes.add_patch(FancyBboxPatch(
+            (-5.9, primera - 0.36), 0.16, (ultima - primera) + 0.72,
+            boxstyle="round,pad=0.01,rounding_size=0.05",
+            facecolor=color, edgecolor="none", clip_on=False, zorder=3))
+        ejes.text(-6.07, (primera + ultima) / 2, nombre, ha="right", va="center",
+                  fontsize=10.2, color=TINTA, weight="bold", clip_on=False)
+
+        for actividad, inicio, duracion in actividades:
+            ejes.text(-5.65, fila, actividad, ha="left", va="center", fontsize=9.0,
+                      color=TINTA, clip_on=False)
+            ejes.add_patch(FancyBboxPatch(
+                (inicio + 0.06, fila - 0.24), duracion - 0.12, 0.48,
+                boxstyle="round,pad=0.01,rounding_size=0.06",
+                facecolor=color, edgecolor=ACENTO, linewidth=0.8, zorder=2))
+            meses = f"{duracion} mes" + ("es" if duracion > 1 else "")
+            ejes.text(inicio + duracion + 0.16, fila, meses, ha="left", va="center",
+                      fontsize=7.8, color=GRIS)
+            fila += 1
+
+    figura.subplots_adjust(left=0.33, right=0.985, top=0.98, bottom=0.02)
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    figura.savefig(destino, dpi=200, facecolor="white")
+    plt.close(figura)
+    return destino
+
+
+if __name__ == "__main__":
+    salida = Path(__file__).resolve().parent.parent / "entregables" / "diagramas"
+    print("Generado:", cronograma_gantt(salida / "FIG-cronograma.png"))

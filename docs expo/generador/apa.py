@@ -47,10 +47,19 @@ ALTO_UTIL_FIGURA = Inches(11 - 2 * 1.0 - 1.4)
 # --- Utilidades de bajo nivel (XML de Word) ------------------------------------
 
 def _campo(parrafo, instruccion):
-    """Inserta un campo de Word (PAGE, TOC...) que Word recalcula al abrir."""
+    """Inserta un campo de Word (PAGE, TOC...) que Word recalcula al abrir.
+
+    El campo se marca como «sucio» (`w:dirty`). Sin esa marca, Word considera
+    vigente el resultado que el campo trae guardado —que aquí es un espacio en
+    blanco, porque quien escribe el archivo no puede saber en qué página va a caer
+    cada título— y muestra una tabla de contenido vacía hasta que alguien pulse F9.
+    El PDF no tenía el problema porque el convertidor recalcula los campos al
+    exportar, así que el mismo documento se veía bien en PDF y en blanco en Word.
+    """
     run = parrafo.add_run()
     inicio = OxmlElement("w:fldChar")
     inicio.set(qn("w:fldCharType"), "begin")
+    inicio.set(qn("w:dirty"), "true")
     texto = OxmlElement("w:instrText")
     texto.set(qn("xml:space"), "preserve")
     texto.text = instruccion
@@ -63,6 +72,33 @@ def _campo(parrafo, instruccion):
     for nodo in (inicio, texto, separador, marcador, fin):
         run._r.append(nodo)
     return run
+
+
+def _recalcular_al_abrir(documento):
+    """Pide a Word que actualice los campos al abrir el archivo.
+
+    Va junto con la marca `w:dirty` de `_campo`: la marca dice qué campo está
+    desactualizado y este ajuste dice cuándo revisarlos. Con uno solo de los dos, la
+    tabla de contenido sigue apareciendo vacía.
+
+    El orden de los hijos de `w:settings` está fijado por el esquema, así que el
+    ajuste se inserta antes de `w:compat` y no al final: Word tolera el desorden,
+    pero otros lectores del formato rechazan el archivo entero.
+    """
+    ajustes = documento.settings.element
+    if ajustes.find(qn("w:updateFields")) is not None:
+        return
+    marca = OxmlElement("w:updateFields")
+    marca.set(qn("w:val"), "true")
+    posteriores = ("w:compat", "w:docVars", "w:rsids", "w:mathPr", "w:themeFontLang",
+                   "w:clrSchemeMapping", "w:shapeDefaults", "w:decimalSymbol",
+                   "w:listSeparator")
+    for nombre in posteriores:
+        hermano = ajustes.find(qn(nombre))
+        if hermano is not None:
+            hermano.addprevious(marca)
+            return
+    ajustes.append(marca)
 
 
 def _borde(elemento, lado, valor="single", medida=6):
@@ -183,6 +219,7 @@ class DocumentoAPA:
         self._configurar_pagina()
         self._configurar_estilos()
         self._numerar_paginas()
+        _recalcular_al_abrir(self.doc)
 
     # -- configuración inicial --
 

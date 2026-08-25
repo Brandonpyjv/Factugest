@@ -181,25 +181,20 @@ def riesgos(d):
 
 
 def cronograma(d):
-    """Diapositiva 10."""
+    """Diapositiva 10.
+
+    Va en diagrama de Gantt y no en el cuadro de cuatro filas que traía antes. El
+    cuadro decía en qué meses ocurrió cada fase, pero para saber si dos se solapaban
+    había que restar fechas mentalmente; en el Gantt eso se ve de una mirada, que es
+    para lo que sirve un cronograma. Los periodos son exactamente los mismos.
+    """
     ppt.limpiar(d, imagenes=True)
     ppt.titulo(d, "Cronograma de Actividades")
-    ppt.tabla(d,
-              ["Fase", "Periodo", "Actividades"],
-              [["Análisis", "Marzo a junio de 2025",
-                "Levantamiento de requisitos, identificación de actores y análisis del "
-                "problema"],
-               ["Planeación", "Julio a octubre de 2025",
-                "Diseño de la solución, arquitectura, modelado y conformación del backlog"],
-               ["Ejecución", "Noviembre de 2025 a mayo de 2026",
-                "Ocho sprints de dos semanas, integración de módulos y pruebas técnicas"],
-               ["Evaluación", "Junio a julio de 2026",
-                "Pruebas finales, corrección de errores y sustentación"]],
-              x=0.75, y=1.9, ancho=11.85, alto=3.6,
-              anchos=[2.1, 3.0, 6.75], tamano=ppt.Pt(16))
+    ppt.imagen_ajustada(d, ppt.DIAGRAMAS / "FIG-cronograma.png", 0.55, 1.5, 12.25, 4.5)
     ppt.parrafo(d, "El proyecto se desarrolló en dieciséis meses, y la fase de análisis ocupó "
                    "cuatro de ellos porque de ahí salió el hallazgo que cambió la solución.",
-                0.75, 5.85, 11.85, 0.7, tamano=ppt.Pt(18), color=ppt.TINTA)
+                0.75, 6.15, 11.85, 0.7, tamano=ppt.Pt(18), color=ppt.TINTA)
+    ppt.pie(d, "Elaboración propia.", y=6.85)
 
 
 def escribir(presentacion):
