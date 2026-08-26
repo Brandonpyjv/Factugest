@@ -430,7 +430,7 @@ El menú lateral se agrupa **por trabajo, no por tabla**. Los grupos son:
 |---|---|---|
 | *(sin grupo)* | Inicio | todos |
 | **Plataforma** | Clientes API · Documentos emitidos · Consumo y planes | solo roles admin |
-| **Facturación** | Facturas · Nueva factura · Nueva factura (anterior) · Clientes · Planes y servicios | todos |
+| **Facturación** | Facturas · Nueva factura · Clientes · Planes y servicios | todos |
 | **Análisis** | Reportes | solo roles admin |
 | *(pie)* | Configuración | solo roles admin |
 
@@ -448,21 +448,18 @@ El enlace activo se marca comparando `request.url.path` en `layout.html`; la cla
 la macro `item()`. Si una pantalla nueva no aparece resaltada, es que su ruta no cuelga del
 prefijo del enlace.
 
-### Las dos vistas de creación de factura
+### La vista de creación de factura
 
-Ahora mismo conviven dos, a propósito, mientras se comparan:
+Hay una sola: `GET /invoice/new` pinta `invoice/form_nueva.html`, el formulario en tres
+pasos —a quién, qué, cómo paga— con el resumen fijo a la derecha. El mismo `POST
+/invoice/new` la emite.
 
-| Ruta | Plantilla | Qué es |
-|---|---|---|
-| `/invoice/nueva` | `invoice/form_nueva.html` | La nueva: tres pasos —a quién, qué, cómo paga— y el resumen fijo a la derecha |
-| `/invoice/new` | `invoice/form.html` | La anterior, tal cual estaba |
+Hubo una anterior (`invoice/form.html`, servida en paralelo desde `/invoice/nueva` mientras
+se comparaban). Se retiró junto con la constante `VISTAS`, el campo oculto `vista` y su
+entrada del menú: las dos compartían validación y guardado, así que quitarla no cambió cómo
+se emite una factura. `_render_invoice_form` ya no recibe qué plantilla usar.
 
-**Las dos envían al mismo `POST /invoice/new`**, con la misma validación y el mismo
-guardado: lo único distinto es la pantalla, así que probar la nueva no puede cambiar cómo
-se emite una factura. Un campo oculto `vista` dice a cuál devolver los errores.
-
-Cuando la nueva quede aprobada se van: la plantilla vieja, la ruta `/invoice/new` como GET,
-la entrada del menú y la constante `VISTAS`.
+El POS de Siste Soluciones tenía las mismas dos y quedó igual.
 
 ---
 

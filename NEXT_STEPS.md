@@ -1,34 +1,9 @@
 # Dónde quedó el proyecto
 
-Última actualización: **2026-08-20**, rama `api`.
+Última actualización: **2026-08-25**, rama `api`.
 
 Este archivo es para retomar sin releer el historial. El *porqué* de cada decisión está en
 `CLAUDE.md`; aquí solo está el estado y lo que sigue.
-
----
-
-## ⏭️ Lo primero al retomar — aprobar la vista nueva de factura
-
-**Pendiente, sin empezar.** Se decidió el 20-ago que la vista nueva queda aprobada y la
-anterior se retira. Es lo que dice `CLAUDE.md` en «Las dos vistas de creación de factura»,
-que ya dejó escrito qué hay que quitar.
-
-Lo que hay que hacer, en FactuGest **y en el POS** (los dos tienen las dos vistas):
-
-1. Quitar del menú lateral la entrada **«Nueva factura (anterior)»** en `layout.html`.
-   Debe desaparecer **para todos los roles, el CAJERO incluido** — hoy la ve.
-2. Retirar la ruta **`GET /invoice/new`**. ⚠️ **Cuidado: el `POST /invoice/new` se queda**,
-   porque es el que usan las dos vistas para emitir. Solo se va el GET que pinta el
-   formulario viejo.
-3. Que `/invoice/nueva` sea la única forma de llegar al formulario, y revisar que ningún
-   otro sitio enlace a la vieja (botón «Nueva factura» de la barra superior, el panel del
-   cajero, los enlaces de «Ver todas»).
-4. Borrar la plantilla `invoice/form.html` y la constante `VISTAS`, más el campo oculto
-   `vista` que decidía a cuál devolver los errores.
-
-Verificar al terminar: emitir una factura de principio a fin, y que un error de validación
-—enviar sin cliente o sin líneas— siga devolviendo el formulario nuevo con el error
-señalado y no un JSON crudo.
 
 ---
 
@@ -109,12 +84,6 @@ en sandbox comparando totales → correo con nuestro PDF → notas → producci�
 Dockerfile por aplicación, `docker-compose` con MySQL y proxy HTTPS, configuración
 externalizada. **Todo esto se puede hacer ya**; contratar servidor y dominio depende de una
 decisión tuya.
-
-### 4 · Borrar la vista anterior de crear factura
-
-Cuando apruebes la nueva (`/invoice/nueva`). Son cuatro cosas y van en los dos repos:
-la plantilla `invoice/form.html`, el GET `/invoice/new`, la entrada del menú y la constante
-`VISTAS` en `routes/invoice.py`.
 
 ---
 
