@@ -7,6 +7,50 @@ Este archivo es para retomar sin releer el historial. El *porqué* de cada decis
 
 ---
 
+## ⏭️ Lo primero al retomar — limpiar las tres tablas muertas
+
+**Pendiente, analizado y comprobado el 25-ago-2026.** Sobran tres tablas en los dos
+proyectos. No es una sospecha: se clonó `factugest`, se borraron las tres en la copia y
+pasaron las 36 rutas GET del panel, `migrate.py` y los 190 tests. MySQL las dejó caer sin
+protestar, lo que ya prueba que ninguna FK apuntaba a ellas.
+
+| Tabla | Filas | Usos en código | Qué es |
+|---|---:|---:|---|
+| `clientes` | 3 | 0 | Del prototipo. La reemplazó `customers`. Trae datos de plantilla venezolana (`tipo_documento = 'V'`, teléfonos `0412-…`). |
+| `configuracion` | 0 | 0 | Del prototipo, clave-valor. La reemplazó el `.env`. Nada que ver con la pantalla `/configuracion`, que lee los catálogos. |
+| `productos_descuentos` | 2 | 0 | Gemela muerta de `producto_descuento`, a una letra. Tiene las dos únicas filas huérfanas de la base: apuntan a los productos `1` y `3`, y el catálogo va del `77` al `86`. |
+
+Lo que hay que hacer:
+
+1. Una **migración `014`** que las tire si existen, en FactuGest **y en el POS**. Va como
+   migración y no como `DROP` suelto: así se aplica sola en cualquier base y queda escrito
+   por qué se fueron.
+2. Quitarlas también de `base/factugest.sql` en los dos repos. **Si no, una instalación
+   limpia las vuelve a crear** — el baseline las declara.
+
+⚠️ `factura_descuento` y `factura_impuesto` **no entran en esta tanda**. También están
+vacías y muertas, pero tienen FK y aparecen en dos `DELETE` de
+`services/invoice_service.py:426-427`. Borrarlas exige quitar antes esas dos líneas.
+
+**Lo que NO se toca**, aunque el diagrama las muestre sueltas o vacías:
+
+- `schema_migrations` — bitácora de `migrate.py`. Describe la base, no el negocio: atarla
+  a algo sería el error. Las versiones saltan de la 005 a la 008 y está bien, la 006 y la
+  007 tampoco existen en `MIGRACIONES`.
+- `movimientos_inventario` — vacía y correcta. Un proveedor tecnológico no tiene bodega;
+  quien la llena es el POS.
+- `producto_descuento` — vacía en FactuGest pero **el código la usa**
+  (`routes/invoice.py:645`, `services/invoice_service.py:81`); en `sistesoluciones` tiene
+  10 filas.
+- Los catálogos `municipios` (1.122) y `departamentos` (33): sueltos en el diagrama porque
+  son catálogos, consultados en trece sitios.
+
+`BASE_DE_DATOS.md` tiene el análisis largo, pero es del 20-ago: no incluye la comprobación
+empírica ni el detalle de que `logs` sobrevivió en `sistesoluciones` (tiene 5 filas, y la
+migración 010 solo la borra si está vacía).
+
+---
+
 ## Estado
 
 **Cerrado**: las fases 1 a 5 del plan, el track de validación V.1–V.8 y dos tandas de

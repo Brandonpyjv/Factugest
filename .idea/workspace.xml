@@ -6,14 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Factugest/routes/invoice.py" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/routes/invoice.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice/form.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Factugest/templates/invoice/form_nueva.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/invoice/form_nueva.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Factugest/templates/layout.html" beforeDir="false" afterPath="$PROJECT_DIR$/Factugest/templates/layout.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NEXT_STEPS.md" beforeDir="false" afterPath="$PROJECT_DIR$/NEXT_STEPS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/base/factugest.sql" beforeDir="false" afterPath="$PROJECT_DIR$/base/factugest.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/carpeta exposicion/FactuGest - Sustentación.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/carpeta exposicion/FactuGest - Sustentación.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/carpeta exposicion/FactuGest - Sustentación.pptx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/carpeta exposicion/~$FactuGest - Sustentación.pptx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/entregables/FactuGest - Documento de Grado.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/entregables/~$ctuGest - Documento de Grado.docx" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,7 +132,8 @@
       <workItem from="1787146728509" duration="25193000" />
       <workItem from="1787241187776" duration="38267000" />
       <workItem from="1787590885100" duration="43000" />
-      <workItem from="1787604647735" duration="16356000" />
+      <workItem from="1787604647735" duration="27214000" />
+      <workItem from="1788223728220" duration="3470000" />
     </task>
     <servers />
   </component>
