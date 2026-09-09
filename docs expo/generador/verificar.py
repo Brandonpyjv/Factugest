@@ -27,7 +27,8 @@ PERMITIDOS = re.compile(
     r"Adquiriente|Proveedor tecnológico|Arquitectura|Jinja|MySQL|ReportLab|Chart|"
     r"software|Scrum|Guía de Scrum|routes|services|templates|static|tests|base|main|"
     r"migrate|Ingeniería del software|Git|OpenAPI|num2words|qrcode|Pillow|"
-    r"itsdangerous|mysql-connector|FastAPI|Resolución \d+|Universal Business Language)")
+    r"itsdangerous|mysql-connector|FastAPI|Resolución \d+|Universal Business Language|"
+    r"Test-driven development|The art of software testing)")
 
 
 def _bien(texto):
@@ -133,8 +134,11 @@ def revisar_pdf(ruta):
     lineas.append((_bien if not puntos else _mal)(
         f"Sin punto medio, páginas {puntos[:8] if puntos else 'ninguna'}"))
 
-    indice = d[2].get_text() if d.page_count > 2 else ""
-    if "Tabla de contenido" in indice or "contenido" in indice.lower():
+    # La página del índice se busca, no se supone: el documento de grado lo lleva en
+    # la tercera hoja porque abre con cubierta y portada, y un entregable suelto que
+    # solo lleva portada lo tiene en la segunda.
+    indice = next((p.get_text() for p in d if "Tabla de contenido" in p.get_text()), "")
+    if indice:
         lleno = "No table of contents" not in indice and bool(re.search(r"\.{5,}\s*\d+", indice))
         lineas.append((_bien if lleno else _mal)("Tabla de contenido con paginación real"))
 

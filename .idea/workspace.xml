@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs expo/generador/verificar.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs expo/generador/verificar.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,7 +66,7 @@
     &quot;ai.playground.ignore.import.keys.banner.in.settings&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;api&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;calidad&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/brandon/Proyects/Factugest&quot;,
@@ -127,7 +128,7 @@
       <workItem from="1787590885100" duration="43000" />
       <workItem from="1787604647735" duration="27214000" />
       <workItem from="1788223728220" duration="3470000" />
-      <workItem from="1788908059626" duration="1108000" />
+      <workItem from="1788908059626" duration="5177000" />
     </task>
     <servers />
   </component>

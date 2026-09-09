@@ -1,0 +1,11 @@
+GET   | 1 · Comprobar la llave | /api/v1/ping | Si esto responde 200, la llave sirve y te dice con qué emisor vas a numerar. Un 401 es problema de tu configuración; un 403 significa que el cliente e
+POST  | 2 · Emitir una factura | /api/v1/facturas | El corazón del servicio. Devuelve 201 con el número, el CUFE y los enlaces al PDF y al XML.
+POST  | 3 · Reintentar la misma venta (idempotencia) | /api/v1/facturas | La misma petición otra vez. Responde **200** en lugar de 201 y devuelve la factura que ya existía, sin gastar otro número de la resolución.
+GET   | 4 · Consultar un documento | /api/v1/documentos/{{documento_id}} | Para reconciliar cuando tu sistema perdió la respuesta de la emisión. Trae el estado actual y, si una nota crédito lo anuló, `anulado: true`.
+GET   | 5 · Descargar el PDF | /api/v1/documentos/{{documento_id}}/pdf | La representación gráfica. Se genera al momento a partir de lo guardado: lo que hay deber de conservar es el XML.
+GET   | 6 · Descargar el XML | /api/v1/documentos/{{documento_id}}/xml | El XML UBL 2.1 tal como se transmitió. Es el documento con validez legal.
+GET   | 7 · Listar los documentos del mes | /api/v1/documentos?tipo=FV&desde=2026-08-01&hasta=2026-08-31&pagina=1&por_pagina=50 | Lo que alimenta tu conciliación: cada fila trae la `referencia_externa` con la que tú lo enviaste, para cruzarlo contra tus propias ventas.
+POST  | 8 · Nota crédito — anular la factura | /api/v1/notas-credito | Sin `items` se anula la factura completa. La nota se queda con los precios de la factura original: no se pueden enviar otros.
+POST  | 9 · Nota crédito — devolución parcial | /api/v1/notas-credito | `linea` es el orden con el que se emitió la línea en la factura original, empezando en 1. De cada línea vuelve la parte proporcional de su base, su de
+POST  | 10 · Nota débito — cobrar un adicional | /api/v1/notas-debito | `incluye_impuesto: true` significa que los $50.000 ya traen el IVA adentro y se descompone. Con `false` son una base y el IVA se suma encima: son dos 
+GET   | 11 · Un error, para ver su forma | /api/v1/ping | Todos los errores salen igual, del 401 al 500:

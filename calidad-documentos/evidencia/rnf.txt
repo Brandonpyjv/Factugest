@@ -1,0 +1,96 @@
+RNF 01 [Rendimiento]
+   REQ: La emisión de un documento por la API debe responder en menos de tres segundos bajo carga normal.
+   VER: Medición del tiempo de respuesta de la operación de emisión.
+RNF 02 [Rendimiento]
+   REQ: El envío del documento al comprador no debe demorar la respuesta al sistema que emitió.
+   VER: El correo se agenda como tarea de fondo y su resultado queda anotado en los eventos.
+RNF 03 [Rendimiento]
+   REQ: Los listados de documentos, facturas y auditoría deben paginarse para no cargar la totalidad de los registros en una sola consulta.
+   VER: Revisión de las consultas paginadas del servicio de listados.
+RNF 04 [Seguridad]
+   REQ: Las contraseñas de los usuarios deben almacenarse cifradas con un algoritmo de hash de un solo sentido.
+   VER: Inspección de la tabla de usuarios, en la que no debe existir ninguna contraseña legible.
+RNF 05 [Seguridad]
+   REQ: Del secreto de las llaves de la API solo debe conservarse su hash; el prefijo se guarda en claro únicamente para poder localizar la fila.
+   VER: Inspección de la tabla de clientes API y prueba automatizada del servicio de llaves.
+RNF 06 [Seguridad]
+   REQ: Ninguna credencial debe quedar escrita en el registro de auditoría ni en los registros del servidor.
+   VER: Revisión del registro tras rotar una llave, en el que debe constar el hecho y no la llave.
+RNF 07 [Seguridad]
+   REQ: Toda ruta del panel, salvo el ingreso y los recursos estáticos, debe exigir sesión iniciada.
+   VER: Petición sin sesión a una ruta protegida, que debe redirigir al formulario de ingreso.
+RNF 08 [Seguridad]
+   REQ: La sesión debe cerrarse por inactividad y no por tiempo transcurrido.
+   VER: Prueba de inactividad prolongada frente a uso continuo durante el mismo lapso.
+RNF 09 [Seguridad]
+   REQ: La comunicación debe realizarse sobre HTTPS en el despliegue productivo.
+   VER: Verificación del certificado y de la redirección forzada en el servidor.
+RNF 10 [Integridad de los datos]
+   REQ: Dos documentos del mismo emisor y del mismo tipo no pueden compartir número, ni siquiera ante peticiones simultáneas.
+   VER: Reserva del consecutivo en una sola sentencia más índice único en la base.
+RNF 11 [Integridad de los datos]
+   REQ: Una emisión que falla a mitad no debe dejar rastro parcial ni consumir un consecutivo.
+   VER: Prueba de fallo intencional dentro de la transacción de emisión.
+RNF 12 [Integridad de los datos]
+   REQ: El consumo del cliente debe calcularse siempre de los documentos emitidos y nunca de un contador almacenado.
+   VER: Revisión del servicio de consumo, donde no debe existir tabla de contadores.
+RNF 13 [Integridad de los datos]
+   REQ: Los documentos emitidos por cuenta de terceros no deben registrarse en las tablas de la venta propia.
+   VER: Revisión de las dos zonas de la base y de las consultas del tablero.
+RNF 14 [Trazabilidad]
+   REQ: Toda operación de escritura debe quedar registrada con el usuario que la realizó, y el registro debe conservar su nombre aunque la cuenta se elimine.
+   VER: Consulta del registro de auditoría después de eliminar un usuario.
+RNF 15 [Trazabilidad]
+   REQ: El registro de auditoría no debe ofrecer operaciones de modificación ni de borrado.
+   VER: Revisión del servicio, donde solo existe la función de registrar.
+RNF 16 [Disponibilidad]
+   REQ: La indisponibilidad de servicios externos, como el correo, no debe impedir la emisión de documentos.
+   VER: Emisión con el servidor de correo apagado, que debe completarse y anotar el intento.
+RNF 17 [Disponibilidad]
+   REQ: El sistema debe estar disponible al menos el 99 % del tiempo en horario hábil.
+   VER: Monitoreo del servicio en el entorno de despliegue.
+RNF 18 [Usabilidad]
+   REQ: La interfaz debe agruparse por trabajo y no por tabla, y cada destino debe tener un solo lugar en la navegación.
+   VER: Revisión del menú, donde ningún destino debe alcanzarse por dos caminos distintos.
+RNF 19 [Usabilidad]
+   REQ: Los formularios deben validar los datos y explicar el error señalando el campo que lo provocó.
+   VER: Envío de formularios con datos inválidos.
+RNF 20 [Usabilidad]
+   REQ: La interfaz debe adaptarse a pantallas de escritorio y de dispositivos móviles.
+   VER: Revisión en distintos anchos de pantalla.
+RNF 21 [Compatibilidad]
+   REQ: El sistema debe funcionar en los navegadores vigentes sin requerir instalación local.
+   VER: Prueba en los navegadores de mayor uso.
+RNF 22 [Compatibilidad]
+   REQ: El contrato de la API debe publicarse en formato OpenAPI para que cualquier cliente pueda generar su integración.
+   VER: Descarga del documento OpenAPI y generación de un cliente a partir de él.
+RNF 23 [Cumplimiento normativo]
+   REQ: Los documentos deben generarse conforme al estándar UBL 2.1 y llevar el código único de facturación electrónica.
+   VER: Validación estructural del XML emitido.
+RNF 24 [Cumplimiento normativo]
+   REQ: La representación gráfica debe llevar siempre los datos de la empresa que emite y nunca los del proveedor tecnológico.
+   VER: Prueba automatizada del membrete del PDF.
+RNF 25 [Cumplimiento normativo]
+   REQ: Los documentos emitidos deben conservarse por el término que exige la normativa tributaria.
+   VER: Revisión de la política de conservación y de los respaldos.
+RNF 26 [Mantenibilidad]
+   REQ: La aritmética tributaria debe estar implementada una sola vez y ser la misma que usan la aplicación web y la API.
+   VER: Revisión del servicio de cálculo y de sus pruebas automatizadas.
+RNF 27 [Mantenibilidad]
+   REQ: Las rutas deben limitarse a recibir y responder, dejando la lógica de negocio en la capa de servicios.
+   VER: Revisión de la estructura del proyecto.
+RNF 28 [Mantenibilidad]
+   REQ: Todo cambio en el esquema de la base debe aplicarse mediante una migración versionada y repetible.
+   VER: Ejecución del migrador dos veces seguidas, de modo que la segunda no altere nada.
+RNF 29 [Mantenibilidad]
+   REQ: El sistema debe contar con pruebas automatizadas sobre el cálculo tributario, el contrato de la API y la generación de los documentos.
+   VER: Ejecución de la batería de pruebas.
+RNF 30 [Escalabilidad]
+   REQ: El sistema debe admitir nuevas empresas emisoras y nuevos clientes integrados sin cambios en el código.
+   VER: Alta de una empresa y de un cliente nuevos por el panel.
+RNF 31 [Escalabilidad]
+   REQ: Un cambio que rompa el contrato de la API debe publicarse como una versión nueva, manteniendo la anterior en funcionamiento.
+   VER: Revisión de la política de versionado de la API.
+RNF 32 [Portabilidad]
+   REQ: El sistema debe operar desde cualquier sistema operativo mediante un navegador, sin instalación en el equipo del usuario.
+   VER: Acceso desde equipos con distintos sistemas operativos.
