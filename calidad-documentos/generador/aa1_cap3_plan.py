@@ -15,7 +15,7 @@ Las cifras vienen de `evidencia.py`, así que este archivo no repite ningún nú
 """
 from evidencia import (CARPETA_CAPTURAS, COLECCION, DURACION, FUNCIONALES, HERRAMIENTA,
                        INTEGRACION, RNF, TOTAL_UNITARIAS, UNITARIAS)
-from fuentes import cita, narrativa
+from fuentes import cita
 
 CITADAS = ["istqb", "ieee829", "iso29119", "myers", "beck", "iso25010", "dian42"]
 
@@ -89,7 +89,7 @@ SEVERIDADES = [
     ("Mayor",
      "El documento sale, pero dice algo que no se puede explicar o falta un dato "
      "obligatorio",
-     "El pie de la factura mostraba un descuento del 0,0 % restando dinero real, y la "
+     "El pie de la factura mostraba un descuento del 0,0 % restando dinero real, y la "
      "ciudad del comprador salía vacía en todo lo emitido por la interfaz"),
     ("Menor",
      "El contenido es correcto pero su presentación estorba la lectura",
@@ -170,7 +170,7 @@ def _objetivo(d):
         "integración cumple el contrato que publica, y que las reglas de acceso y de "
         "registro de la actividad se aplican. Dicho de otro modo, no se busca demostrar "
         "que el sistema funciona sino encontrar aquello en lo que falla, que es la "
-        f"diferencia entre probar y confirmar lo que uno ya cree ({narrativa('myers')})."
+        f"diferencia entre probar y confirmar lo que uno ya cree ({cita('myers')})."
     )
 
     d.titulo("4.2 Alcance", nivel=2)
@@ -225,7 +225,7 @@ def _estrategia(d):
         "copia de la salida del programa. Una prueba que repite lo que el código devolvió "
         "no verifica nada, porque queda en verde tanto si el código está bien como si "
         "está mal, y esa es una trampa fácil de caer cuando se escriben pruebas después "
-        f"del código y no antes ({narrativa('beck')})."
+        f"del código y no antes ({cita('beck')})."
     )
     d.tabla(
         "Niveles y tipos de prueba aplicados",

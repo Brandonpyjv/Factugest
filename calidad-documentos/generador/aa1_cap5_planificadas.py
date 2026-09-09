@@ -13,7 +13,7 @@ sistema que no tenía pruebas y ninguno en la que sí las tenía.
 """
 from evidencia import (DEFECTOS, FUNCIONALES, INTEGRACION, INVARIANTES, PENDIENTES,
                        TOTAL_UNITARIAS, UNITARIAS)
-from fuentes import cita, narrativa
+from fuentes import cita
 
 CITADAS = ["istqb", "iso29119", "iso25010", "dian42", "myers", "beck"]
 
@@ -21,7 +21,7 @@ CITADAS = ["istqb", "iso29119", "iso25010", "dian42", "myers", "beck"]
 PLANIFICADAS = [
     ("Carga sobre la emisión",
      "El tiempo de respuesta de la emisión con varias peticiones simultáneas",
-     "El 95 % de las emisiones por debajo de tres segundos, sin ninguna respuesta "
+     "El 95 % de las emisiones por debajo de tres segundos, sin ninguna respuesta "
      "errónea ni ningún consecutivo repetido",
      "Un servidor de pruebas separado del equipo de desarrollo y una herramienta de "
      "carga"),
@@ -61,7 +61,7 @@ DETALLE_DEFECTOS = [
      "Revisión de un documento generado por la interfaz de integración",
      "Diez pruebas automatizadas, una de las cuales comprueba que el nombre del "
      "proveedor no aparezca en ninguna parte del documento de un tercero"),
-    ("El pie mostraba un descuento del 0,0 % restando dinero real", "Mayor",
+    ("El pie mostraba un descuento del 0,0 % restando dinero real", "Mayor",
      "Lectura de una factura con descuento por producto",
      "Seis pruebas automatizadas sobre las filas de descuento del pie"),
     ("La ciudad y el departamento del comprador salían vacíos en todo lo emitido por la "
@@ -163,7 +163,7 @@ def _resultados(d):
     d.parrafo(
         "Ese resultado, por sí solo, dice menos de lo que parece. Una batería que siempre "
         "está en verde puede significar que el sistema funciona o que las pruebas no "
-        f"buscan donde duele ({narrativa('myers')}), de modo que lo que sigue no es el "
+        f"buscan donde duele ({cita('myers')}), de modo que lo que sigue no es el "
         "recuento de lo que pasó sino el de lo que falló mientras se construía, que es "
         "donde se ve si el proceso de calidad sirvió para algo."
     )
@@ -184,7 +184,7 @@ def _defectos(d):
          for defecto, severidad, deteccion, cobertura in DETALLE_DEFECTOS],
         nota="Los cuatro están corregidos. La severidad corresponde a la clasificación "
              "declarada en el plan de pruebas.",
-        anchos=[4.2, 1.8, 3.6, 5.2],
+        anchos=[4.0, 2.4, 3.6, 4.8],
     )
     d.parrafo(
         "El primero es el más grave que este sistema puede producir y conviene explicar "
@@ -209,7 +209,7 @@ def _defectos(d):
         "que el plan ya declara, según la cual un defecto se reproduce primero con una "
         "prueba que falla y solo después se corrige, de modo que hoy dieciséis pruebas "
         "cubren dos de esos cuatro defectos y ninguno puede volver en silencio "
-        f"({narrativa('beck')}). La segunda es la primera acción del plan de mejora, que "
+        f"({cita('beck')}). La segunda es la primera acción del plan de mejora, que "
         "consiste en extender la automatización a la capa que consulta la base de datos, "
         "porque el tercer defecto, la ciudad del comprador que llegaba vacía, sigue sin "
         "prueba automatizada justamente por vivir en esa capa."

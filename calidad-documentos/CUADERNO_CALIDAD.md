@@ -4,8 +4,9 @@ Control de la elaboración de las dos evidencias de la guía GFPI-F-135, ficha *
 programa Análisis y Desarrollo de Software (228118), fase de **Evaluación**.
 
 **Creado:** 8 de septiembre de 2026
-**Estado global:** **AA1 terminado**, 59 páginas en PDF. Cerradas C0 a C8, faltan 5
-tareas, todas de la infografía. Sigue C9, el contenido del mapa.
+**Estado global:** **terminado.** Las catorce tareas cerradas. El informe en 59 páginas,
+tamaño carta, y la infografía en una lámina A3 vertical. Los dos PDF están en
+`entregables/` y listos para subir.
 
 Insumos leídos:
 
@@ -23,7 +24,7 @@ del mismo motor de formato.
 
 1. **Una tarea a la vez.** Al terminar cada una se reporta qué quedó y se pide permiso
    para seguir. El motivo es el presupuesto de tokens, no la formalidad.
-2. **Al cerrar una tarea se actualiza este cuaderno**, la casilla y la bitácora (§10).
+2. **Al cerrar una tarea se actualiza este cuaderno**, la casilla y la bitácora (§12).
 3. **Lo que se escribe tiene que existir en el software.** Ninguna prueba inventada,
    ninguna cifra redondeada hacia arriba. Si una prueba está planificada y no ejecutada,
    el informe lo dice con esas palabras, que además es exactamente lo que la guía permite
@@ -263,19 +264,19 @@ Marcar `[x]` al cerrar. Cada fila es una sesión independiente.
 
 ### Fase 2 — Infografía AA2
 
-- [ ] **C9 · Contenido del mapa.** La lista de nodos, la jerarquía y los conectores,
-      cerrada en texto antes de dibujar nada. Se aprueba como texto.
-- [ ] **C10 · Dibujo, versión 1.** Según la herramienta que gane en D3.
-- [ ] **C11 · Franja de aplicación a FactuGest.** El cierre que responde al criterio de
-      evaluación.
-- [ ] **C12 · Ajuste visual, exportación a PDF y verificación.** Legibilidad al 100 %, que
-      todo quepa, que ningún texto se solape y que la tipografía sea la del documento de
-      grado.
+- [x] **C9 · Contenido del mapa.** Nodos, jerarquía, conectores cruzados y franja de
+      aplicación, en §10. Pendiente de aprobación antes de dibujar.
+- [x] **C10 · Dibujo.** `generador/aa2_mapa.py`, matplotlib, A3 vertical exacto.
+- [x] **C11 · De la teoría a los resultados.** Rehecha entera. Ya no define modelos ni
+      normas, muestra qué se probó, con qué cifras, qué se corrigió y qué falta. Ver §10.
+- [x] **C12 · Ajuste visual, exportación y verificación.** PDF de una página, 29,7 x 42 cm,
+      sin texto fuera de la hoja, con las cuatro variantes de la tipografía incrustadas.
 
 ### Fase 3 — Cierre
 
-- [ ] **C13 · Revisión final de los dos PDF** contra los lineamientos de la guía y
-      actualización de la bitácora.
+- [x] **C13 · Revisión final.** Informe revisado a fondo, con tres correcciones
+      aplicadas. Infografía comprobada sin tocarla, por decisión del cliente. Detalle
+      en §12.
 
 **Salida:** `calidad-documentos/entregables/`
 **Scripts:** `calidad-documentos/generador/`
@@ -358,7 +359,53 @@ intercambiar información con otros sistemas.
 
 ---
 
-## 10 · Cosas que quedaron anotadas para el final
+## 10 · El contenido de la infografía (AA2)
+
+**Rehecha el 8 de septiembre de 2026.** La primera versión era un mapa conceptual de
+modelos y estándares, con McCall, Boehm, la 9126, SPICE y la 9001 definidos uno por uno.
+El cliente la rechazó y tiene razón en el fondo del asunto, porque esa lámina se podía
+entregar igual en cualquier proyecto y no decía nada de este. La segunda versión muestra
+qué se hizo y qué resultó.
+
+### 10.1 La tensión con la guía, escrita para no olvidarla
+
+El enunciado de AA2 pide «desarrolle el tema de modelos para el aseguramiento de la calidad
+de software y sus principales características», o sea teoría. Pero el criterio de evaluación
+de la misma guía dice «ajusta procesos del desarrollo de software de acuerdo con el
+referente de calidad adoptado», que es aplicación. Se optó por el criterio, que es lo que
+se califica, y el referente adoptado queda **nombrado** al pie de la lámina, sin definirlo.
+La teoría completa, con los nueve referentes y el motivo de cada descarte, está en el
+capítulo 2 del informe AA1, así que el equipo no se queda sin ella si alguien pregunta.
+
+### 10.2 Lo que muestra la lámina, de arriba abajo
+
+| Bloque | Qué muestra |
+|---|---|
+| **Cuatro cifras de entrada** | 190 pruebas automáticas, 100 % superadas, 11 pruebas sobre la API, 4 operaciones verificadas en pantalla |
+| **1. Qué se probó** | Los doce grupos de pruebas en barras, con lo que protege cada uno dicho en español y no con el nombre del archivo |
+| **2. Ejemplos de lo que se comprobó** | Cinco casos reales con sus cifras, entrada, lo que debía dar y lo que dio |
+| **3. Qué se encontró y se corrigió** | Los cuatro defectos con su severidad, qué pasaba y cómo quedó |
+| **4. Qué falta por probar** | Los cuatro pendientes, cada uno con la medida que lo dará por bueno |
+| **Cierre** | Lo que no depende de una prueba sino del diseño, con los invariantes en lenguaje llano |
+
+Los cinco casos del bloque 2 son los que hacen entendible el trabajo a quien no programa,
+porque un IVA de 71.820 sobre dos unidades de 189.000 lo verifica cualquiera con una
+calculadora. Ese bloque es el que convierte «hicimos pruebas» en «esto se probó y esto dio».
+
+### 10.3 Forma
+
+Una sola hoja **A3 vertical**, 29,7 x 42 cm, elegida por el cliente. Misma tinta y misma
+tipografía que los diagramas del documento de grado. Las cifras vienen de `evidencia.py`,
+de manera que la lámina no puede decir algo distinto del informe, y el archivo comprueba al
+generarse que los doce grupos de pruebas tengan su etiqueta y que las cuentas sumen 190.
+
+**Cada caja calcula su propio alto** a partir de su texto, y el programa avisa si el
+contenido se come el pie. La primera versión llevaba los altos escritos a mano y el texto
+se salía por debajo de casi todas las cajas.
+
+---
+
+## 11 · Cosas que quedaron anotadas para el final
 
 - **Las capturas funcionales son anteriores a un cambio del menú.** La imagen del
   formulario de emisión muestra todavía la entrada «Nueva factura (anterior)» en la barra
@@ -368,7 +415,41 @@ intercambiar información con otros sistemas.
 
 ---
 
-## 11 · Bitácora
+## 12 · La revisión final
+
+Hecha el 8 de septiembre de 2026 sobre los dos PDF ya generados.
+
+### 12.1 Lo que se comprobó del informe
+
+| Comprobación | Resultado |
+|---|---|
+| Formato APA, márgenes, fuente, interlineado, sangría, paginación, numeración de tablas y figuras | 17 de 17 en verde |
+| Cifras afirmadas en el texto contra la corrida real | Las 19 coinciden |
+| Referencias cruzadas entre capítulos | Correctas, ninguna apunta a un capítulo equivocado |
+| Palabras repetidas y espacios antes de puntuación | Solo falsos positivos, del índice y de un encabezado de tabla |
+| Títulos sueltos al pie de página, rótulos separados de su tabla, notas huérfanas | Ninguno |
+| Bibliografía contra citas del texto | Ninguna fuente citada sin referencia ni referencia sin citar |
+| Datos de portada | Los tres integrantes, la ficha, la instructora, el centro y la ciudad |
+
+### 12.2 Las tres correcciones que salieron de la revisión
+
+1. **Citas narrativas dentro de paréntesis.** En cuatro sitios salía «(Myers et al.
+   (2011))», con el paréntesis doble, porque se usó la forma narrativa donde iba la
+   parentética. Ahora dice «(Myers et al., 2011)».
+2. **La columna de severidad partía su propio encabezado**, y el rótulo salía como
+   «Severida d». Se ensanchó a costa de la última columna.
+3. **El signo de porcentaje se quedaba solo al empezar un renglón**, en frases como
+   «descuento del 0,0 %». Se puso espacio duro en los catorce porcentajes del informe.
+
+### 12.3 La infografía
+
+Comprobada sin modificarla, por decisión del cliente. Una página, 29,7 x 42 cm, ningún
+texto fuera de la hoja, y las cifras coinciden con las del informe porque las dos salen de
+`evidencia.py`.
+
+---
+
+## 13 · Bitácora
 
 | Fecha | Tarea | Qué se decidió |
 |---|---|---|
@@ -381,3 +462,7 @@ intercambiar información con otros sistemas.
 | 2026-09-08 | C6 | Capítulo de evidencia. Los 15 casos se tomaron de la batería con sus valores tal como están escritos, no se redactaron para el informe, y por eso los importes no son cifras redondas. La tabla va en página apaisada porque con seis datos por caso en vertical las columnas quedaban en dos palabras por renglón. Se retiró el nivel 3 del índice, que hacía dos páginas y dejaba una hoja en blanco delante del primer capítulo por la marca de párrafo con que Word cierra el campo. |
 | 2026-09-08 | C7 | Cerrado el contenido del informe. Las siete pruebas planificadas llevan métrica de aprobación y condición de inicio, porque una prueba planificada sin criterio no es un plan. El hallazgo del capítulo de resultados es el patrón de los cuatro defectos, pues ninguno está en la aritmética, que se escribió con pruebas, y los cuatro están en la generación del documento y en la consulta que lo alimenta, que no las tenían. De ahí salen las dos primeras acciones del plan de mejora. La conclusión final dice lo que las pruebas no demuestran, que es la ausencia de defectos, y lo que sí sostienen, que es que un error ya cometido no puede volver en silencio. |
 | 2026-09-08 | C8 | Informe terminado. Las referencias se construyen desde las claves que cada capítulo declara, y el cierre comprueba que no quede una fuente citada sin referencia ni una referencia que nadie citó. El anexo B lista las 190 pruebas leyendo la salida de la corrida, no escritas a mano, así que el anexo no puede desfasarse del código. Se corrigieron dos cosas del armado, la hoja en blanco al final que dejaba volver a vertical después del anexo apaisado, y el título del libro de Beck, que el verificador leía como el patrón de texto generado y se agregó a su lista de excepciones junto con el de Myers. |
+| 2026-09-08 | C9 | Contenido del mapa cerrado en texto. Se decidió que el mapa lleve conectores con verbo y cinco relaciones cruzadas, porque sin ellas un mapa conceptual es un organigrama. La franja de aplicación a FactuGest no es un añadido, es lo que responde al criterio de evaluación de la guía, que pide ajustar el proceso al referente adoptado. Formato A3 apaisado para que las cajas se lean al 100 % sin bajar de 9 puntos. |
+| 2026-09-08 | C10 a C12 | Mapa dibujado. El cliente pidió dos cambios sobre lo aprobado en C9, A3 vertical en vez de apaisado y FactuGest como eje en vez de franja al pie, y los dos se aplicaron. Se retiró un conector cruzado, el de Boehm hacia los estándares ISO, porque el arco se salía de la hoja por el margen izquierdo, y esa relación pasó al texto de su caja. Quedan tres relaciones cruzadas dibujadas, que es lo que distingue un mapa conceptual de un organigrama. |
+| 2026-09-08 | C10 a C12, segunda versión | El cliente rechazó la lámina teórica. Se rehízo entera para mostrar resultados, y las definiciones de McCall, Boehm, 9126, SPICE y 9001 salieron de la lámina, que ya están en el informe. Queda la tensión declarada en §10.1 entre el enunciado de la guía, que pide teoría, y su criterio de evaluación, que pide aplicación. Se corrigió además que matplotlib leía como fórmula lo que iba entre dos signos de peso, y en una lámina llena de importes eso se comía el texto. |
+| 2026-09-08 | C13 | Revisión final. Tres defectos encontrados y corregidos en el informe, todos de forma y ninguno de contenido. La infografía se revisó sin tocarla. Los dos entregables quedan listos. |
