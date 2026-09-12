@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="@localhost" uuid="c238c1c5-851f-4c8b-b125-a96bdb0ffdff">
-      <driver-ref>mariadb</driver-ref>
+    <data-source source="LOCAL" name="@localhost" uuid="a69563ef-1d94-4a52-9279-77950d85a5b6">
+      <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mariadb://localhost:3306</jdbc-url>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://localhost:3306</jdbc-url>
       <jdbc-additional-properties>
         <property name="database.introspection.mysql.dbe5060" value="true" />
       </jdbc-additional-properties>

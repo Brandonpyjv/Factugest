@@ -4,16 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="2556802e-6d4c-4e58-ac2a-af43e757c400" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="3576" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CSS File" />
+        <option value="HTML File" />
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="FlaskConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass">
     <envs>
@@ -26,64 +30,67 @@
       </map>
     </option>
   </component>
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;Brandonpyjv&quot;
-  }
+  <component name="HttpClientOnboardingState">{
+  &quot;isOnboardingCommentShown&quot;: true
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/Brandonpyjv/Factugest.git&quot;,
-    &quot;accountId&quot;: &quot;88f126e7-dd6d-481f-941d-16269c3868f4&quot;
-  }
-}</component>
-  <component name="McpProjectServerCommands">
-    <commands />
-    <urls />
-  </component>
   <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 0
+  &quot;associatedIndex&quot;: 6
 }</component>
-  <component name="ProjectId" id="3AteomDGFA3A4OZf4FdGgaWMCzC" />
+  <component name="ProjectId" id="39FsPiBHUU5K7PpIC8z6iVIM2k1" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;HTTP Request.All in generated-requests.executor&quot;: &quot;Run&quot;,
+    &quot;JavaScript Debug.form.html.executor&quot;: &quot;Run&quot;,
+    &quot;JavaScript Debug.index.html.executor&quot;: &quot;Run&quot;,
+    &quot;JavaScript Debug.layout.html.executor&quot;: &quot;Run&quot;,
+    &quot;JavaScript Debug.list.html.executor&quot;: &quot;Run&quot;,
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.database.executor&quot;: &quot;Run&quot;,
+    &quot;Python.index.executor&quot;: &quot;Run&quot;,
+    &quot;Python.invoice_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.logs_service.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;Python.product_discount_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.products_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.proyecto.executor&quot;: &quot;Run&quot;,
+    &quot;Python.pruebas.executor&quot;: &quot;Run&quot;,
+    &quot;Python.users.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;ai.playground.ignore.import.keys.banner.in.settings&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;api&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/brandon/Proyects/Factugest&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/01. Proyectos/Factugest Python/Factugest/Factugest&quot;,
+    &quot;list.type.of.created.stylesheet&quot;: &quot;CSS&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;editor.reader.mode&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
   &quot;keyToStringList&quot;: {
     &quot;DatabaseDriversLRU&quot;: [
-      &quot;mariadb&quot;
+      &quot;mysql&quot;
     ]
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\01. Proyectos\Factugest Python\python\templates\invoice" />
+      <recent name="D:\01. Proyectos\Factugest Python\python\templates" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\01. Proyectos\Factugest Python\python" />
+      <recent name="D:\01. Proyectos\Factugest Python\python\templates\prueba" />
+      <recent name="D:\01. Proyectos\python\templates" />
+      <recent name="D:\01. Proyectos\python\templates\static\product" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -94,58 +101,54 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="f09cb525-f40a-44f6-ab45-113b1edf87b4" name="Changes" comment="" />
-      <created>1773416471379</created>
+      <changelist id="2556802e-6d4c-4e58-ac2a-af43e757c400" name="Changes" comment="" />
+      <created>1770303131116</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1773416471379</updated>
-      <workItem from="1773416472685" duration="2888000" />
-      <workItem from="1773424381059" duration="1155000" />
-      <workItem from="1773427242475" duration="24000" />
-      <workItem from="1773427821949" duration="6327000" />
-      <workItem from="1776378978801" duration="141000" />
-      <workItem from="1776379146465" duration="1716000" />
-      <workItem from="1776380906395" duration="2802000" />
-      <workItem from="1776385218422" duration="860000" />
-      <workItem from="1776386950713" duration="5000" />
-      <workItem from="1776389082003" duration="1251000" />
-      <workItem from="1776729846896" duration="299000" />
-      <workItem from="1777492197501" duration="1998000" />
-      <workItem from="1778161307376" duration="4046000" />
-      <workItem from="1778681757063" duration="643000" />
-      <workItem from="1785192320925" duration="2724000" />
-      <workItem from="1785427830750" duration="1927000" />
-      <workItem from="1786312875812" duration="15658000" />
-      <workItem from="1786331215676" duration="193000" />
-      <workItem from="1786376368978" duration="792000" />
-      <workItem from="1786631851090" duration="1646000" />
-      <workItem from="1786707222802" duration="778000" />
-      <workItem from="1787065967572" duration="23944000" />
-      <workItem from="1787146516410" duration="23000" />
-      <workItem from="1787146728509" duration="25193000" />
-      <workItem from="1787241187776" duration="38267000" />
-      <workItem from="1787590885100" duration="43000" />
-      <workItem from="1787604647735" duration="27214000" />
-      <workItem from="1788223728220" duration="3470000" />
-      <workItem from="1788908059626" duration="1108000" />
+      <updated>1770303131116</updated>
+      <workItem from="1770303132250" duration="5034000" />
+      <workItem from="1770338849237" duration="10017000" />
+      <workItem from="1770350792329" duration="356000" />
+      <workItem from="1770376299075" duration="368000" />
+      <workItem from="1770384799285" duration="80000" />
+      <workItem from="1770386525177" duration="7554000" />
+      <workItem from="1770731597402" duration="6666000" />
+      <workItem from="1770756618284" duration="12529000" />
+      <workItem from="1770817489549" duration="6433000" />
+      <workItem from="1770903885059" duration="20784000" />
+      <workItem from="1771200824147" duration="2608000" />
+      <workItem from="1771252519156" duration="2664000" />
+      <workItem from="1771335601009" duration="5324000" />
+      <workItem from="1771422711368" duration="20174000" />
+      <workItem from="1771503569054" duration="9619000" />
+      <workItem from="1771513480378" duration="13175000" />
+      <workItem from="1772199921924" duration="1263000" />
+      <workItem from="1772201273144" duration="235000" />
+      <workItem from="1772202094292" duration="7605000" />
+      <workItem from="1772405262595" duration="2920000" />
+      <workItem from="1772572206597" duration="10666000" />
+      <workItem from="1773027679157" duration="9832000" />
+      <workItem from="1773063820474" duration="650000" />
+      <workItem from="1773262100298" duration="814000" />
+      <workItem from="1773329716330" duration="363000" />
+      <workItem from="1773373402224" duration="61000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Factugest/main.py</url>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Factugest$main.coverage" NAME="main Coverage Results" MODIFIED="1776692585129" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Factugest" />
-    <SUITE FILE_PATH="coverage/Factugest$prueba.coverage" NAME="prueba Coverage Results" MODIFIED="1773426738295" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Factugest" />
+    <SUITE FILE_PATH="coverage/python$users.coverage" NAME="users Coverage Results" MODIFIED="1771469149840" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/routes" />
+    <SUITE FILE_PATH="coverage/python$main.coverage" NAME="main Coverage Results" MODIFIED="1772201372392" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Factugest$products_service.coverage" NAME="products_service Coverage Results" MODIFIED="1772581120554" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/services" />
+    <SUITE FILE_PATH="coverage/Factugest$invoice_service.coverage" NAME="invoice_service Coverage Results" MODIFIED="1772209155579" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/services" />
+    <SUITE FILE_PATH="coverage/python$database.coverage" NAME="database Coverage Results" MODIFIED="1771425047528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Factugest$main.coverage" NAME="main Coverage Results" MODIFIED="1773063851153" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Factugest$logs_service.coverage" NAME="logs_service Coverage Results" MODIFIED="1773029652533" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/services" />
+    <SUITE FILE_PATH="coverage/python$index.coverage" NAME="index Coverage Results" MODIFIED="1770935220022" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Factugest$product_discount_service.coverage" NAME="product_discount_service Coverage Results" MODIFIED="1773033097600" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/services" />
+    <SUITE FILE_PATH="coverage/python$proyecto.coverage" NAME="proyecto Coverage Results" MODIFIED="1770303300824" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/python$pruebas.coverage" NAME="pruebas Coverage Results" MODIFIED="1770820733724" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
