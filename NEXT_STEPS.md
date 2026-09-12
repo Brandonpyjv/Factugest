@@ -1,34 +1,53 @@
 # Dónde quedó el proyecto
 
-Última actualización: **2026-08-20**, rama `api`.
+Última actualización: **2026-08-25**, rama `api`.
 
 Este archivo es para retomar sin releer el historial. El *porqué* de cada decisión está en
 `CLAUDE.md`; aquí solo está el estado y lo que sigue.
 
 ---
 
-## ⏭️ Lo primero al retomar — aprobar la vista nueva de factura
+## ⏭️ Lo primero al retomar — limpiar las tres tablas muertas
 
-**Pendiente, sin empezar.** Se decidió el 20-ago que la vista nueva queda aprobada y la
-anterior se retira. Es lo que dice `CLAUDE.md` en «Las dos vistas de creación de factura»,
-que ya dejó escrito qué hay que quitar.
+**Pendiente, analizado y comprobado el 25-ago-2026.** Sobran tres tablas en los dos
+proyectos. No es una sospecha: se clonó `factugest`, se borraron las tres en la copia y
+pasaron las 36 rutas GET del panel, `migrate.py` y los 190 tests. MySQL las dejó caer sin
+protestar, lo que ya prueba que ninguna FK apuntaba a ellas.
 
-Lo que hay que hacer, en FactuGest **y en el POS** (los dos tienen las dos vistas):
+| Tabla | Filas | Usos en código | Qué es |
+|---|---:|---:|---|
+| `clientes` | 3 | 0 | Del prototipo. La reemplazó `customers`. Trae datos de plantilla venezolana (`tipo_documento = 'V'`, teléfonos `0412-…`). |
+| `configuracion` | 0 | 0 | Del prototipo, clave-valor. La reemplazó el `.env`. Nada que ver con la pantalla `/configuracion`, que lee los catálogos. |
+| `productos_descuentos` | 2 | 0 | Gemela muerta de `producto_descuento`, a una letra. Tiene las dos únicas filas huérfanas de la base: apuntan a los productos `1` y `3`, y el catálogo va del `77` al `86`. |
 
-1. Quitar del menú lateral la entrada **«Nueva factura (anterior)»** en `layout.html`.
-   Debe desaparecer **para todos los roles, el CAJERO incluido** — hoy la ve.
-2. Retirar la ruta **`GET /invoice/new`**. ⚠️ **Cuidado: el `POST /invoice/new` se queda**,
-   porque es el que usan las dos vistas para emitir. Solo se va el GET que pinta el
-   formulario viejo.
-3. Que `/invoice/nueva` sea la única forma de llegar al formulario, y revisar que ningún
-   otro sitio enlace a la vieja (botón «Nueva factura» de la barra superior, el panel del
-   cajero, los enlaces de «Ver todas»).
-4. Borrar la plantilla `invoice/form.html` y la constante `VISTAS`, más el campo oculto
-   `vista` que decidía a cuál devolver los errores.
+Lo que hay que hacer:
 
-Verificar al terminar: emitir una factura de principio a fin, y que un error de validación
-—enviar sin cliente o sin líneas— siga devolviendo el formulario nuevo con el error
-señalado y no un JSON crudo.
+1. Una **migración `014`** que las tire si existen, en FactuGest **y en el POS**. Va como
+   migración y no como `DROP` suelto: así se aplica sola en cualquier base y queda escrito
+   por qué se fueron.
+2. Quitarlas también de `base/factugest.sql` en los dos repos. **Si no, una instalación
+   limpia las vuelve a crear** — el baseline las declara.
+
+⚠️ `factura_descuento` y `factura_impuesto` **no entran en esta tanda**. También están
+vacías y muertas, pero tienen FK y aparecen en dos `DELETE` de
+`services/invoice_service.py:426-427`. Borrarlas exige quitar antes esas dos líneas.
+
+**Lo que NO se toca**, aunque el diagrama las muestre sueltas o vacías:
+
+- `schema_migrations` — bitácora de `migrate.py`. Describe la base, no el negocio: atarla
+  a algo sería el error. Las versiones saltan de la 005 a la 008 y está bien, la 006 y la
+  007 tampoco existen en `MIGRACIONES`.
+- `movimientos_inventario` — vacía y correcta. Un proveedor tecnológico no tiene bodega;
+  quien la llena es el POS.
+- `producto_descuento` — vacía en FactuGest pero **el código la usa**
+  (`routes/invoice.py:645`, `services/invoice_service.py:81`); en `sistesoluciones` tiene
+  10 filas.
+- Los catálogos `municipios` (1.122) y `departamentos` (33): sueltos en el diagrama porque
+  son catálogos, consultados en trece sitios.
+
+`BASE_DE_DATOS.md` tiene el análisis largo, pero es del 20-ago: no incluye la comprobación
+empírica ni el detalle de que `logs` sobrevivió en `sistesoluciones` (tiene 5 filas, y la
+migración 010 solo la borra si está vacía).
 
 ---
 
@@ -109,12 +128,6 @@ en sandbox comparando totales → correo con nuestro PDF → notas → producci�
 Dockerfile por aplicación, `docker-compose` con MySQL y proxy HTTPS, configuración
 externalizada. **Todo esto se puede hacer ya**; contratar servidor y dominio depende de una
 decisión tuya.
-
-### 4 · Borrar la vista anterior de crear factura
-
-Cuando apruebes la nueva (`/invoice/nueva`). Son cuatro cosas y van en los dos repos:
-la plantilla `invoice/form.html`, el GET `/invoice/new`, la entrada del menú y la constante
-`VISTAS` en `routes/invoice.py`.
 
 ---
 
